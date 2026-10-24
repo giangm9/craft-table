@@ -1,0 +1,1270 @@
+{
+  "server": {
+    "signInRetry": "Thử lại",
+    "signInAgain": "Đăng nhập lại",
+    "signInNotConfigured": {
+      "params": "Xưởng chưa cấu hình đăng nhập — chỉ mở được từ chính máy chạy xưởng (‹a0.url›).",
+      "one": "Xưởng chưa cấu hình đăng nhập — chỉ mở được từ chính máy chạy xưởng (undefined).",
+      "two": "Xưởng chưa cấu hình đăng nhập — chỉ mở được từ chính máy chạy xưởng (undefined)."
+    },
+    "signInStartFailed": {
+      "params": "Không bắt đầu đăng nhập được: ‹a0.why›.",
+      "one": "Không bắt đầu đăng nhập được: undefined.",
+      "two": "Không bắt đầu đăng nhập được: undefined."
+    },
+    "signInRefusedByProvider": {
+      "params": "Nhà cung cấp không cho đăng nhập: ‹a0.why›.",
+      "one": "Nhà cung cấp không cho đăng nhập: undefined.",
+      "two": "Nhà cung cấp không cho đăng nhập: undefined."
+    },
+    "signInFlowInvalid": "Phiên đăng nhập không hợp lệ hoặc đã quá hạn.",
+    "signInNotAllowed": {
+      "params": "Tài khoản ‹a0.email› không được cấp quyền vào xưởng.",
+      "one": "Tài khoản undefined không được cấp quyền vào xưởng.",
+      "two": "Tài khoản undefined không được cấp quyền vào xưởng."
+    },
+    "signInFailed": {
+      "params": "Đăng nhập lỗi: ‹a0.why›.",
+      "one": "Đăng nhập lỗi: undefined.",
+      "two": "Đăng nhập lỗi: undefined."
+    },
+    "signedOut": "Đã đăng xuất khỏi xưởng.",
+    "pageBadRequest": "Yêu cầu không hợp lệ.",
+    "pageNotFound": "Không có",
+    "pageStudioError": {
+      "params": "Lỗi xưởng: ‹a0.message›",
+      "one": "Lỗi xưởng: undefined",
+      "two": "Lỗi xưởng: undefined"
+    },
+    "apiNotSignedIn": "chưa đăng nhập",
+    "apiNotFound": "không có",
+    "apiMethodNotAllowed": "phương thức không hỗ trợ",
+    "apiNoSuchVersion": "không có phiên bản này",
+    "apiSourceVersionMissing": "phiên bản nguồn không có",
+    "apiVersionMissing": "phiên bản không có",
+    "apiDeleteOnlyLocal": "chỉ dọn bản thử từ 127.0.0.1",
+    "apiCannotDeleteLive": "không xoá bản đang chạy",
+    "apiBadEntry": "entry không hợp lệ",
+    "apiNoSuchSnapshot": "không có mốc này",
+    "apiNeedImageType": "cần Content-Type image/*",
+    "apiNoSuchImage": "không có ảnh này",
+    "apiNeedJson": "cần Content-Type: application/json",
+    "apiBadEntryKind": "entry/kind không hợp lệ",
+    "apiNoSpec": "chưa có đặc tả",
+    "apiNoSuchThread": "không có luồng này",
+    "apiClaudeOnly": "chỉ Claude (127.0.0.1)",
+    "apiNoFile": "không có file",
+    "apiPathNotAllowed": "đường dẫn không được phép",
+    "requestBodyTooLarge": "body quá lớn",
+    "requestBadJson": "JSON hỏng",
+    "uploadTooLarge": {
+      "params": "ảnh quá lớn (tối đa ‹a0.mb›MB)",
+      "one": "ảnh quá lớn (tối đa undefinedMB)",
+      "two": "ảnh quá lớn (tối đa undefinedMB)"
+    },
+    "uploadNotImage": "không phải ảnh PNG / JPEG / WebP / GIF",
+    "srcNotDeclared": "Dự án chưa khai mã nguồn app.",
+    "srcPathNotAllowed": "Đường dẫn không được phép.",
+    "srcNoFile": "Không có file.",
+    "srcReadOnlyBranch": {
+      "params": "chỉ đọc · cây làm việc hiện tại (nhánh ‹a0.branch›)",
+      "one": "chỉ đọc · cây làm việc hiện tại (nhánh undefined)",
+      "two": "chỉ đọc · cây làm việc hiện tại (nhánh undefined)"
+    },
+    "srcReadOnly": {
+      "params": "chỉ đọc · cây làm việc hiện tại (‹a0.head›)",
+      "one": "chỉ đọc · cây làm việc hiện tại (undefined)",
+      "two": "chỉ đọc · cây làm việc hiện tại (undefined)"
+    },
+    "entryErrorSection": "Lỗi",
+    "entryMissingMetaGroup": "Thiếu meta",
+    "threadDefaultTitle": "Luồng mới",
+    "claudeNoReply": "(Claude không trả lời gì)",
+    "oidcMalformed": "id_token hỏng",
+    "oidcNotBase64url": "id_token hỏng (không phải base64url)",
+    "oidcNotJsonObject": "id_token hỏng (không phải JSON object)",
+    "oidcBadKid": "id_token hỏng (kid)",
+    "oidcNotJws": "id_token hỏng (không phải JWS 3 phần)",
+    "oidcBadSignaturePart": "id_token hỏng (chữ ký)",
+    "oidcUnknownKid": {
+      "params": "id_token ký bằng khoá lạ (kid \"‹a0.kid›\")",
+      "one": "id_token ký bằng khoá lạ (kid \"undefined\")",
+      "two": "id_token ký bằng khoá lạ (kid \"undefined\")"
+    },
+    "oidcKeyUnfit": {
+      "params": "khoá \"‹a0.kid›\" không dùng được cho ‹a0.alg›",
+      "one": "khoá \"undefined\" không dùng được cho undefined",
+      "two": "khoá \"undefined\" không dùng được cho undefined"
+    },
+    "oidcNoKidManyKeys": "id_token không có kid mà nhà cung cấp có nhiều khoá",
+    "oidcNoKeyForAlg": {
+      "params": "không có khoá nào cho ‹a0.alg›",
+      "one": "không có khoá nào cho undefined",
+      "two": "không có khoá nào cho undefined"
+    },
+    "oidcBrokenKey": "khoá của nhà cung cấp hỏng",
+    "oidcShortRsaKey": "khoá RSA của nhà cung cấp ngắn hơn 2048 bit",
+    "oidcWrongKeyType": "khoá của nhà cung cấp sai loại",
+    "oidcWrongIssuer": {
+      "params": "id_token của nhà phát hành khác (\"‹a0.iss›\")",
+      "one": "id_token của nhà phát hành khác (\"undefined\")",
+      "two": "id_token của nhà phát hành khác (\"undefined\")"
+    },
+    "oidcNotForStudio": {
+      "params": "id_token không dành cho xưởng này (‹a0.claim›)",
+      "one": "id_token không dành cho xưởng này (undefined)",
+      "two": "id_token không dành cho xưởng này (undefined)"
+    },
+    "oidcExpired": "id_token đã hết hạn — kiểm tra đồng hồ máy chủ",
+    "oidcIssuedInFuture": "id_token phát hành ở tương lai — kiểm tra đồng hồ máy chủ",
+    "oidcNotYetValid": "id_token chưa có hiệu lực",
+    "oidcNonce": "id_token không khớp lượt đăng nhập này (nonce)",
+    "oidcNoEmail": "nhà cung cấp không trả email của tài khoản",
+    "oidcEmailUnverified": {
+      "params": "email ‹a0.email› chưa được xác minh ở nhà cung cấp",
+      "one": "email undefined chưa được xác minh ở nhà cung cấp",
+      "two": "email undefined chưa được xác minh ở nhà cung cấp"
+    },
+    "oidcBadAlg": {
+      "params": "id_token ký bằng thuật toán không chấp nhận (‹a0.alg›)",
+      "one": "id_token ký bằng thuật toán không chấp nhận (undefined)",
+      "two": "id_token ký bằng thuật toán không chấp nhận (undefined)"
+    },
+    "oidcBadSignature": "chữ ký id_token không hợp lệ",
+    "oidcBadDiscovery": "tài liệu discovery của nhà cung cấp hỏng",
+    "oidcIssuerMismatch": {
+      "params": "nhà cung cấp tự xưng \"‹a0.claimed›\", khác IDP_ISSUER \"‹a0.issuer›\" — từ chối",
+      "one": "nhà cung cấp tự xưng \"undefined\", khác IDP_ISSUER \"undefined\" — từ chối",
+      "two": "nhà cung cấp tự xưng \"undefined\", khác IDP_ISSUER \"undefined\" — từ chối"
+    },
+    "oidcDiscoveryMissing": {
+      "params": "discovery thiếu ‹a0.name›",
+      "one": "discovery thiếu undefined",
+      "two": "discovery thiếu undefined"
+    },
+    "oidcDiscoveryInvalid": {
+      "params": "discovery: ‹a0.name› không hợp lệ",
+      "one": "discovery: undefined không hợp lệ",
+      "two": "discovery: undefined không hợp lệ"
+    },
+    "oidcUnreachable": {
+      "params": "không kết nối được ‹a0.url› (‹a0.why›)",
+      "one": "không kết nối được undefined (undefined)",
+      "two": "không kết nối được undefined (undefined)"
+    },
+    "oidcHttpStatus": {
+      "params": "‹a0.url› trả HTTP ‹a0.status›",
+      "one": "undefined trả HTTP undefined",
+      "two": "undefined trả HTTP undefined"
+    },
+    "oidcNotJson": {
+      "params": "‹a0.url› không trả JSON",
+      "one": "undefined không trả JSON",
+      "two": "undefined không trả JSON"
+    },
+    "oidcBadJwks": "bộ khoá (JWKS) của nhà cung cấp hỏng",
+    "oidcTokenUnreachable": {
+      "params": "không kết nối được nhà cung cấp để đổi mã (‹a0.why›)",
+      "one": "không kết nối được nhà cung cấp để đổi mã (undefined)",
+      "two": "không kết nối được nhà cung cấp để đổi mã (undefined)"
+    },
+    "oidcTokenRefused": {
+      "params": "nhà cung cấp từ chối đổi mã: ‹a0.error› — ‹a0.description›",
+      "one": "nhà cung cấp từ chối đổi mã: undefined",
+      "two": "nhà cung cấp từ chối đổi mã: undefined"
+    },
+    "oidcNoIdToken": "nhà cung cấp không trả id_token"
+  },
+  "data": {
+    "badVersionStatus": {
+      "params": "trạng thái không hợp lệ: ‹a0.status›",
+      "one": "trạng thái không hợp lệ: undefined",
+      "two": "trạng thái không hợp lệ: undefined"
+    },
+    "versionIdInvalid": {
+      "params": "id phiên bản không hợp lệ: ‹a0.id›",
+      "one": "id phiên bản không hợp lệ: undefined",
+      "two": "id phiên bản không hợp lệ: undefined"
+    },
+    "versionSourceMissing": {
+      "params": "không có phiên bản ‹a0.id›",
+      "one": "không có phiên bản undefined",
+      "two": "không có phiên bản undefined"
+    },
+    "versionTitleMissing": "thiếu tên phiên bản",
+    "optionVersionMissing": {
+      "params": "không có phiên bản: ‹a0.id›",
+      "one": "không có phiên bản: undefined",
+      "two": "không có phiên bản: undefined"
+    },
+    "optionNameMissing": "thiếu tên phương án",
+    "optionNoScreens": "chọn ít nhất một màn",
+    "optionScreenIdInvalid": {
+      "params": "id màn không hợp lệ: ‹a0.id›",
+      "one": "id màn không hợp lệ: undefined",
+      "two": "id màn không hợp lệ: undefined"
+    },
+    "optionScreenIsOption": {
+      "params": "màn đã là phương án: ‹a0.id›",
+      "one": "màn đã là phương án: undefined",
+      "two": "màn đã là phương án: undefined"
+    },
+    "optionScreenMissing": {
+      "params": "không có màn: ‹a0.id›",
+      "one": "không có màn: undefined",
+      "two": "không có màn: undefined"
+    },
+    "optionNotOption": {
+      "params": "không phải phương án: ‹a0.id›",
+      "one": "không phải phương án: undefined",
+      "two": "không phải phương án: undefined"
+    },
+    "optionMissing": {
+      "params": "không có phương án: ‹a0.id›",
+      "one": "không có phương án: undefined",
+      "two": "không có phương án: undefined"
+    },
+    "optionMetaNotJson": {
+      "params": "File thông tin phải là JSON hợp lệ (phương án cần \"option\": { \"of\": \"‹a0.base›\", \"name\": \"<tên ngắn, vd A. Bản gọn>\", \"status\": \"trying\" }).",
+      "one": "File thông tin phải là JSON hợp lệ (phương án cần \"option\": { \"of\": \"undefined\", \"name\": \"<tên ngắn, vd A. Bản gọn>\", \"status\": \"trying\" }).",
+      "two": "File thông tin phải là JSON hợp lệ (phương án cần \"option\": { \"of\": \"undefined\", \"name\": \"<tên ngắn, vd A. Bản gọn>\", \"status\": \"trying\" })."
+    },
+    "optionMetaNotObject": {
+      "params": "Phương án phải có \"option\": { \"of\": \"‹a0.base›\", \"name\": \"<tên ngắn, vd A. Bản gọn>\", \"status\": \"trying\" } — không phải chữ trơn.",
+      "one": "Phương án phải có \"option\": { \"of\": \"undefined\", \"name\": \"<tên ngắn, vd A. Bản gọn>\", \"status\": \"trying\" } — không phải chữ trơn.",
+      "two": "Phương án phải có \"option\": { \"of\": \"undefined\", \"name\": \"<tên ngắn, vd A. Bản gọn>\", \"status\": \"trying\" } — không phải chữ trơn."
+    },
+    "optionMetaBadOf": {
+      "params": "option.of phải là màn chính \"‹a0.base›\". Dạng đúng: \"option\": { \"of\": \"‹a0.base›\", \"name\": \"<tên ngắn, vd A. Bản gọn>\", \"status\": \"trying\" }.",
+      "one": "option.of phải là màn chính \"undefined\". Dạng đúng: \"option\": { \"of\": \"undefined\", \"name\": \"<tên ngắn, vd A. Bản gọn>\", \"status\": \"trying\" }.",
+      "two": "option.of phải là màn chính \"undefined\". Dạng đúng: \"option\": { \"of\": \"undefined\", \"name\": \"<tên ngắn, vd A. Bản gọn>\", \"status\": \"trying\" }."
+    },
+    "optionMetaBadName": {
+      "params": "option.name phải là tên ngắn của phương án. Dạng đúng: \"option\": { \"of\": \"‹a0.base›\", \"name\": \"<tên ngắn, vd A. Bản gọn>\", \"status\": \"trying\" }.",
+      "one": "option.name phải là tên ngắn của phương án. Dạng đúng: \"option\": { \"of\": \"undefined\", \"name\": \"<tên ngắn, vd A. Bản gọn>\", \"status\": \"trying\" }.",
+      "two": "option.name phải là tên ngắn của phương án. Dạng đúng: \"option\": { \"of\": \"undefined\", \"name\": \"<tên ngắn, vd A. Bản gọn>\", \"status\": \"trying\" }."
+    },
+    "optionMetaBadStatus": {
+      "params": "option.status phải là \"trying\" (hoặc \"adopted\"). Dạng đúng: \"option\": { \"of\": \"‹a0.base›\", \"name\": \"<tên ngắn, vd A. Bản gọn>\", \"status\": \"trying\" }.",
+      "one": "option.status phải là \"trying\" (hoặc \"adopted\"). Dạng đúng: \"option\": { \"of\": \"undefined\", \"name\": \"<tên ngắn, vd A. Bản gọn>\", \"status\": \"trying\" }.",
+      "two": "option.status phải là \"trying\" (hoặc \"adopted\"). Dạng đúng: \"option\": { \"of\": \"undefined\", \"name\": \"<tên ngắn, vd A. Bản gọn>\", \"status\": \"trying\" }."
+    },
+    "threadEntryInvalid": "entry không hợp lệ",
+    "threadVersionInvalid": "phiên bản không hợp lệ",
+    "threadTitleMissing": "thiếu tiêu đề",
+    "messageRoleInvalid": "role phải là user|claude",
+    "messageTooLong": "tin nhắn quá dài",
+    "messageTooManyMarks": "quá nhiều vùng khoanh",
+    "markInvalid": "vùng khoanh không hợp lệ",
+    "messageViewingOutside": "màn đang xem không thuộc luồng này",
+    "messageTooManyImages": {
+      "params": "tối đa ‹a0.max› ảnh mỗi tin",
+      "one": "tối đa undefined ảnh mỗi tin",
+      "two": "tối đa undefined ảnh mỗi tin"
+    },
+    "messageImageInvalid": "ảnh đính kèm không hợp lệ",
+    "messageEmpty": "tin nhắn trống",
+    "markMissing": "không có vùng khoanh này",
+    "markAlreadyRemoved": "vùng khoanh đã bỏ",
+    "markNotRemoved": "vùng khoanh chưa bỏ",
+    "markRemovedRestoreFirst": "vùng khoanh đã bỏ — khôi phục trước khi vẽ lại",
+    "markActionInvalid": "thao tác phải là remove|restore|redraw",
+    "transcriptClaude": "Claude (bạn, lượt trước)",
+    "transcriptOnlyImages": "(chỉ gửi ảnh, không có chữ)",
+    "transcriptOnlyMarks": "(chỉ khoanh, không có chữ)",
+    "transcriptMarks": "Vùng khoanh kèm tin này:",
+    "transcriptImages": "Ảnh người dùng đính kèm tin này (dùng Read để xem từng ảnh):",
+    "transcriptImage": {
+      "params": "ảnh ‹a0.n›: ‹a0.path›",
+      "one": "ảnh undefined: undefined",
+      "two": "ảnh undefined: undefined"
+    },
+    "transcriptMarkRemoved": {
+      "params": "[#‹a0.n›] đã bỏ (người dùng bỏ vùng này)",
+      "one": "[#undefined] đã bỏ (người dùng bỏ vùng này)",
+      "two": "[#undefined] đã bỏ (người dùng bỏ vùng này)"
+    },
+    "transcriptMark": {
+      "params": "[#‹a0.n›] kịch bản ‹a0.scenario› · ‹a0.viewport› · x=‹a0.x› y=‹a0.y› w=‹a0.w› h=‹a0.h› · chữ: ‹a0.texts›",
+      "one": "[#undefined] kịch bản (mặc định) · undefined · x=undefined y=undefined w=undefined h=undefined",
+      "two": "[#undefined] kịch bản (mặc định) · undefined · x=undefined y=undefined w=undefined h=undefined"
+    },
+    "specOverview": "Tổng quan",
+    "frameUnreachable": {
+      "params": "Không mở được khung: chưa biết phiên bản nào đang chạy — không hỏi được máy chủ xưởng (‹a0.detail›). Mở khung kèm ?v=<phiên-bản> để xem một bản cụ thể.",
+      "one": "Không mở được khung: chưa biết phiên bản nào đang chạy — không hỏi được máy chủ xưởng (undefined). Mở khung kèm ?v=<phiên-bản> để xem một bản cụ thể.",
+      "two": "Không mở được khung: chưa biết phiên bản nào đang chạy — không hỏi được máy chủ xưởng (undefined). Mở khung kèm ?v=<phiên-bản> để xem một bản cụ thể."
+    },
+    "frameServerError": {
+      "params": "Không mở được khung: chưa biết phiên bản nào đang chạy — máy chủ xưởng trả lỗi ‹a0.status›: ‹a0.detail›. Mở khung kèm ?v=<phiên-bản> để xem một bản cụ thể.",
+      "one": "Không mở được khung: chưa biết phiên bản nào đang chạy — máy chủ xưởng trả lỗi undefined. Mở khung kèm ?v=<phiên-bản> để xem một bản cụ thể.",
+      "two": "Không mở được khung: chưa biết phiên bản nào đang chạy — máy chủ xưởng trả lỗi undefined. Mở khung kèm ?v=<phiên-bản> để xem một bản cụ thể."
+    },
+    "frameUnreadable": "Không mở được khung: chưa biết phiên bản nào đang chạy — máy chủ xưởng trả dữ liệu không đọc được. Mở khung kèm ?v=<phiên-bản> để xem một bản cụ thể.",
+    "frameNoLive": "Không mở được khung: chưa biết phiên bản nào đang chạy — versions/index.json chưa ghi \"live\" hợp lệ. Mở khung kèm ?v=<phiên-bản> để xem một bản cụ thể.",
+    "dsNoLive": {
+      "params": "Không phân giải được \"@ds\": chưa biết phiên bản đang chạy — ‹a0.root›/versions/index.json không đọc được (hoặc thiếu \"live\") và chưa có thư mục versions/<phiên-bản>/ nào có version.json.",
+      "one": "Không phân giải được \"@ds\": chưa biết phiên bản đang chạy — undefined/versions/index.json không đọc được (hoặc thiếu \"live\") và chưa có thư mục versions/<phiên-bản>/ nào có version.json.",
+      "two": "Không phân giải được \"@ds\": chưa biết phiên bản đang chạy — undefined/versions/index.json không đọc được (hoặc thiếu \"live\") và chưa có thư mục versions/<phiên-bản>/ nào có version.json."
+    },
+    "dsCssBlocked": {
+      "params": "CSS ‹a0.file› bị chặn: ‹a0.found› — trong versions/ chỉ được @import \"tailwindcss\" hoặc \"./tệp.css\".",
+      "one": "CSS undefined bị chặn: undefined — trong versions/ chỉ được @import \"tailwindcss\" hoặc \"./tệp.css\".",
+      "two": "CSS undefined bị chặn: undefined — trong versions/ chỉ được @import \"tailwindcss\" hoặc \"./tệp.css\"."
+    }
+  },
+  "agent": {
+    "systemPrompt": {
+      "params": "Bạn là Claude, trợ lý thiết kế trong xưởng thiết kế craft-table của dự án ‹a0.name› — ‹a0.description› — nơi chủ dự án và Claude cùng thiết kế màn hình TRƯỚC khi code. Mỗi màn là một bản vẽ React (nhiều kịch bản) kèm thông tin màn và đặc tả 2 tab (Hành vi, Kỹ thuật).\n\nBạn chỉ làm việc qua các công cụ xưởng, đã khoá sẵn theo phiên bản và luồng của tin nhắn. Cách làm:\n1. Mò trước, đừng đoán: list (màn, kịch bản, file) → read_thread khi cần tin cũ → view_region / view_image cho vùng khoanh, ảnh đính kèm → view_frame để thấy màn đang trông thế nào → read / search file liên quan (‹a0.sourceRoots› là mã nguồn ‹a0.sourceLabel› — app thật, chỉ đọc).\n2. Trước khi sửa việc thuộc chủ đề nào thì đọc rules của chủ đề đó: ‹a0.topics›.\n3. Sửa bằng edit (đoạn cũ phải duy nhất) / write. Chỉ sửa đúng việc được nhờ.\n4. Tự kiểm rồi mới trả lời: check typecheck sau khi sửa .tsx, check lint sau khi sửa mô tả/kịch bản/tab Hành vi, check spec sau khi sửa đặc tả; view_frame lại đúng kịch bản để xem kết quả. Còn lỗi thì sửa tiếp, lặp tới khi sạch.\n5. Có nhiều hướng thì đặt tên từng cái (Phương án A — <tên ngắn>, Phương án B — …), nêu đánh đổi + đề xuất 1; cần người dùng quyết thì hỏi rõ và DỪNG, đừng tự làm.\n\nTrả lời bằng đúng ngôn ngữ người dùng đã viết (không rõ thì dùng tiếng Việt), bằng markdown gọn (gạch đầu dòng, **đậm**), ngắn, đi thẳng vào việc: đã làm gì (file nào), kiểm thế nào, điều cần người dùng quyết. Chỉ chỗ trên khung bằng @khoanh(<kịch-bản|->, <desktop|mobile>, x, y, w, h) — lấy toạ độ bằng locate.",
+      "one": "Bạn là Claude, trợ lý thiết kế trong xưởng thiết kế craft-table của dự án undefined — nơi chủ dự án và Claude cùng thiết kế màn hình TRƯỚC khi code. Mỗi màn là một bản vẽ React (nhiều kịch bản) kèm thông tin màn và đặc tả 2 tab (Hành vi, Kỹ thuật).\n\nBạn chỉ làm việc qua các công cụ xưởng, đã khoá sẵn theo phiên bản và luồng của tin nhắn. Cách làm:\n1. Mò trước, đừng đoán: list (màn, kịch bản, file) → read_thread khi cần tin cũ → view_region / view_image cho vùng khoanh, ảnh đính kèm → view_frame để thấy màn đang trông thế nào → read / search file liên quan.\n2. Trước khi sửa việc thuộc chủ đề nào thì đọc rules của chủ đề đó: undefined.\n3. Sửa bằng edit (đoạn cũ phải duy nhất) / write. Chỉ sửa đúng việc được nhờ.\n4. Tự kiểm rồi mới trả lời: check typecheck sau khi sửa .tsx, check lint sau khi sửa mô tả/kịch bản/tab Hành vi, check spec sau khi sửa đặc tả; view_frame lại đúng kịch bản để xem kết quả. Còn lỗi thì sửa tiếp, lặp tới khi sạch.\n5. Có nhiều hướng thì đặt tên từng cái (Phương án A — <tên ngắn>, Phương án B — …), nêu đánh đổi + đề xuất 1; cần người dùng quyết thì hỏi rõ và DỪNG, đừng tự làm.\n\nTrả lời bằng đúng ngôn ngữ người dùng đã viết (không rõ thì dùng tiếng Việt), bằng markdown gọn (gạch đầu dòng, **đậm**), ngắn, đi thẳng vào việc: đã làm gì (file nào), kiểm thế nào, điều cần người dùng quyết. Chỉ chỗ trên khung bằng @khoanh(<kịch-bản|->, <desktop|mobile>, x, y, w, h) — lấy toạ độ bằng locate.",
+      "two": "Bạn là Claude, trợ lý thiết kế trong xưởng thiết kế craft-table của dự án undefined — nơi chủ dự án và Claude cùng thiết kế màn hình TRƯỚC khi code. Mỗi màn là một bản vẽ React (nhiều kịch bản) kèm thông tin màn và đặc tả 2 tab (Hành vi, Kỹ thuật).\n\nBạn chỉ làm việc qua các công cụ xưởng, đã khoá sẵn theo phiên bản và luồng của tin nhắn. Cách làm:\n1. Mò trước, đừng đoán: list (màn, kịch bản, file) → read_thread khi cần tin cũ → view_region / view_image cho vùng khoanh, ảnh đính kèm → view_frame để thấy màn đang trông thế nào → read / search file liên quan.\n2. Trước khi sửa việc thuộc chủ đề nào thì đọc rules của chủ đề đó: undefined.\n3. Sửa bằng edit (đoạn cũ phải duy nhất) / write. Chỉ sửa đúng việc được nhờ.\n4. Tự kiểm rồi mới trả lời: check typecheck sau khi sửa .tsx, check lint sau khi sửa mô tả/kịch bản/tab Hành vi, check spec sau khi sửa đặc tả; view_frame lại đúng kịch bản để xem kết quả. Còn lỗi thì sửa tiếp, lặp tới khi sạch.\n5. Có nhiều hướng thì đặt tên từng cái (Phương án A — <tên ngắn>, Phương án B — …), nêu đánh đổi + đề xuất 1; cần người dùng quyết thì hỏi rõ và DỪNG, đừng tự làm.\n\nTrả lời bằng đúng ngôn ngữ người dùng đã viết (không rõ thì dùng tiếng Việt), bằng markdown gọn (gạch đầu dòng, **đậm**), ngắn, đi thẳng vào việc: đã làm gì (file nào), kiểm thế nào, điều cần người dùng quyết. Chỉ chỗ trên khung bằng @khoanh(<kịch-bản|->, <desktop|mobile>, x, y, w, h) — lấy toạ độ bằng locate."
+    },
+    "stopUnchecked": {
+      "params": "Chưa tự kiểm sau lần sửa cuối: ‹a0.steps›. Làm các bước này rồi mới trả lời; còn lỗi thì chỉ sửa lỗi nằm ở file bạn đã sửa (lỗi ở màn khác không phải việc của lượt này — nêu trong câu trả lời).",
+      "one": "Chưa tự kiểm sau lần sửa cuối: undefined. Làm các bước này rồi mới trả lời; còn lỗi thì chỉ sửa lỗi nằm ở file bạn đã sửa (lỗi ở màn khác không phải việc của lượt này — nêu trong câu trả lời).",
+      "two": "Chưa tự kiểm sau lần sửa cuối: undefined. Làm các bước này rồi mới trả lời; còn lỗi thì chỉ sửa lỗi nằm ở file bạn đã sửa (lỗi ở màn khác không phải việc của lượt này — nêu trong câu trả lời)."
+    },
+    "promptHead": {
+      "params": "Luồng ‹a0.thread› · phiên bản ‹a0.version› · màn ‹a0.entry› (\"‹a0.title›\").",
+      "one": "Luồng undefined · phiên bản undefined · màn undefined (\"undefined\").",
+      "two": "Luồng undefined · phiên bản undefined · màn undefined (\"undefined\")."
+    },
+    "promptViewing": {
+      "params": "Người dùng đang xem màn chính ‹a0.entry› — mặc định làm trên màn này.",
+      "one": "Người dùng đang xem phương án undefined — mặc định làm trên màn này.",
+      "two": "Người dùng đang xem phương án undefined — mặc định làm trên màn này."
+    },
+    "promptMarkChanges": {
+      "params": "Khoanh cũ đã đổi từ lượt trước: #‹a0.changes[0].n› vẽ lại → view_region(‹a0.changes[0].n›).",
+      "one": "(throws TypeError)",
+      "two": "(throws TypeError)"
+    },
+    "promptMessage": {
+      "params": "Tin mới — ‹a0.author›:\n‹a0.text›",
+      "one": "Tin mới — undefined:\n(không có chữ)",
+      "two": "Tin mới — undefined:\n(không có chữ)"
+    },
+    "promptMark": {
+      "params": "Vùng khoanh #‹a0.n›: đã bỏ",
+      "one": "Vùng khoanh #undefined: không kịch bản · undefined → view_region(undefined)",
+      "two": "Vùng khoanh #undefined: không kịch bản · undefined → view_region(undefined)"
+    },
+    "promptImage": {
+      "params": "Ảnh ‹a0.n› → view_image(\"‹a0.id›\")",
+      "one": "Ảnh undefined → view_image(\"undefined\")",
+      "two": "Ảnh undefined → view_image(\"undefined\")"
+    },
+    "toolList": "Liệt kê để định hướng TRƯỚC khi đọc: screens (mọi màn của phiên bản), scenarios (kịch bản của một màn), files (file của một màn: bản vẽ, thông tin, 2 tab đặc tả), system (file design system), threads (các luồng của màn).",
+    "paramEntry": "id màn, vd screens/orders/list — mặc định màn của luồng",
+    "toolRead": {
+      "params": "Đọc file (có số dòng), tối đa ‹a0.max› dòng mỗi lần. path: \"boards/…\" hoặc \"system/…\" trong phiên bản ‹a0.version›, hoặc ‹a0.srcArea› (mã nguồn ‹a0.label› — app thật, chỉ đọc).",
+      "one": "Đọc file (có số dòng), tối đa undefined dòng mỗi lần. path: \"boards/…\" hoặc \"system/…\" trong phiên bản undefined.",
+      "two": "Đọc file (có số dòng), tối đa undefined dòng mỗi lần. path: \"boards/…\" hoặc \"system/…\" trong phiên bản undefined."
+    },
+    "toolSearch": {
+      "params": "Tìm CHỮ (không phân biệt hoa thường, không phải regex) → \"file:dòng: nội dung\", tối đa ‹a0.max› kết quả. in: version (mặc định, cả phiên bản) hoặc source (mã nguồn ‹a0.label›). glob: lọc tên file, vd \"*.tsx\".",
+      "one": "Tìm CHỮ (không phân biệt hoa thường, không phải regex) → \"file:dòng: nội dung\", tối đa undefined kết quả. in: version (mặc định, cả phiên bản). glob: lọc tên file, vd \"*.tsx\".",
+      "two": "Tìm CHỮ (không phân biệt hoa thường, không phải regex) → \"file:dòng: nội dung\", tối đa undefined kết quả. in: version (mặc định, cả phiên bản). glob: lọc tên file, vd \"*.tsx\"."
+    },
+    "toolReadThread": {
+      "params": "Đọc các tin của luồng này (‹a0.page› tin mỗi lần): tác giả, chữ, mã vùng khoanh (#n — xem bằng view_region) và ảnh đính kèm (xem bằng view_image).",
+      "one": "Đọc các tin của luồng này (undefined tin mỗi lần): tác giả, chữ, mã vùng khoanh (#n — xem bằng view_region) và ảnh đính kèm (xem bằng view_image).",
+      "two": "Đọc các tin của luồng này (undefined tin mỗi lần): tác giả, chữ, mã vùng khoanh (#n — xem bằng view_region) và ảnh đính kèm (xem bằng view_image)."
+    },
+    "toolViewFrame": "Xem ảnh khung một kịch bản của màn (ảnh thật của bản vẽ đang chạy). part: top = một màn hình (mặc định), full = cả trang (cao tối đa 2000px). Dùng để hiểu màn TRƯỚC khi sửa và tự kiểm SAU khi sửa.",
+    "paramScenario": "id kịch bản; bỏ trống hoặc '-' = không kịch bản",
+    "toolViewRegion": "Xem đúng vùng người dùng khoanh (#n trong luồng): ảnh có viền đỏ + chữ nằm trong vùng.",
+    "toolViewImage": "Xem ảnh người dùng đính kèm trong luồng này (id lấy từ tin nhắn hoặc read_thread).",
+    "toolLocate": "Tìm toạ độ phần tử chứa chữ trên khung → dòng @khoanh(...) dán thẳng vào câu trả lời để chỉ chỗ.",
+    "toolEdit": {
+      "params": "Sửa file bằng cách thay một đoạn: old phải xuất hiện ĐÚNG MỘT lần (thêm ngữ cảnh nếu cần). Chỉ \"boards/…\" hoặc \"system/…\" của phiên bản ‹a0.version›.",
+      "one": "Sửa file bằng cách thay một đoạn: old phải xuất hiện ĐÚNG MỘT lần (thêm ngữ cảnh nếu cần). Chỉ \"boards/…\" hoặc \"system/…\" của phiên bản undefined.",
+      "two": "Sửa file bằng cách thay một đoạn: old phải xuất hiện ĐÚNG MỘT lần (thêm ngữ cảnh nếu cần). Chỉ \"boards/…\" hoặc \"system/…\" của phiên bản undefined."
+    },
+    "toolWrite": {
+      "params": "Ghi cả file (tạo mới hoặc thay toàn bộ). Chỉ \"boards/…\" hoặc \"system/…\" của phiên bản ‹a0.version›; đuôi .tsx .ts .css .md .json.",
+      "one": "Ghi cả file (tạo mới hoặc thay toàn bộ). Chỉ \"boards/…\" hoặc \"system/…\" của phiên bản undefined; đuôi .tsx .ts .css .md .json.",
+      "two": "Ghi cả file (tạo mới hoặc thay toàn bộ). Chỉ \"boards/…\" hoặc \"system/…\" của phiên bản undefined; đuôi .tsx .ts .css .md .json."
+    },
+    "toolCheck": "Kiểm sau khi sửa (PHẢI sạch trước khi trả lời): typecheck (sau khi sửa .tsx), lint (luật lời thường — sau khi sửa tên/mô tả/kịch bản/tab Hành vi), spec (trang đặc tả: sơ đồ + code nhúng — sau khi sửa .md; trả kèm ảnh).",
+    "toolRules": {
+      "params": "Đọc luật chi tiết theo chủ đề TRƯỚC khi làm việc thuộc chủ đề đó: ‹a0.topics›.",
+      "one": "Đọc luật chi tiết theo chủ đề TRƯỚC khi làm việc thuộc chủ đề đó: undefined.",
+      "two": "Đọc luật chi tiết theo chủ đề TRƯỚC khi làm việc thuộc chủ đề đó: undefined."
+    },
+    "markName": "khoanh",
+    "outOfScope": {
+      "params": "Ngoài phạm vi: chỉ đọc \"boards/…\", \"system/…\" của phiên bản ‹a0.version› hoặc ‹a0.srcArea›.",
+      "one": "Ngoài phạm vi: chỉ đọc \"boards/…\", \"system/…\" của phiên bản undefined.",
+      "two": "Ngoài phạm vi: chỉ đọc \"boards/…\", \"system/…\" của phiên bản undefined."
+    },
+    "cssBlocked": {
+      "params": "Không được dùng trong CSS: ‹a0.found› (Tailwind sẽ nạp/chạy file khác trong máy chủ). Chỉ @import \"tailwindcss\" hoặc \"./tệp.css\".",
+      "one": "Không được dùng trong CSS: undefined (Tailwind sẽ nạp/chạy file khác trong máy chủ). Chỉ @import \"tailwindcss\" hoặc \"./tệp.css\".",
+      "two": "Không được dùng trong CSS: undefined (Tailwind sẽ nạp/chạy file khác trong máy chủ). Chỉ @import \"tailwindcss\" hoặc \"./tệp.css\"."
+    },
+    "listScreen": {
+      "params": "‹a0.id› — ‹a0.title› (‹a0.scenarios› kịch bản) · phương án \"‹a0.option›\"",
+      "one": "undefined — undefined (undefined kịch bản)",
+      "two": "undefined — undefined (undefined kịch bản)"
+    },
+    "noScreens": "(chưa có màn)",
+    "noScenarios": "(màn không chia kịch bản — dùng '-')",
+    "listThread": {
+      "params": "‹a0.id› — ‹a0.title› (‹a0.status›, ‹a0.messages› tin)",
+      "one": "undefined — undefined (undefined, undefined tin)",
+      "two": "undefined — undefined (undefined, undefined tin)"
+    },
+    "noThreads": "(chưa có luồng)",
+    "noScreen": {
+      "params": "Không có màn \"‹a0.entry›\".",
+      "one": "Không có màn \"undefined\".",
+      "two": "Không có màn \"undefined\"."
+    },
+    "noScreenIn": {
+      "params": "Không có màn \"‹a0.entry›\" trong ‹a0.version›.",
+      "one": "Không có màn \"undefined\" trong undefined.",
+      "two": "Không có màn \"undefined\" trong undefined."
+    },
+    "noScreenUseList": {
+      "params": "Không có màn \"‹a0.entry›\" trong ‹a0.version› — dùng list screens.",
+      "one": "Không có màn \"undefined\" trong undefined — dùng list screens.",
+      "two": "Không có màn \"undefined\" trong undefined — dùng list screens."
+    },
+    "noFile": {
+      "params": "Không có file ‹a0.path›.",
+      "one": "Không có file undefined.",
+      "two": "Không có file undefined."
+    },
+    "moreLines": {
+      "params": "… còn ‹a0.left› dòng — đọc tiếp với from=‹a0.from›",
+      "one": "… còn undefined dòng — đọc tiếp với from=undefined",
+      "two": "… còn undefined dòng — đọc tiếp với from=undefined"
+    },
+    "noSource": "Dự án chưa khai mã nguồn app (craft-table.json → source).",
+    "notFound": {
+      "params": "Không thấy \"‹a0.text›\".",
+      "one": "Không thấy \"undefined\".",
+      "two": "Không thấy \"undefined\"."
+    },
+    "moreResults": {
+      "params": "… còn ‹a0.left› kết quả — thu hẹp pattern/glob",
+      "one": "… còn undefined kết quả — thu hẹp pattern/glob",
+      "two": "… còn undefined kết quả — thu hẹp pattern/glob"
+    },
+    "threadUnreadable": "Không đọc được luồng.",
+    "threadMessage": {
+      "params": "[‹a0.index›] ‹a0.who›:\n‹a0.text›\nVùng khoanh: #‹a0.refs[0].n› (đã bỏ)\nẢnh: ảnh 1: ‹a0.images[0]›",
+      "one": "(throws TypeError)",
+      "two": "(throws TypeError)"
+    },
+    "noMoreMessages": "(hết tin)",
+    "moreMessages": {
+      "params": "… còn ‹a0.left› tin — đọc tiếp với from=‹a0.from›",
+      "one": "… còn undefined tin — đọc tiếp với from=undefined",
+      "two": "… còn undefined tin — đọc tiếp với from=undefined"
+    },
+    "frameCaption": {
+      "params": "Khung ‹a0.entry› · ‹a0.scenario› · ‹a0.viewport› · trang cao ‹a0.height›px\nLỖI JS: ‹a0.errors›",
+      "one": "Khung undefined · undefined",
+      "two": "Khung undefined · undefined"
+    },
+    "noMark": {
+      "params": "Luồng không có vùng khoanh #‹a0.n› — xem read_thread.",
+      "one": "Luồng không có vùng khoanh #undefined — xem read_thread.",
+      "two": "Luồng không có vùng khoanh #undefined — xem read_thread."
+    },
+    "markRemoved": {
+      "params": "Vùng khoanh #‹a0.n› đã bị bỏ — người dùng không cần làm theo vùng này nữa.",
+      "one": "Vùng khoanh #undefined đã bị bỏ — người dùng không cần làm theo vùng này nữa.",
+      "two": "Vùng khoanh #undefined đã bị bỏ — người dùng không cần làm theo vùng này nữa."
+    },
+    "regionCaption": {
+      "params": "Vùng #‹a0.n›: kịch bản ‹a0.scenario› · ‹a0.viewport› · x=‹a0.x› y=‹a0.y› rộng ‹a0.w› cao ‹a0.h›\nChữ trong vùng: ‹a0.texts›",
+      "one": "(throws TypeError)",
+      "two": "(throws TypeError)"
+    },
+    "imageNotInThread": {
+      "params": "Ảnh \"‹a0.id›\" không thuộc luồng này.",
+      "one": "Ảnh \"undefined\" không thuộc luồng này.",
+      "two": "Ảnh \"undefined\" không thuộc luồng này."
+    },
+    "imageGone": "Ảnh không còn trên máy chủ.",
+    "imageShrunk": {
+      "params": "Ảnh gốc ‹a0.mb› MB — đã thu nhỏ (cạnh dài tối đa 1568 px) để gửi.",
+      "one": "Ảnh gốc undefined MB — đã thu nhỏ (cạnh dài tối đa 1568 px) để gửi.",
+      "two": "Ảnh gốc undefined MB — đã thu nhỏ (cạnh dài tối đa 1568 px) để gửi."
+    },
+    "imageTooBig": {
+      "params": "Ảnh ‹a0.mb› MB quá lớn và không thu nhỏ được: ‹a0.error›",
+      "one": "Ảnh undefined MB quá lớn và không thu nhỏ được: undefined",
+      "two": "Ảnh undefined MB quá lớn và không thu nhỏ được: undefined"
+    },
+    "cannotEdit": {
+      "params": "Không được sửa \"‹a0.path›\": chỉ boards/… hoặc system/… (.tsx .ts .css .md .json) của ‹a0.version›.",
+      "one": "Không được sửa \"undefined\": chỉ boards/… hoặc system/… (.tsx .ts .css .md .json) của undefined.",
+      "two": "Không được sửa \"undefined\": chỉ boards/… hoặc system/… (.tsx .ts .css .md .json) của undefined."
+    },
+    "noFileUseWrite": {
+      "params": "Không có file ‹a0.path› — tạo mới bằng write.",
+      "one": "Không có file undefined — tạo mới bằng write.",
+      "two": "Không có file undefined — tạo mới bằng write."
+    },
+    "editAmbiguous": {
+      "params": "Đoạn cần thay xuất hiện ‹a0.count› lần — thêm ngữ cảnh cho duy nhất.",
+      "one": "Đoạn cần thay xuất hiện undefined lần — thêm ngữ cảnh cho duy nhất.",
+      "two": "Đoạn cần thay xuất hiện undefined lần — thêm ngữ cảnh cho duy nhất."
+    },
+    "editNotFound": "Không thấy đoạn cần thay — read lại file.",
+    "edited": {
+      "params": "Đã sửa ‹a0.path›.",
+      "one": "Đã sửa undefined.",
+      "two": "Đã sửa undefined."
+    },
+    "cannotWrite": {
+      "params": "Không được ghi \"‹a0.path›\": chỉ boards/… hoặc system/… (.tsx .ts .css .md .json) của ‹a0.version›.",
+      "one": "Không được ghi \"undefined\": chỉ boards/… hoặc system/… (.tsx .ts .css .md .json) của undefined.",
+      "two": "Không được ghi \"undefined\": chỉ boards/… hoặc system/… (.tsx .ts .css .md .json) của undefined."
+    },
+    "written": {
+      "params": "Đã ghi ‹a0.path› (‹a0.lines› dòng).",
+      "one": "Đã ghi undefined (undefined dòng).",
+      "two": "Đã ghi undefined (undefined dòng)."
+    },
+    "typecheckClean": "✓ typecheck sạch",
+    "lintOff": "✓ dự án không bật luật lời thường — không có gì để kiểm",
+    "lintClean": "✓ mô tả + tab Hành vi đều là lời thường",
+    "lintFailed": {
+      "params": "✗ ‹a0.count› chỗ chưa phải lời thường — chuyển phần kỹ thuật sang tab Kỹ thuật:\n‹a0.issues›",
+      "one": "✗ undefined chỗ chưa phải lời thường — chuyển phần kỹ thuật sang tab Kỹ thuật:\nundefined",
+      "two": "✗ undefined chỗ chưa phải lời thường — chuyển phần kỹ thuật sang tab Kỹ thuật:\nundefined"
+    },
+    "noSpecFile": {
+      "params": "Chưa có ‹a0.path›.",
+      "one": "Chưa có undefined.",
+      "two": "Chưa có undefined."
+    },
+    "specReport": {
+      "params": "sơ đồ: ‹a0.diagrams› vẽ được, 1 LỖI: ‹a0.badDiagrams› · code nhúng: ‹a0.embeds›, 1 HỎNG: ‹a0.badEmbeds› · luật: ‹a0.rules› · LỖI JS: ‹a0.errors›",
+      "one": "(throws TypeError)",
+      "two": "(throws TypeError)"
+    },
+    "unknownTopic": {
+      "params": "Chủ đề có: ‹a0.topics›.",
+      "one": "Chủ đề có: undefined.",
+      "two": "Chủ đề có: undefined."
+    },
+    "tscFailed": {
+      "params": "✗ tsc lỗi (‹a0.project›):\n‹a0.output›",
+      "one": "✗ tsc lỗi (undefined):\nundefined",
+      "two": "✗ tsc lỗi (undefined):\nundefined"
+    },
+    "tscClean": {
+      "params": "✓ tsc sạch (xưởng + ‹a0.version›)",
+      "one": "✓ tsc sạch (undefined)",
+      "two": "✓ tsc sạch (undefined)"
+    },
+    "lintCodeBlock": "khối code (tab Hành vi không chứa code)",
+    "lintTerms": "API|endpoint|SVG|URL|JSON|HTTP|UTC|null|undefined|true|false|query|params?|state|dirty|debounce|payload|cache|render|component|hook|banner|badge|pill|toast|modal|dropdown|slider|canvas|amber|emerald|server|client|frontend|backend|database|DB|SQL|schema|migration|cookie|token|session|timestamp|boolean|array|items",
+    "lintHttpCode": "\\b(?:trả|lỗi|mã|status|HTTP|server)\\s*(?:về\\s*)?([2-5]\\d{2})\\b"
+  },
+  "shell": {
+    "panelResizeLabel": "Kéo để đổi độ rộng ngăn hội thoại",
+    "panelResizeHint": "Kéo để đổi độ rộng · bấm đúp để về mặc định",
+    "studioTagline": "Xưởng thiết kế",
+    "signOut": "Đăng xuất",
+    "language": "Ngôn ngữ",
+    "boardList": "Danh mục",
+    "closeCode": "Đóng ngăn code",
+    "openCode": "Sửa code bản vẽ (cùng sửa)",
+    "boardCode": "Code bản vẽ",
+    "createOptionHint": "Tạo phương án — bản sao để thử hướng khác, màn chính giữ nguyên",
+    "createOption": "Tạo phương án",
+    "editScreenInfoHint": "Sửa thông tin màn (tên, mô tả, kịch bản)",
+    "editScreenInfo": "Sửa thông tin màn",
+    "scenarioCount": {
+      "params": "‹a0› kịch bản",
+      "one": "1 kịch bản",
+      "two": "2 kịch bản"
+    },
+    "version": "Phiên bản",
+    "versionOption": {
+      "params": "‹a0.title› · đang chạy",
+      "one": "undefined",
+      "two": "undefined"
+    },
+    "manageVersions": "Quản lý phiên bản…",
+    "compare": "So sánh",
+    "noCompare": "Không so sánh",
+    "compareWith": {
+      "params": "So với ‹a0›",
+      "one": "So với 1",
+      "two": "So với 2"
+    },
+    "phone": "Điện thoại",
+    "fullDeviceWide": "Cả trang · cao tự do",
+    "frames": "Khung",
+    "viewportBoth": "Desktop + Mobile",
+    "viewport": {
+      "desktop": "Desktop",
+      "mobile": "Mobile"
+    },
+    "openSpec": "Mở bảng đặc tả",
+    "collapseSpec": "Thu gọn bảng đặc tả",
+    "spec": "Đặc tả",
+    "theme": "Giao diện",
+    "themeLight": "Sáng",
+    "themeDark": "Tối",
+    "markHint": "Khoanh vùng để gắn vào tin nhắn (phím C, Esc để thoát)",
+    "mark": "Khoanh",
+    "marking": "Đang khoanh",
+    "redrawing": {
+      "params": "Vẽ lại ‹a0›",
+      "one": "Vẽ lại 1",
+      "two": "Vẽ lại 2"
+    },
+    "conversation": "Hội thoại",
+    "history": "Lịch sử",
+    "noBoards": {
+      "params": "Chưa có bản vẽ nào trong versions/‹a0›/boards/.",
+      "one": "Chưa có bản vẽ nào trong versions/1/boards/.",
+      "two": "Chưa có bản vẽ nào trong versions/2/boards/."
+    },
+    "othersHere": {
+      "params": "‹a0› người khác đang mở xưởng",
+      "one": "1 người khác đang mở xưởng",
+      "two": "2 người khác đang mở xưởng"
+    },
+    "peerLabel": {
+      "params": "‹a0.name› · đang xem ‹a0.where› (‹a0.version›)",
+      "one": "undefined · đang xem danh mục",
+      "two": "undefined · đang xem danh mục"
+    },
+    "mainScreen": "màn chính",
+    "removedOption": "phương án đã bỏ",
+    "optionNamed": {
+      "params": "phương án “‹a0›”",
+      "one": "phương án “1”",
+      "two": "phương án “2”"
+    },
+    "otherSection": "Khác",
+    "searchBoards": "Tìm bản vẽ…",
+    "clearSearch": "Xoá tìm",
+    "noMatch": {
+      "params": "Không có bản vẽ khớp “‹a0›”.",
+      "one": "Không có bản vẽ khớp “1”.",
+      "two": "Không có bản vẽ khớp “2”."
+    },
+    "optionRowTitle": {
+      "params": "Phương án “‹a0.name›” của ‹a0.of› · ‹a0.status›",
+      "one": "Phương án “undefined” của undefined · undefined",
+      "two": "Phương án “undefined” của undefined · undefined"
+    },
+    "boardRowTitle": {
+      "params": "‹a0.title› · ‹a0.n› kịch bản",
+      "one": "undefined · undefined kịch bản",
+      "two": "undefined · undefined kịch bản"
+    },
+    "changedHint": "Khác bản nguồn",
+    "changedLabel": "đã đổi so với bản nguồn",
+    "viewingNow": {
+      "params": "Đang xem: ‹a0›",
+      "one": "Đang xem: 1",
+      "two": "Đang xem: 2"
+    },
+    "zoomOut": "Thu nhỏ",
+    "zoomOutHint": "Thu nhỏ (lăn chuột)",
+    "zoomReset": "Về 100%",
+    "zoomIn": "Phóng to",
+    "zoomInHint": "Phóng to (lăn chuột)",
+    "fit": "Vừa màn",
+    "openFrameHint": "Mở khung riêng",
+    "openFrame": "Mở riêng",
+    "boardError": {
+      "params": "Lỗi dòng ‹a0.line›: ‹a0.message›",
+      "one": "Lỗi: undefined",
+      "two": "Lỗi: undefined"
+    },
+    "boardMissing": {
+      "params": "Phiên bản “‹a0.version›” không có bản vẽ “‹a0.id›”.",
+      "one": "Phiên bản “undefined” không có bản vẽ “undefined”.",
+      "two": "Phiên bản “undefined” không có bản vẽ “undefined”."
+    },
+    "frameTitle": "Khung",
+    "localUser": "Claude (máy)",
+    "guest": "khách"
+  },
+  "ui": {
+    "cancel": "Huỷ",
+    "working": "Đang xử lý…",
+    "loadFailed": {
+      "params": "Không tải được ‹a0›",
+      "one": "Không tải được 1",
+      "two": "Không tải được 2"
+    },
+    "loadFailedDetail": "Có thể do mạng chập chờn. Dữ liệu của bạn không bị mất.",
+    "referenceCode": "Mã tra cứu:",
+    "retrying": "Đang thử lại…",
+    "retry": "Thử lại",
+    "close": "Đóng"
+  },
+  "threads": {
+    "conversation": "Hội thoại",
+    "newThread": "Luồng mới",
+    "noThreads": "Chưa có luồng nào",
+    "closedCount": {
+      "params": "Đã đóng (‹a0›)",
+      "one": "Đã đóng (1)",
+      "two": "Đã đóng (2)"
+    },
+    "messageCount": {
+      "params": "‹a0› tin",
+      "one": "1 tin",
+      "two": "2 tin"
+    },
+    "fromClaude": {
+      "params": "Claude: ‹a0›",
+      "one": "Claude: 1",
+      "two": "Claude: 2"
+    },
+    "lastImage": "(ảnh)",
+    "lastMark": "(khoanh)",
+    "stamp": {
+      "params": "‹a0.getHours()›:‹a0.getMinutes()›",
+      "one": "(throws TypeError)",
+      "two": "(throws TypeError)"
+    },
+    "working": "Claude đang làm",
+    "queuedBadge": "Chờ lượt",
+    "queuedHint": "Chờ Claude xong luồng khác trên màn này",
+    "errorBadge": "Lỗi",
+    "closedBadge": "Đã đóng",
+    "yourTurn": "Chờ bạn",
+    "backToThreads": "Về danh sách luồng",
+    "close": "Đóng",
+    "renamePrompt": "Đổi tên luồng",
+    "rename": "Đổi tên",
+    "marksToggle": "Danh sách khoanh — bỏ hoặc vẽ lại",
+    "closeThread": "Đóng luồng (đã xong)",
+    "reopenThread": "Mở lại luồng",
+    "deleteThread": "Xoá luồng",
+    "deleteConfirm": "Xoá luồng này?",
+    "markRemoved": "Khoanh đã bỏ",
+    "chipRemove": "Bỏ vùng khoanh",
+    "removeMark": "Bỏ khoanh",
+    "restore": "Khôi phục",
+    "redraw": "Vẽ lại",
+    "redrawing": "Đang vẽ lại",
+    "redrawHint": "Vẽ lại vùng này trên bảng vẽ (giữ số)",
+    "statusRemoved": "đã bỏ",
+    "statusRedrawn": "đã vẽ lại",
+    "onMember": {
+      "params": "trên ‹a0›",
+      "one": "trên 1",
+      "two": "trên 2"
+    },
+    "openImage": "Mở ảnh",
+    "attachedImage": "Ảnh đính kèm",
+    "workingLong": "Claude đang làm…",
+    "stop": "Dừng",
+    "waitingTurn": "Đang chờ lượt",
+    "busyElsewhere": "Claude đang sửa màn này ở luồng khác.",
+    "unqueue": "Bỏ chờ",
+    "turnFailed": "Lượt của Claude bị lỗi",
+    "runAgain": "Chạy lại",
+    "askClaude": "Gửi cho Claude trả lời",
+    "messageClaude": "Nhắn Claude…",
+    "reply": "Trả lời…",
+    "replyToReopen": "Gửi để mở lại luồng…",
+    "markHint": "Khoanh vùng trên bảng vẽ để gắn vào tin (phím C)",
+    "mark": "Khoanh",
+    "marking": "Đang khoanh",
+    "attachHint": {
+      "params": "Đính kèm ảnh (tối đa ‹a0›) — hoặc dán / kéo thả ảnh vào đây",
+      "one": "Đính kèm ảnh (tối đa 1) — hoặc dán / kéo thả ảnh vào đây",
+      "two": "Đính kèm ảnh (tối đa 2) — hoặc dán / kéo thả ảnh vào đây"
+    },
+    "image": "Ảnh",
+    "removeImage": "Bỏ ảnh",
+    "shrinkComposer": "Thu nhỏ ô soạn",
+    "shrinkComposerHint": "Thu nhỏ ô soạn (Esc)",
+    "openBigComposer": "Mở khung soạn lớn",
+    "openBigComposerHint": "Mở khung soạn lớn — gõ văn bản nhiều đoạn",
+    "send": "Gửi",
+    "sendHint": "Gửi (Enter) · Shift+Enter để xuống dòng",
+    "sendHintBig": "Gửi (Ctrl+Enter)",
+    "compose": "Soạn tin"
+  },
+  "history": {
+    "timeFormat": {
+      "hour": "2-digit",
+      "minute": "2-digit"
+    },
+    "dayFormat": {
+      "weekday": "short",
+      "day": "2-digit",
+      "month": "2-digit",
+      "year": "numeric"
+    },
+    "file": {
+      "behavior": "Hành vi",
+      "tech": "Kỹ thuật",
+      "meta": "Thông tin",
+      "board": "Bản vẽ"
+    },
+    "badge": {
+      "restore": "khôi phục",
+      "option": "chốt phương án",
+      "init": "khởi tạo"
+    },
+    "claudeInThread": {
+      "params": "Claude · ‹a0›",
+      "one": "Claude · 1",
+      "two": "Claude · 2"
+    },
+    "localClaude": "Claude (máy chủ)",
+    "sameAsCurrent": "Giống hệt nội dung hiện tại.",
+    "unchangedLines": {
+      "params": "… ‹a0› dòng không đổi",
+      "one": "… 1 dòng không đổi",
+      "two": "… 2 dòng không đổi"
+    },
+    "openSnapshotFailed": {
+      "params": "Không mở được mốc (‹a0›)",
+      "one": "Không mở được mốc (1)",
+      "two": "Không mở được mốc (2)"
+    },
+    "backToHistory": "Lịch sử",
+    "restore": "Khôi phục",
+    "loadSnapshot": "mốc này",
+    "loadHistory": "lịch sử",
+    "loading": "Đang tải…",
+    "snapshotHeading": {
+      "params": "‹a0.file› · ‹a0.day› ‹a0.time›",
+      "one": "undefined · undefined undefined",
+      "two": "undefined · undefined undefined"
+    },
+    "restoreLegend": {
+      "params": [
+        "Khôi phục: ",
+        "‹a0(xanh)›",
+        " có lại, ",
+        "‹a1(đỏ)›",
+        " mất."
+      ],
+      "one": "(throws TypeError)",
+      "two": "(throws TypeError)"
+    },
+    "restored": "Đã khôi phục — thành một mốc mới trong lịch sử.",
+    "fileGone": "File này hiện không còn — khôi phục sẽ tạo lại.",
+    "restoreTitle": {
+      "params": "Khôi phục ‹a0.file› về lúc ‹a0.time› ‹a0.day›?",
+      "one": "Khôi phục undefined về lúc undefined undefined?",
+      "two": "Khôi phục undefined về lúc undefined undefined?"
+    },
+    "restoreConfirm": "Khôi phục bản này",
+    "restoreFailed": {
+      "params": "Khôi phục hỏng (‹a0›)",
+      "one": "Khôi phục hỏng (1)",
+      "two": "Khôi phục hỏng (2)"
+    },
+    "restoreKeepsCurrent": "Nội dung hiện tại không mất: nó vẫn nằm trong lịch sử, khôi phục ngược lại được.",
+    "noSnapshots": "Chưa có mốc nào.",
+    "backToStudio": "Về xưởng",
+    "versionsTitle": "Phiên bản",
+    "versionsIntro": "Mỗi phiên bản là một bản sao đầy đủ của cả app trong xưởng (bản vẽ, đặc tả, design system). Thiết kế bản mới không làm đổi bản đang chạy; thay đổi nhỏ trong một bản được ghi ở Lịch sử của từng màn.",
+    "loadVersions": "danh sách phiên bản",
+    "live": "Đang chạy",
+    "created": {
+      "params": "Tạo ‹a0›",
+      "one": "Tạo 1",
+      "two": "Tạo 2"
+    },
+    "copiedFrom": {
+      "params": "chép từ ‹a0›",
+      "one": "chép từ 1",
+      "two": "chép từ 2"
+    },
+    "original": "bản gốc",
+    "changedScreens": {
+      "params": "‹a0› màn đã đổi",
+      "one": "1 màn đã đổi",
+      "two": "2 màn đã đổi"
+    },
+    "statusOf": {
+      "params": "Trạng thái ‹a0›",
+      "one": "Trạng thái 1",
+      "two": "Trạng thái 2"
+    },
+    "open": "Mở",
+    "editVersion": {
+      "params": "Sửa ‹a0›",
+      "one": "Sửa 1",
+      "two": "Sửa 2"
+    },
+    "newFromHere": "Tạo bản mới từ đây",
+    "setLive": "Đặt đang chạy",
+    "newVersionFrom": {
+      "params": "Tạo phiên bản mới từ ‹a0›",
+      "one": "Tạo phiên bản mới từ 1",
+      "two": "Tạo phiên bản mới từ 2"
+    },
+    "cancel": "Huỷ",
+    "saving": "Đang lưu…",
+    "createCopy": "Tạo bản sao",
+    "save": "Lưu",
+    "versionName": "Tên phiên bản",
+    "note": "Ghi chú",
+    "setLiveTitle": {
+      "params": "Đặt ‹a0› là bản đang chạy?",
+      "one": "Đặt 1 là bản đang chạy?",
+      "two": "Đặt 2 là bản đang chạy?"
+    },
+    "setLiveBody": "Chỉ làm khi bản này đã được làm vào app thật. Xưởng sẽ mở bản này mặc định; bản cũ vẫn giữ nguyên để xem lại.",
+    "createOption": "Tạo phương án",
+    "create": "Tạo",
+    "optionName": "Tên phương án",
+    "optionScreens": "Màn trong phương án",
+    "thisScreen": {
+      "params": "‹a0› (màn đang xem)",
+      "one": "1 (màn đang xem)",
+      "two": "2 (màn đang xem)"
+    },
+    "renameOption": "Đổi tên phương án",
+    "quoted": {
+      "params": "“‹a0›”",
+      "one": "“1”",
+      "two": "“2”"
+    },
+    "optionBar": {
+      "params": [
+        "Phương án ",
+        "‹a0.name›",
+        "‹a0.rename›",
+        "của màn ",
+        "‹a0.main›",
+        " · ",
+        "‹a0.status›"
+      ],
+      "one": [
+        "Phương án ",
+        null,
+        null,
+        "của màn ",
+        null,
+        " · ",
+        null
+      ],
+      "two": [
+        "Phương án ",
+        null,
+        null,
+        "của màn ",
+        null,
+        " · ",
+        null
+      ]
+    },
+    "removeOption": "Bỏ phương án",
+    "adoptAgain": "Chốt lại",
+    "adoptThis": "Chốt phương án này",
+    "adoptTitle": "Chốt phương án?",
+    "adopt": "Chốt",
+    "adoptBody": {
+      "params": [
+        "Chép đè lên màn ",
+        "‹a0›",
+        ". Bản cũ vẫn khôi phục được ở tab Lịch sử."
+      ],
+      "one": [
+        "Chép đè lên màn ",
+        1,
+        ". Bản cũ vẫn khôi phục được ở tab Lịch sử."
+      ],
+      "two": [
+        "Chép đè lên màn ",
+        2,
+        ". Bản cũ vẫn khôi phục được ở tab Lịch sử."
+      ]
+    },
+    "removeTitle": "Bỏ phương án?",
+    "removeBody": {
+      "params": [
+        "Màn ",
+        "‹a0›",
+        " không đổi."
+      ],
+      "one": [
+        "Màn ",
+        1,
+        " không đổi."
+      ],
+      "two": [
+        "Màn ",
+        2,
+        " không đổi."
+      ]
+    }
+  },
+  "spec": {
+    "behavior": "Hành vi",
+    "tech": "Kỹ thuật",
+    "spec": "Đặc tả",
+    "loading": "Đang tải…",
+    "tabEmpty": "Tab này chưa có nội dung.",
+    "noContent": "Chưa có nội dung.",
+    "claudeBusy": "Claude đang sửa màn này",
+    "close": "Đóng",
+    "editors": {
+      "params": "‹a0› người đang sửa",
+      "one": "1 người đang sửa",
+      "two": "2 người đang sửa"
+    },
+    "saveStatus": {
+      "connecting": "Đang nối…",
+      "saved": "Đã lưu",
+      "saving": "Đang lưu…",
+      "offline": "Mất kết nối — chưa lưu"
+    },
+    "screenInfo": "Thông tin màn",
+    "connectedAutosave": "Đã nối · tự lưu",
+    "screenName": "Tên màn",
+    "description": "Mô tả",
+    "status": "Trạng thái",
+    "frames": "Khung",
+    "viewports": {
+      "both": "Desktop + Mobile",
+      "desktop": "Desktop",
+      "mobile": "Mobile"
+    },
+    "group": "Nhóm trên danh mục",
+    "order": "Thứ tự",
+    "scenarios": {
+      "params": "Kịch bản (‹a0›)",
+      "one": "Kịch bản (1)",
+      "two": "Kịch bản (2)"
+    },
+    "addScenario": "Thêm kịch bản",
+    "scenarioName": "Tên kịch bản",
+    "moveUp": "Lên",
+    "moveDown": "Xuống",
+    "deleteScenario": "Xoá kịch bản",
+    "scenarioId": {
+      "params": "Mã: ‹a0›",
+      "one": "Mã: 1",
+      "two": "Mã: 2"
+    },
+    "scenarioIdUnnamed": {
+      "params": "Mã: ‹a0› — đặt tên rồi bấm",
+      "one": "Mã: 1 — đặt tên rồi bấm",
+      "two": "Mã: 2 — đặt tên rồi bấm"
+    },
+    "idFromName": "đặt mã theo tên",
+    "notPlain": {
+      "params": "Chưa phải lời thường: ‹a0›",
+      "one": "Chưa phải lời thường: 1",
+      "two": "Chưa phải lời thường: 2"
+    },
+    "openSpec": "Mở đặc tả",
+    "noSpecWrite": "Màn này chưa có đặc tả — bấm để viết",
+    "noSpec": "Màn này chưa có đặc tả",
+    "openSeparately": "Mở riêng",
+    "done": "Xong",
+    "edit": "Sửa",
+    "closeSpec": "Đóng đặc tả",
+    "collapseSpec": "Thu gọn đặc tả",
+    "collapse": "Thu gọn",
+    "tabMissing": {
+      "params": "‹a0› (chưa có)",
+      "one": "1 (chưa có)",
+      "two": "2 (chưa có)"
+    },
+    "writeOrPreview": "Soạn hay xem trước",
+    "write": "Soạn",
+    "preview": "Xem trước",
+    "loadingSpec": "Đang tải đặc tả…",
+    "resizeSpec": "Kéo để đổi độ rộng đặc tả",
+    "srcRefTitle": {
+      "params": "‹a0› — bấm để xem code tại chỗ, Ctrl+bấm để mở trang",
+      "one": "1 — bấm để xem code tại chỗ, Ctrl+bấm để mở trang",
+      "two": "2 — bấm để xem code tại chỗ, Ctrl+bấm để mở trang"
+    },
+    "ruleTitle": {
+      "params": "Xem ‹a0› ở tab bên kia",
+      "one": "Xem 1 ở tab bên kia",
+      "two": "Xem 2 ở tab bên kia"
+    },
+    "drawingDiagram": "Đang vẽ sơ đồ…",
+    "srcBadFence": {
+      "params": "Không nhúng được code: “‹a0›”",
+      "one": "Không nhúng được code: “1”",
+      "two": "Không nhúng được code: “2”"
+    },
+    "srcLoading": {
+      "params": "Đang tải ‹a0›…",
+      "one": "Đang tải 1…",
+      "two": "Đang tải 2…"
+    },
+    "srcReadFailed": {
+      "params": "Không đọc được ‹a0› (‹a1›)",
+      "one": "Không đọc được 1 (undefined)",
+      "two": "Không đọc được 2 (undefined)"
+    },
+    "openWholeFile": "Mở cả file ↗",
+    "srcMore": {
+      "params": "… còn tiếp — ‹a0(xem đầy đủ)›",
+      "one": "(throws TypeError)",
+      "two": "(throws TypeError)"
+    },
+    "diagramError": {
+      "params": "Sơ đồ lỗi cú pháp: ‹a0›",
+      "one": "Sơ đồ lỗi cú pháp: 1",
+      "two": "Sơ đồ lỗi cú pháp: 2"
+    },
+    "toc": "Mục lục",
+    "notPlainCount": {
+      "params": "‹a0› chỗ chưa phải lời thường",
+      "one": "1 chỗ chưa phải lời thường",
+      "two": "2 chỗ chưa phải lời thường"
+    },
+    "resizeHeight": "Kéo để đổi chiều cao",
+    "closeCode": "Đóng ngăn code",
+    "errorAt": {
+      "params": "Lỗi dòng ‹a0›:",
+      "one": "Lỗi dòng 1:",
+      "two": "Lỗi dòng 2:"
+    },
+    "docTitle": {
+      "params": "‹a0› · ‹a1›",
+      "one": "1 · undefined",
+      "two": "2 · undefined"
+    },
+    "specHeader": {
+      "params": "Đặc tả · ‹a0›",
+      "one": "Đặc tả · 1",
+      "two": "Đặc tả · 2"
+    }
+  },
+  "values": {
+    "versionStatus": {
+      "draft": "đang thiết kế",
+      "approved": "đã chốt",
+      "live": "đã lên app",
+      "archived": "lưu trữ"
+    },
+    "optionStatus": {
+      "trying": "đang thử",
+      "adopted": "đã chốt"
+    },
+    "boardStatus": {
+      "current": "hiện tại",
+      "proposed": "đề xuất",
+      "approved": "chốt"
+    },
+    "author": {
+      "init": "Khởi tạo",
+      "external": "Ngoài xưởng"
+    },
+    "device": {
+      "android-small": "Android nhỏ",
+      "full": "Cả trang"
+    }
+  },
+  "stored": {
+    "listing": {
+      "params": "Đang xem danh sách ‹a0.what›",
+      "one": "Đang xem danh sách",
+      "two": "Đang xem danh sách"
+    },
+    "reading": {
+      "params": "Đang đọc ‹a0.path›",
+      "one": "Đang đọc ",
+      "two": "Đang đọc "
+    },
+    "searching": {
+      "params": "Đang tìm \"‹a0.pattern›\"",
+      "one": "Đang tìm \"\"",
+      "two": "Đang tìm \"\""
+    },
+    "readingThread": "Đang đọc lại luồng",
+    "viewingFrame": {
+      "params": "Đang xem khung ‹a0.entry› · ‹a0.scenario› · ‹a0.viewport›",
+      "one": "Đang xem khung ",
+      "two": "Đang xem khung "
+    },
+    "viewingMark": {
+      "params": "Đang xem vùng khoanh #‹a0.n›",
+      "one": "Đang xem vùng khoanh #undefined",
+      "two": "Đang xem vùng khoanh #undefined"
+    },
+    "viewingImage": "Đang xem ảnh đính kèm",
+    "locating": {
+      "params": "Đang tìm vị trí \"‹a0.text›\"",
+      "one": "Đang tìm vị trí \"\"",
+      "two": "Đang tìm vị trí \"\""
+    },
+    "editing": {
+      "params": "Đang sửa ‹a0.path›",
+      "one": "Đang sửa ",
+      "two": "Đang sửa "
+    },
+    "checking": {
+      "params": "Đang kiểm: ‹a0.what›",
+      "one": "Đang kiểm: ",
+      "two": "Đang kiểm: "
+    },
+    "readingRules": {
+      "params": "Đang đọc luật ‹a0.topic›",
+      "one": "Đang đọc luật ",
+      "two": "Đang đọc luật "
+    },
+    "usingTool": {
+      "params": "Đang dùng ‹a0.name›",
+      "one": "Đang dùng ",
+      "two": "Đang dùng "
+    },
+    "queued": "Chờ Claude xong luồng khác trên màn này",
+    "readingConversation": "Đang đọc hội thoại…",
+    "restarted": "Xưởng khởi động lại giữa lượt — bấm Chạy lại.",
+    "timedOut": {
+      "params": "quá ‹a0.minutes› phút",
+      "one": "quá  phút",
+      "two": "quá  phút"
+    },
+    "stoppedTimedOut": {
+      "params": "dừng (quá ‹a0.minutes› phút)",
+      "one": "dừng (quá  phút)",
+      "two": "dừng (quá  phút)"
+    },
+    "userStopped": "người dùng bấm Dừng",
+    "stoppedByUser": "dừng (người dùng bấm Dừng)",
+    "sandboxLeak": {
+      "params": "sandbox hở — có công cụ ngoài xưởng: ‹a0.tools›",
+      "one": "sandbox hở — có công cụ ngoài xưởng: ",
+      "two": "sandbox hở — có công cụ ngoài xưởng: "
+    },
+    "stoppedSandboxLeak": {
+      "params": "dừng (sandbox hở — có công cụ ngoài xưởng: ‹a0.tools›)",
+      "one": "dừng (sandbox hở — có công cụ ngoài xưởng: )",
+      "two": "dừng (sandbox hở — có công cụ ngoài xưởng: )"
+    },
+    "loginLost": {
+      "params": "Claude trong xưởng mất đăng nhập. Người quản trị xưởng nạp lại bằng lệnh: ‹a0.command›",
+      "one": "Claude trong xưởng mất đăng nhập. Người quản trị xưởng nạp lại bằng lệnh: ",
+      "two": "Claude trong xưởng mất đăng nhập. Người quản trị xưởng nạp lại bằng lệnh: "
+    },
+    "noResult": "không có kết quả",
+    "restoredSnapshot": {
+      "params": "khôi phục mốc #‹a0.id› (‹a0.ts›)",
+      "one": "khôi phục mốc # ()",
+      "two": "khôi phục mốc # ()"
+    },
+    "adoptedOption": {
+      "params": "chốt phương án \"‹a0.name›\"",
+      "one": "chốt phương án \"\"",
+      "two": "chốt phương án \"\""
+    },
+    "changedWhileOff": "đổi khi xưởng tắt"
+  },
+  "systemPrompt": "Bạn là Claude, trợ lý thiết kế trong xưởng thiết kế craft-table của dự án Acme — Cửa hàng mẫu. — nơi chủ dự án và Claude cùng thiết kế màn hình TRƯỚC khi code. Mỗi màn là một bản vẽ React (nhiều kịch bản) kèm thông tin màn và đặc tả 2 tab (Hành vi, Kỹ thuật).\n\nBạn chỉ làm việc qua các công cụ xưởng, đã khoá sẵn theo phiên bản và luồng của tin nhắn. Cách làm:\n1. Mò trước, đừng đoán: list (màn, kịch bản, file) → read_thread khi cần tin cũ → view_region / view_image cho vùng khoanh, ảnh đính kèm → view_frame để thấy màn đang trông thế nào → read / search file liên quan (src:src/… là mã nguồn acme-app — app thật, chỉ đọc).\n2. Trước khi sửa việc thuộc chủ đề nào thì đọc rules của chủ đề đó: boards, marks, specs.\n3. Sửa bằng edit (đoạn cũ phải duy nhất) / write. Chỉ sửa đúng việc được nhờ.\n4. Tự kiểm rồi mới trả lời: check typecheck sau khi sửa .tsx, check lint sau khi sửa mô tả/kịch bản/tab Hành vi, check spec sau khi sửa đặc tả; view_frame lại đúng kịch bản để xem kết quả. Còn lỗi thì sửa tiếp, lặp tới khi sạch.\n5. Có nhiều hướng thì đặt tên từng cái (Phương án A — <tên ngắn>, Phương án B — …), nêu đánh đổi + đề xuất 1; cần người dùng quyết thì hỏi rõ và DỪNG, đừng tự làm.\n\nTrả lời bằng đúng ngôn ngữ người dùng đã viết (không rõ thì dùng tiếng Việt), bằng markdown gọn (gạch đầu dòng, **đậm**), ngắn, đi thẳng vào việc: đã làm gì (file nào), kiểm thế nào, điều cần người dùng quyết. Chỉ chỗ trên khung bằng @khoanh(<kịch-bản|->, <desktop|mobile>, x, y, w, h) — lấy toạ độ bằng locate."
+}

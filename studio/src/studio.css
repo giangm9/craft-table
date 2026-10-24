@@ -1,0 +1,67 @@
+/* Typography of the markdown spec (Spec panel), from the studio's design tokens. */
+.spec-md { line-height: 1.6; }
+.spec-md h1 { font-size: 1.1rem; font-weight: 600; color: var(--color-ink-900); margin: 0 0 .5rem; }
+.spec-md h2 { font-size: .95rem; font-weight: 600; color: var(--color-ink-900); margin: 1.4rem 0 .4rem; padding-top: .9rem; border-top: 1px solid var(--color-ink-100); }
+.spec-md h3 { font-size: .875rem; font-weight: 600; color: var(--color-ink-800); margin: 1rem 0 .3rem; }
+.spec-md p { margin: .45rem 0; }
+.spec-md blockquote { margin: .5rem 0; padding: .5rem .75rem; border-left: 3px solid var(--color-accent-300); background: var(--color-accent-50); color: var(--color-ink-700); border-radius: 0 .5rem .5rem 0; }
+.spec-md ul, .spec-md ol { margin: .4rem 0; padding-left: 1.2rem; }
+.spec-md ul { list-style: disc; } .spec-md ol { list-style: decimal; }
+.spec-md li { margin: .2rem 0; }
+.spec-md code { font-size: .78rem; background: var(--color-ink-100); color: var(--color-ink-800); padding: .05rem .3rem; border-radius: .3rem; word-break: normal; overflow-wrap: break-word; }
+.spec-md pre { background: var(--color-ink-100); padding: .6rem .75rem; border-radius: .5rem; overflow-x: auto; }
+.spec-md pre code { background: none; padding: 0; }
+/* Tables take the full width and the browser sizes columns by their text (display:block once squeezed a "Returns" column). */
+.spec-md table { width: 100%; border-collapse: collapse; margin: .5rem 0; font-size: .8rem; }
+.spec-md th, .spec-md td { border: 1px solid var(--color-ink-200); padding: .3rem .45rem; text-align: left; vertical-align: top; }
+.spec-md th { background: var(--color-ink-50); font-weight: 600; }
+.spec-md strong { color: var(--color-ink-900); }
+.spec-md a { color: var(--color-accent-700); text-decoration: underline; }
+/* Technical tab: compact, light source links (file name + line), no box, no background; function / variable names
+   on a pale grey. A reference never breaks across lines. */
+.spec-md a.src-ref {
+  font: 500 .86em/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap;
+  color: var(--color-accent-700); text-decoration: none; border-bottom: 1px dotted var(--color-accent-300);
+}
+.spec-md a.src-ref:hover { color: var(--color-accent-800); background: var(--color-accent-50); border-bottom-style: solid; }
+.spec-md code.ident { background: var(--color-ink-50); border: 0; padding: .05rem .25rem; font-size: .86em; color: var(--color-ink-800); }
+.spec-md td { font-size: .95em; }
+/* Rule numbers are clickable to jump to the other tab. */
+.spec-md strong.rule { cursor: pointer; color: var(--color-accent-800); border-bottom: 1px dashed var(--color-accent-400); }
+.spec-md strong.rule:hover { background: var(--color-accent-50); }
+.spec-md td a.src-ref, .spec-md td code.ident { font-size: .92em; }
+
+/* ── Embedded code / code opened in place (Technical tab) ───────────────────── */
+.spec-md .src-embed { --src-hit: color-mix(in srgb, var(--color-accent-500) 14%, transparent); margin: .6rem 0 .8rem; border: 1px solid var(--color-ink-200); border-radius: .75rem; overflow: hidden; background: var(--color-surface); font-size: 13px; }
+.spec-md li > .src-embed, .spec-md td > .src-embed, .spec-md p > .src-embed { margin-top: .5rem; }
+.spec-md .src-head { display: flex; align-items: center; gap: .6rem; padding: .4rem .75rem; background: var(--color-ink-50); border-bottom: 1px solid var(--color-ink-200); font-size: 12px; }
+.spec-md .src-file { font: 600 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--color-ink-800); }
+.spec-md .src-cap { color: var(--color-ink-600); flex: 1; min-width: 0; }
+.spec-md .src-head a { margin-left: auto; color: var(--color-accent-700); text-decoration: none; white-space: nowrap; }
+.spec-md .src-body { display: flex; overflow-x: auto; }
+.spec-md .src-gutter { flex: none; padding: 8px 0; text-align: right; user-select: none; background: var(--color-ink-50); border-right: 1px solid var(--color-ink-100); font: 12px/20px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--color-ink-400); }
+.spec-md .src-gutter span { display: block; padding: 0 .6rem; }
+.spec-md .src-gutter span.hit { color: var(--color-accent-800); font-weight: 700; background: var(--src-hit); }
+.spec-md .src-body pre { flex: 1; margin: 0; padding: 8px .9rem; background-color: transparent; border-radius: 0; font: 12.5px/20px ui-monospace, SFMono-Regular, Menlo, monospace; overflow: visible; white-space: pre; }
+.spec-md .src-body pre code { background: none; padding: 0; font: inherit; }
+.spec-md .src-load, .spec-md .src-err, .spec-md .src-more { margin: 0; padding: .5rem .75rem; font-size: 12px; color: var(--color-ink-500); }
+.spec-md .src-err { color: var(--color-rose-700); }
+.spec-md a.src-ref.open { background: var(--color-accent-50); border-bottom-style: solid; }
+.spec-md pre.code { background: var(--color-ink-50); border: 1px solid var(--color-ink-200); }
+/* Syntax colours from the tokens (they invert by themselves in dark mode). */
+.hljs-keyword, .hljs-built_in, .hljs-literal { color: var(--color-violet-700); }
+.hljs-string, .hljs-regexp { color: var(--color-emerald-700); }
+.hljs-number { color: var(--color-amber-700); }
+.hljs-comment { color: var(--color-ink-400); font-style: italic; }
+.hljs-title, .hljs-title.function_, .hljs-function .hljs-title { color: var(--color-sky-700); }
+.hljs-type, .hljs-title.class_ { color: var(--color-rose-700); }
+.hljs-attr, .hljs-property, .hljs-params { color: var(--color-ink-700); }
+.hljs-variable, .hljs-template-variable { color: var(--color-ink-800); }
+
+/* ── Diagrams (mermaid) ──────────────────────────────────────────────────── */
+.spec-md figure.mmd { margin: .8rem 0 1rem; padding: .75rem; border: 1px solid var(--color-ink-200); border-radius: .75rem; background: var(--color-surface); text-align: center; overflow-x: auto; }
+.spec-md figure.mmd svg { max-width: 100%; height: auto; margin: 0 auto; } /* preflight makes svg a block → centred by margin */
+.spec-md figure.mmd figcaption { font-size: 12px; color: var(--color-ink-500); }
+.spec-md figure.mmd-err { border-color: var(--color-rose-300); text-align: left; }
+.spec-md figure.mmd-err figcaption { color: var(--color-rose-700); }
+.spec-md figure.mmd-err pre { font-size: 12px; background: var(--color-ink-50); padding: .5rem; }

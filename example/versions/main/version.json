@@ -1,0 +1,9 @@
+{
+  "id": "main",
+  "title": "Main",
+  "status": "live",
+  "from": null,
+  "createdAt": "2026-10-24T00:00:00.000Z",
+  "createdBy": "craft-table",
+  "note": "The example project: three screens of a small team to-do app (task list, task detail, settings) and the colours of its design system."
+}

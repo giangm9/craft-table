@@ -1,0 +1,45 @@
+/* Design tokens of this version: the colours and fonts every component and board uses (Tailwind v4 theme).
+   Change a value here and every board of this version updates. `static` keeps every token in the output, even
+   one no class uses yet. Classes follow the names: bg-ink-50, text-ink-900, bg-accent-600, bg-surface…
+   Dark mode: the studio's theme switch sets data-theme="dark" on each frame — override the same variables under
+   :root[data-theme="dark"] to support it. */
+@import "tailwindcss";
+
+@theme static {
+  /* Neutral greys: page background (50) … body text (900). */
+  --color-ink-50: #f8f9fa;
+  --color-ink-100: #f1f3f5;
+  --color-ink-200: #e2e5e9;
+  --color-ink-300: #c8cdd4;
+  --color-ink-400: #9ba2ad;
+  --color-ink-500: #6c7380;
+  --color-ink-600: #4d5461;
+  --color-ink-700: #363c47;
+  --color-ink-800: #21262e;
+  --color-ink-900: #121519;
+
+  /* Accent: primary buttons, links, selection. 600 is the main shade. */
+  --color-accent-50: #eff5ff;
+  --color-accent-100: #dbe7fe;
+  --color-accent-200: #bfd4fe;
+  --color-accent-300: #93b6fd;
+  --color-accent-400: #6091f9;
+  --color-accent-500: #3b6ef5;
+  --color-accent-600: #2553ea;
+  --color-accent-700: #1d41d7;
+  --color-accent-800: #1e37ae;
+  --color-accent-900: #1e3389;
+
+  /* Surfaces: cards, panels, inputs (above the ink-50 page). */
+  --color-surface: #ffffff;
+  --color-surface-2: #f8f9fa;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+html,
+body {
+  background: var(--color-ink-50);
+  color: var(--color-ink-900);
+  font-family: var(--font-sans);
+}

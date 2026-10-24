@@ -1,0 +1,23 @@
+{
+  "title": "Task detail",
+  "section": "Screens",
+  "group": "Tasks",
+  "order": 20,
+  "desc": "One task on its own screen: who does it and by when, the notes, a checklist and the comments. Mark it as done from here, or open it again.",
+  "viewports": [
+    "desktop",
+    "mobile"
+  ],
+  "scenarios": [
+    {
+      "id": "open-task",
+      "title": "A late task",
+      "desc": "Booking a room for the quarterly planning: due yesterday, so the date is red. One of three checklist steps is done and two people have left comments."
+    },
+    {
+      "id": "done-task",
+      "title": "A finished task",
+      "desc": "Sending an invoice, already done: the title is struck through, the screen says who finished it and when, and the main button now opens the task again."
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+node_modules/
+# craft-table working data at the project root (history database, uploads, Claude's screenshots).
+# Anchored with "/": a folder of the same name deeper down, such as a board folder or src/data/, stays in git.
+/data/
+/.chat-shots/
+# Claude credentials (npx craft-table login)
+.env

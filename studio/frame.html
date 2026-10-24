@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>craft-table</title>
+    <!-- The server sets lang to the project's language (the board's content) and data-ui-lang to the viewer's.
+         frame-entry.tsx sets the tab title in the viewer's language. -->
+    <script>
+      // Theme from ?th= (the studio drives it), set before the first paint so the frame does not flash.
+      (function () {
+        var th = new URLSearchParams(location.search).get("th");
+        document.documentElement.dataset.theme = th === "dark" ? "dark" : "light";
+      })();
+    </script>
+    <style>
+      /* The frame is as tall as its content (the studio measures it and sizes the iframe) → no scrolling of its
+         own, so mark coordinates stay stable. An app's styles.css may set height:100%, hence the override. */
+      html, body, #root { height: auto !important; min-height: 0 !important; margin: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/studio/src/frame-entry.tsx"></script>
+  </body>
+</html>

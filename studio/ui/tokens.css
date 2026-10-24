@@ -1,0 +1,142 @@
+/* craft-table studio theme: colour tokens and base CSS for the studio chrome only.
+   Project boards never load this file; they use their own versions/<v>/system/tokens.css.
+   Installed, the tool lives in node_modules, which Tailwind skips, so the sources are listed here. */
+@import "tailwindcss";
+@source "../src";
+@source "./";
+
+/* Contrast ratios below are WCAG 2 figures; studio/lib/studio-theme.test.mjs checks them. */
+@theme static {
+  /* ink: cool slate greys. 50 = page background, 100 = chips and hover rows, 200-300 = borders.
+     400 and up are text: 400 is the muted step (section headers, counts, list numbers,
+     placeholders) at 4.6:1 even on ink-100; 500 is secondary text (6.7:1 on white). */
+  --color-ink-50: #f8fafc;
+  --color-ink-100: #f1f4f7;
+  --color-ink-200: #e0e6ed;
+  --color-ink-300: #cad2dc;
+  --color-ink-400: #626f80;
+  --color-ink-500: #4f5d6f;
+  --color-ink-600: #404e60;
+  --color-ink-700: #344152;
+  --color-ink-800: #202a37;
+  --color-ink-900: #101821;
+
+  /* accent: indigo. 700 fills primary buttons and the selected item (white text 7.9:1),
+     800 is their hover; 600 (6.2:1) and 700 also work as text on white; 500 is the focus
+     ring; 50-300 tint selected rows, chips and borders. */
+  --color-accent-50: #f3f4ff;
+  --color-accent-100: #e7ebff;
+  --color-accent-200: #d2d8fe;
+  --color-accent-300: #b3bcfb;
+  --color-accent-400: #8891f1;
+  --color-accent-500: #666ae5;
+  --color-accent-600: #524ed4;
+  --color-accent-700: #443fb7;
+  --color-accent-800: #373592;
+  --color-accent-900: #29296d;
+
+  /* surface: raised planes (sidebar, header, panels, cards, inputs) above the ink-50 page. */
+  --color-surface: #ffffff;
+  --color-surface-2: #f8fafc;
+
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Dark theme: the same tokens re-pointed under [data-theme="dark"]. Tailwind v4 utilities read
+   the variables where they are used, so every ink-*, accent-* and surface class follows without
+   dark: variants.
+   - ink flips: 50 = deepest background ... 900 = brightest text, same cool slate hue;
+     400 (muted text) still reaches 4.8:1 on ink-100.
+   - accent gets lighter step by step too: 50-300 tint fills and borders, 700 stays dark
+     enough for white button text (4.6:1), 800-900 are accent text on dark planes (5:1+).
+     Links in accent-700 drop to 4:1 here: one token cannot serve both roles at 4.5:1.
+   - color-scheme gives native controls (scrollbars, inputs) their dark look. */
+:root { color-scheme: light; }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-ink-50: #0c0f12;
+  --color-ink-100: #1a1e23;
+  --color-ink-200: #272c32;
+  --color-ink-300: #393f46;
+  --color-ink-400: #828a95;
+  --color-ink-500: #969fab;
+  --color-ink-600: #aeb7c1;
+  --color-ink-700: #c8ced7;
+  --color-ink-800: #dde2e8;
+  --color-ink-900: #f1f4f7;
+
+  --color-accent-50: #1c1e34;
+  --color-accent-100: #242746;
+  --color-accent-200: #2f3260;
+  --color-accent-300: #404488;
+  --color-accent-400: #5256b3;
+  --color-accent-500: #5a5ec7;
+  --color-accent-600: #5f63d1;
+  --color-accent-700: #6569da;
+  --color-accent-800: #8088eb;
+  --color-accent-900: #aab3f6;
+
+  --color-surface: #13161a;
+  --color-surface-2: #181b20;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  background: var(--color-ink-50);
+  color: var(--color-ink-900);
+  font-family: var(--font-sans);
+}
+
+/* Project name in the sidebar header. */
+.font-brand {
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  letter-spacing: -0.01em;
+}
+
+/* Dark theme for Tailwind's own palettes (rose, amber, sky and the rest, used for status colours):
+   each default ramp is mirrored 50 <-> 950, so tinted backgrounds turn dark and 700-900 text
+   turns light. */
+:root[data-theme="dark"]{--color-slate-50:#020617;--color-slate-100:#0f172a;--color-slate-200:#1e293b;--color-slate-300:#334155;--color-slate-400:#475569;--color-slate-500:#64748b;--color-slate-600:#94a3b8;--color-slate-700:#cbd5e1;--color-slate-800:#e2e8f0;--color-slate-900:#f1f5f9;--color-slate-950:#f8fafc;--color-gray-50:#030712;--color-gray-100:#111827;--color-gray-200:#1f2937;--color-gray-300:#374151;--color-gray-400:#4b5563;--color-gray-500:#6b7280;--color-gray-600:#9ca3af;--color-gray-700:#d1d5db;--color-gray-800:#e5e7eb;--color-gray-900:#f3f4f6;--color-gray-950:#f9fafb;--color-zinc-50:#09090b;--color-zinc-100:#18181b;--color-zinc-200:#27272a;--color-zinc-300:#3f3f46;--color-zinc-400:#52525b;--color-zinc-500:#71717a;--color-zinc-600:#a1a1aa;--color-zinc-700:#d4d4d8;--color-zinc-800:#e4e4e7;--color-zinc-900:#f4f4f5;--color-zinc-950:#fafafa;--color-neutral-50:#0a0a0a;--color-neutral-100:#171717;--color-neutral-200:#262626;--color-neutral-300:#404040;--color-neutral-400:#525252;--color-neutral-500:#737373;--color-neutral-600:#a3a3a3;--color-neutral-700:#d4d4d4;--color-neutral-800:#e5e5e5;--color-neutral-900:#f5f5f5;--color-neutral-950:#fafafa;--color-stone-50:#0c0a09;--color-stone-100:#1c1917;--color-stone-200:#292524;--color-stone-300:#44403c;--color-stone-400:#57534e;--color-stone-500:#78716c;--color-stone-600:#a8a29e;--color-stone-700:#d6d3d1;--color-stone-800:#e7e5e4;--color-stone-900:#f5f5f4;--color-stone-950:#fafaf9;--color-red-50:#450a0a;--color-red-100:#7f1d1d;--color-red-200:#991b1b;--color-red-300:#b91c1c;--color-red-400:#dc2626;--color-red-500:#ef4444;--color-red-600:#f87171;--color-red-700:#fca5a5;--color-red-800:#fecaca;--color-red-900:#fee2e2;--color-red-950:#fef2f2;--color-orange-50:#431407;--color-orange-100:#7c2d12;--color-orange-200:#9a3412;--color-orange-300:#c2410c;--color-orange-400:#ea580c;--color-orange-500:#f97316;--color-orange-600:#fb923c;--color-orange-700:#fdba74;--color-orange-800:#fed7aa;--color-orange-900:#ffedd5;--color-orange-950:#fff7ed;--color-amber-50:#451a03;--color-amber-100:#78350f;--color-amber-200:#92400e;--color-amber-300:#b45309;--color-amber-400:#d97706;--color-amber-500:#f59e0b;--color-amber-600:#fbbf24;--color-amber-700:#fcd34d;--color-amber-800:#fde68a;--color-amber-900:#fef3c7;--color-amber-950:#fffbeb;--color-yellow-50:#422006;--color-yellow-100:#713f12;--color-yellow-200:#854d0e;--color-yellow-300:#a16207;--color-yellow-400:#ca8a04;--color-yellow-500:#eab308;--color-yellow-600:#facc15;--color-yellow-700:#fde047;--color-yellow-800:#fef08a;--color-yellow-900:#fef9c3;--color-yellow-950:#fefce8;--color-lime-50:#1a2e05;--color-lime-100:#365314;--color-lime-200:#3f6212;--color-lime-300:#4d7c0f;--color-lime-400:#65a30d;--color-lime-500:#84cc16;--color-lime-600:#a3e635;--color-lime-700:#bef264;--color-lime-800:#d9f99d;--color-lime-900:#ecfccb;--color-lime-950:#f7fee7;--color-green-50:#052e16;--color-green-100:#14532d;--color-green-200:#166534;--color-green-300:#15803d;--color-green-400:#16a34a;--color-green-500:#22c55e;--color-green-600:#4ade80;--color-green-700:#86efac;--color-green-800:#bbf7d0;--color-green-900:#dcfce7;--color-green-950:#f0fdf4;--color-emerald-50:#022c22;--color-emerald-100:#064e3b;--color-emerald-200:#065f46;--color-emerald-300:#047857;--color-emerald-400:#059669;--color-emerald-500:#10b981;--color-emerald-600:#34d399;--color-emerald-700:#6ee7b7;--color-emerald-800:#a7f3d0;--color-emerald-900:#d1fae5;--color-emerald-950:#ecfdf5;--color-teal-50:#042f2e;--color-teal-100:#134e4a;--color-teal-200:#115e59;--color-teal-300:#0f766e;--color-teal-400:#0d9488;--color-teal-500:#14b8a6;--color-teal-600:#2dd4bf;--color-teal-700:#5eead4;--color-teal-800:#99f6e4;--color-teal-900:#ccfbf1;--color-teal-950:#f0fdfa;--color-cyan-50:#083344;--color-cyan-100:#164e63;--color-cyan-200:#155e75;--color-cyan-300:#0e7490;--color-cyan-400:#0891b2;--color-cyan-500:#06b6d4;--color-cyan-600:#22d3ee;--color-cyan-700:#67e8f9;--color-cyan-800:#a5f3fc;--color-cyan-900:#cffafe;--color-cyan-950:#ecfeff;--color-sky-50:#082f49;--color-sky-100:#0c4a6e;--color-sky-200:#075985;--color-sky-300:#0369a1;--color-sky-400:#0284c7;--color-sky-500:#0ea5e9;--color-sky-600:#38bdf8;--color-sky-700:#7dd3fc;--color-sky-800:#bae6fd;--color-sky-900:#e0f2fe;--color-sky-950:#f0f9ff;--color-blue-50:#172554;--color-blue-100:#1e3a8a;--color-blue-200:#1e40af;--color-blue-300:#1d4ed8;--color-blue-400:#2563eb;--color-blue-500:#3b82f6;--color-blue-600:#60a5fa;--color-blue-700:#93c5fd;--color-blue-800:#bfdbfe;--color-blue-900:#dbeafe;--color-blue-950:#eff6ff;--color-indigo-50:#1e1b4b;--color-indigo-100:#312e81;--color-indigo-200:#3730a3;--color-indigo-300:#4338ca;--color-indigo-400:#4f46e5;--color-indigo-500:#6366f1;--color-indigo-600:#818cf8;--color-indigo-700:#a5b4fc;--color-indigo-800:#c7d2fe;--color-indigo-900:#e0e7ff;--color-indigo-950:#eef2ff;--color-violet-50:#2e1065;--color-violet-100:#4c1d95;--color-violet-200:#5b21b6;--color-violet-300:#6d28d9;--color-violet-400:#7c3aed;--color-violet-500:#8b5cf6;--color-violet-600:#a78bfa;--color-violet-700:#c4b5fd;--color-violet-800:#ddd6fe;--color-violet-900:#ede9fe;--color-violet-950:#f5f3ff;--color-purple-50:#3b0764;--color-purple-100:#581c87;--color-purple-200:#6b21a8;--color-purple-300:#7e22ce;--color-purple-400:#9333ea;--color-purple-500:#a855f7;--color-purple-600:#c084fc;--color-purple-700:#d8b4fe;--color-purple-800:#e9d5ff;--color-purple-900:#f3e8ff;--color-purple-950:#faf5ff;--color-fuchsia-50:#4a044e;--color-fuchsia-100:#701a75;--color-fuchsia-200:#86198f;--color-fuchsia-300:#a21caf;--color-fuchsia-400:#c026d3;--color-fuchsia-500:#d946ef;--color-fuchsia-600:#e879f9;--color-fuchsia-700:#f0abfc;--color-fuchsia-800:#f5d0fe;--color-fuchsia-900:#fae8ff;--color-fuchsia-950:#fdf4ff;--color-pink-50:#500724;--color-pink-100:#831843;--color-pink-200:#9d174d;--color-pink-300:#be185d;--color-pink-400:#db2777;--color-pink-500:#ec4899;--color-pink-600:#f472b6;--color-pink-700:#f9a8d4;--color-pink-800:#fbcfe8;--color-pink-900:#fce7f3;--color-pink-950:#fdf2f8;--color-rose-50:#4c0519;--color-rose-100:#881337;--color-rose-200:#9f1239;--color-rose-300:#be123c;--color-rose-400:#e11d48;--color-rose-500:#f43f5e;--color-rose-600:#fb7185;--color-rose-700:#fda4af;--color-rose-800:#fecdd3;--color-rose-900:#ffe4e6;--color-rose-950:#fff1f2}
+/* ...except the two fills that carry white text (bg-rose-600: danger button and count badge;
+   bg-sky-600: Claude's marker badge). Mirrored they become light tints under white text, so
+   they keep a mid tone: white text 4.6:1, still 4:1 as text on dark surfaces. */
+:root[data-theme="dark"] {
+  --color-rose-600: #de2c51;
+  --color-sky-600: #007db3;
+}
+
+/* Mobile browsers: keep the chosen text size, no rubber-band scroll or tap flash. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+/* 100vh includes the collapsing URL bar; dvh is the height actually visible. Browsers without dvh
+   keep Tailwind's vh. */
+@supports (height: 100dvh) {
+  .h-screen { height: 100dvh; }
+  .min-h-screen { min-height: 100dvh; }
+}
+
+/* Shared text field for <input>, <select> and <textarea> in studio forms and dialogs. */
+.input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  background: var(--color-surface);
+  color: var(--color-ink-900);
+  border: 1px solid var(--color-ink-200);
+  border-radius: 0.75rem;
+  outline: none;
+}
+.input::placeholder { color: var(--color-ink-400); }
+.input:focus {
+  border-color: var(--color-accent-500);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-500) 20%, transparent);
+}
+.input:disabled { opacity: 0.6; cursor: not-allowed; }

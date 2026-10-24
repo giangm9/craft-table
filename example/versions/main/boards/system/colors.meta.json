@@ -1,0 +1,11 @@
+{
+  "title": "Colors",
+  "section": "Design system",
+  "group": "Foundations",
+  "order": 100,
+  "desc": "Every colour of the design system, with its value read live: ink, accent, surface and the three status colours, and where each one goes. Switch Light and Dark to see the dark theme.",
+  "viewports": [
+    "desktop",
+    "mobile"
+  ]
+}

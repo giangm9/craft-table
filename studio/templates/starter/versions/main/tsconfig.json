@@ -1,0 +1,10 @@
+{
+  "extends": "craft-table/tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@ds": ["./system/components/index.ts"],
+      "@ds/*": ["./system/components/*"]
+    }
+  },
+  "include": ["boards", "system"]
+}

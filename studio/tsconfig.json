@@ -1,0 +1,5 @@
+{
+  // Typecheck of the studio itself (UI + its own kit). Project boards have their own tsconfig per version.
+  "extends": "../tsconfig.base.json",
+  "include": ["src", "ui"]
+}

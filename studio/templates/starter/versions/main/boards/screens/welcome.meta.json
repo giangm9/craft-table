@@ -1,0 +1,20 @@
+{
+  "title": "Welcome",
+  "section": "Screens",
+  "group": "Getting started",
+  "order": 10,
+  "desc": "The first screen people see. Newcomers learn what the product is for and choose to sign up or sign in; people who come back find their latest work and carry on.",
+  "viewports": ["desktop", "mobile"],
+  "scenarios": [
+    {
+      "id": "first-visit",
+      "title": "First visit",
+      "desc": "Someone opens the product for the first time: a short welcome, then a choice between creating an account and signing in."
+    },
+    {
+      "id": "returning",
+      "title": "Coming back",
+      "desc": "Sam has used the product before: the screen greets Sam by first name and lists the three things Sam worked on last, newest first, each with when it was last changed."
+    }
+  ]
+}

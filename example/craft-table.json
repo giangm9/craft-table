@@ -1,0 +1,6 @@
+{
+  "name": "Acme Tasks",
+  "description": "a small team to-do app",
+  "language": "en",
+  "lint": { "plainLanguage": false }
+}

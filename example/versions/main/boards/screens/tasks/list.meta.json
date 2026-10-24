@@ -1,0 +1,28 @@
+{
+  "title": "Task list",
+  "section": "Screens",
+  "group": "Tasks",
+  "order": 10,
+  "desc": "The whole team's to-do list, the first screen after signing in. Add a task in one line, tick it off when it is done, show only what is still open. Clickable like the real thing.",
+  "viewports": [
+    "desktop",
+    "mobile"
+  ],
+  "scenarios": [
+    {
+      "id": "few-tasks",
+      "title": "A normal day",
+      "desc": "Six tasks: four still open (one is late, one is due today, one has nobody on it yet) and two done, struck through at the bottom."
+    },
+    {
+      "id": "empty",
+      "title": "No tasks yet",
+      "desc": "A new team on its first day: the list is replaced by a short invitation to add the first task, and there are no filters yet."
+    },
+    {
+      "id": "many-tasks",
+      "title": "A busy week",
+      "desc": "Thirty-six tasks, more than fit on one screen: the page scrolls, nothing is cut off and there is no button to load more."
+    }
+  ]
+}

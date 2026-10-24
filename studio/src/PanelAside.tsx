@@ -1,0 +1,49 @@
+// The right panel (Conversation / History) on wide screens — drag its left edge to resize (lib/panel-width.mjs);
+// each person's width is remembered. The handle captures the pointer so the board's iframe cannot steal the drag,
+// as in the spec panel.
+import { useRef, useState, type KeyboardEvent, type PointerEvent as RPointerEvent, type ReactNode } from "react";
+import { cn } from "../ui";
+import { PANEL_DEFAULT, clampPanelWidth, dragPanelWidth } from "../lib/panel-width.mjs";
+import { T } from "./i18n/shell";
+
+export function PanelAside({ width, onWidth, children }: { width: number; onWidth: (w: number) => void; children: ReactNode }) {
+  const drag = useRef<{ x: number; w: number } | null>(null);
+  const [live, setLive] = useState<number | null>(null);
+  const shown = clampPanelWidth(live ?? width, innerWidth);
+  const down = (e: RPointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    drag.current = { x: e.clientX, w: shown };
+  };
+  const move = (e: RPointerEvent<HTMLDivElement>) => { if (drag.current) setLive(dragPanelWidth(drag.current.w, drag.current.x, e.clientX, innerWidth)); };
+  const up = (e: RPointerEvent<HTMLDivElement>) => {
+    if (drag.current) onWidth(dragPanelWidth(drag.current.w, drag.current.x, e.clientX, innerWidth));
+    drag.current = null;
+    setLive(null);
+  };
+  const key = (e: KeyboardEvent<HTMLDivElement>) => {
+    const d = e.key === "ArrowLeft" ? 24 : e.key === "ArrowRight" ? -24 : 0;
+    if (d) { e.preventDefault(); onWidth(clampPanelWidth(shown + d, innerWidth)); }
+  };
+  return (
+    <aside data-panel style={{ width: shown }} className="hidden lg:flex shrink-0 border-l border-ink-200 bg-surface flex-col min-h-0 relative">
+      <div
+        data-panel-resize
+        role="separator"
+        aria-orientation="vertical"
+        aria-label={T.panelResizeLabel}
+        aria-valuenow={shown}
+        tabIndex={0}
+        title={T.panelResizeHint}
+        onPointerDown={down}
+        onPointerMove={move}
+        onPointerUp={up}
+        onPointerCancel={up}
+        onDoubleClick={() => onWidth(PANEL_DEFAULT)}
+        onKeyDown={key}
+        className={cn("absolute top-0 -left-1 w-2 h-full cursor-col-resize z-10 hover:bg-accent-500/25 focus-visible:bg-accent-500/25 outline-none", live != null && "bg-accent-500/35")}
+      />
+      {children}
+    </aside>
+  );
+}

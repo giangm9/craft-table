@@ -1,0 +1,23 @@
+{
+  "title": "Settings",
+  "section": "Screens",
+  "group": "Account",
+  "order": 30,
+  "desc": "Each person's own settings: the name the team sees, the email address, and which reminders the app sends. Changes are kept only after Save.",
+  "viewports": [
+    "desktop",
+    "mobile"
+  ],
+  "scenarios": [
+    {
+      "id": "default",
+      "title": "As after signing up",
+      "desc": "Name and email filled in, all three reminders on: a new task given to you, a summary every morning, and a reminder the day before a task is due."
+    },
+    {
+      "id": "reminders-off",
+      "title": "Every reminder off",
+      "desc": "Someone turned off all three reminders: a yellow note under them warns that late tasks will now only show on the list. Saving is still allowed."
+    }
+  ]
+}

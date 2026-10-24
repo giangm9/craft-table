@@ -1,0 +1,544 @@
+// The "Conversation" tab: the threads of the open board. A thread is a whole conversation between people and Claude
+// (Claude runs in the background and can edit the board). Marking an area on the canvas attaches a reference to the
+// message being written ([#n] in the text); clicking the reference brings that area to the middle of the canvas.
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { ArrowLeft, CheckCheck, Hourglass, ImagePlus, Loader2, Maximize2, MessageSquarePlus, Minimize2, Pencil, RotateCcw, Send, Sparkles, Square, SquareDashedMousePointer, Trash2, Undo2, X } from "lucide-react";
+import { cn } from "../ui";
+import { allRefs, dropMark, waitingForUser } from "../lib/thread-core.mjs";
+import { replyBlocks, replyPlain } from "../lib/reply-md.mjs";
+import { enterAction } from "../lib/composer-keys.mjs";
+import { api, refScenario, scenariosOf, uploadUrl, type Entry, type Ref, type Thread } from "./api";
+import { agentText } from "./i18n/agent-status";
+import { T, threadTitle } from "./i18n/threads";
+
+/** A mark waiting to be redrawn: the i-th mark being written, or a sent mark (message + position in it, thread-wide number #n). */
+export type Redraw = { kind: "pending"; i: number } | { kind: "sent"; messageId: string; index: number; n: number };
+
+type Props = {
+  entry: Entry;
+  /** Version being viewed: a new thread belongs to it. */
+  version: string;
+  threads: Thread[];
+  activeId: string | null; // thread id; "new" = starting a new thread; null = the list
+  pendingRefs: Ref[];
+  annotating: boolean;
+  onOpen: (id: string | null) => void;
+  onToggleAnnotate: () => void;
+  onRemovePending: (i: number) => void;
+  onClearPending: () => void;
+  onFocusRef: (key: string) => void;
+  onChanged: () => Promise<void>;
+  onClose?: () => void;
+  /** The large composer in the middle of the screen is open (URL `soan=1`). */
+  composeBig: boolean;
+  onComposeBig: (on: boolean) => void;
+  /** The main screen and its options share threads: short name of a screen of the group ("the main screen", "option “X”"). */
+  memberLabel: (entryId: string) => string;
+  /** "Redraw" on a mark → the next mark drawn on the canvas replaces it (keeping its number). */
+  redraw: Redraw | null;
+  onRedraw: (r: Redraw) => void;
+  /** The marks list of the open thread is shown (URL `kh=1`). */
+  refsOpen: boolean;
+  onRefsOpen: (on: boolean) => void;
+};
+
+/** When something happened: the time today, else the date too (in the page's language). */
+const hm = (iso: string) => {
+  const d = new Date(iso);
+  return T.stamp(d, d.toDateString() === new Date().toDateString());
+};
+const who = (a: string) => (a === "claude" ? "Claude" : a.split("@")[0]);
+const titleOf = (t: Thread) => threadTitle(t.title);
+// A mark with no scenario lies on the first scenario's row (refScenario): show that scenario's name.
+const scLabel = (entry: Entry, r: Ref) => { const id = refScenario(r, entry); return scenariosOf(entry).find((s) => s.id === id)?.title ?? id ?? ""; };
+
+// data-* values ("da-bo", "lon", "loi", "dang-tai") are test hooks that projects' e2e tests select on: kept as they are.
+function RefChip({ n, claude, onClick, pending, removed, onRemove, title }: { n: number | string; claude?: boolean; pending?: boolean; removed?: boolean; onClick?: () => void; onRemove?: () => void; title?: string }) {
+  return (
+    <span data-ref-chip={removed ? "da-bo" : ""} className={cn(
+      "inline-flex items-center gap-0.5 align-baseline rounded-full text-[11px] font-semibold tabular-nums border",
+      removed ? "border-ink-200 bg-ink-50 text-ink-400 line-through" : pending ? "border-dashed border-accent-500 text-accent-800 bg-accent-50" : claude ? "border-sky-300 bg-sky-50 text-sky-800" : "border-accent-300 bg-accent-50 text-accent-800",
+    )}>
+      {removed
+        ? <span title={T.markRemoved} className="px-1.5 py-px">#{n}</span>
+        : <button type="button" onClick={onClick} title={title} className="px-1.5 py-px hover:underline">{pending ? `+${n}` : `#${n}`}</button>}
+      {onRemove && <button type="button" aria-label={T.chipRemove} onClick={onRemove} className="pr-1 opacity-70 hover:opacity-100"><X size={11} /></button>}
+    </span>
+  );
+}
+
+/** A row of the marks list: number, where (scenario · frame), the text inside the area; Redraw / Remove, or Restore. */
+function RefRow(p: { chip: ReactNode; where: string; texts: string[]; status?: string; redrawing?: boolean; busy?: boolean; onRedraw: () => void; onRemove: () => void; onRestore?: () => void }) {
+  const btn = "shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-xs font-medium disabled:opacity-50";
+  return (
+    <div data-ref-row className="flex items-center gap-2 py-1.5 text-xs">
+      <span className="shrink-0">{p.chip}</span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-ink-700" title={p.where}>{p.where}{p.status && <span className="text-ink-400"> · {p.status}</span>}</p>
+        {p.texts.length > 0 && <p className="truncate text-ink-500" title={p.texts.join(" · ")}>{p.texts.slice(0, 4).map((t) => `“${t}”`).join(", ")}</p>}
+      </div>
+      {p.onRestore ? (
+        <button type="button" data-ref-restore onClick={p.onRestore} disabled={p.busy} className={cn(btn, "border-ink-200 text-ink-700 hover:bg-ink-50")}><Undo2 size={13} /> {T.restore}</button>
+      ) : (
+        <>
+          <button type="button" data-ref-redraw onClick={p.onRedraw} disabled={p.busy} aria-pressed={!!p.redrawing} title={T.redrawHint} className={cn(btn, p.redrawing ? "bg-accent-700 border-accent-700 text-white" : "border-ink-200 text-ink-700 hover:bg-ink-50")}>
+            <Pencil size={13} /> {p.redrawing ? T.redrawing : T.redraw}
+          </button>
+          <button type="button" data-ref-remove onClick={p.onRemove} disabled={p.busy} aria-label={T.removeMark} title={T.removeMark} className="shrink-0 p-1.5 rounded-lg text-ink-500 hover:bg-ink-100 hover:text-rose-700 disabled:opacity-50"><X size={15} /></button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function StatusBadge({ t }: { t: Thread }) {
+  if (t.agent.state === "running") return <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-sky-50 text-sky-800"><Loader2 size={11} className="animate-spin" />{T.working}</span>;
+  if (t.agent.state === "queued") return <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-800" title={T.queuedHint}><Hourglass size={11} />{T.queuedBadge}</span>;
+  if (t.agent.state === "error") return <span className="shrink-0 px-2 py-0.5 rounded-full text-[11px] font-medium bg-rose-50 text-rose-800">{T.errorBadge}</span>;
+  if (t.status === "closed") return <span className="shrink-0 px-2 py-0.5 rounded-full text-[11px] font-medium bg-ink-100 text-ink-600">{T.closedBadge}</span>;
+  if (waitingForUser(t)) return <span className="shrink-0 px-2 py-0.5 rounded-full text-[11px] font-medium bg-rose-50 text-rose-800">{T.yourTurn}</span>;
+  return null;
+}
+
+/** Message text with [#k] (k = the mark's position in the message) → a chip with the thread-wide number. */
+function MessageText({ text, map }: { text: string; map: (k: number) => ReactNode }) {
+  const parts = text.split(/(\[#\d+\])/g);
+  return (
+    <p className="text-sm whitespace-pre-wrap break-words text-ink-900">
+      {parts.map((p, i) => {
+        const m = /^\[#(\d+)\]$/.exec(p);
+        return <Fragment key={i}>{m ? map(Number(m[1])) : p}</Fragment>;
+      })}
+    </p>
+  );
+}
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type MdNode = any; // tree of lib/reply-md.mjs (blocks: p h ul ol quote pre hr table · inline: text ref b i del code a br)
+
+/**
+ * Claude's reply: markdown built straight into React elements (NO injected HTML — see lib/reply-md.mjs), with [#k]
+ * as mark chips, as in a person's message.
+ */
+function ReplyBody({ text, chip }: { text: string; chip: (k: number) => ReactNode }) {
+  const tree = useMemo(() => replyBlocks(text) as MdNode[], [text]);
+  const inl = (ns: MdNode[]): ReactNode => ns.map((n, i) => {
+    switch (n.t) {
+      case "ref": return <Fragment key={i}>{chip(n.k)}</Fragment>;
+      case "b": return <strong key={i} className="font-semibold">{inl(n.c)}</strong>;
+      case "i": return <em key={i}>{inl(n.c)}</em>;
+      case "del": return <del key={i}>{inl(n.c)}</del>;
+      case "code": return <code key={i} className="px-1 py-px rounded bg-ink-100 text-[12.5px] font-mono break-all">{n.v}</code>;
+      case "a": return <a key={i} href={n.href} target="_blank" rel="noreferrer noopener" className="text-accent-700 underline">{inl(n.c)}</a>;
+      case "br": return <br key={i} />;
+      default: return <Fragment key={i}>{n.v}</Fragment>;
+    }
+  });
+  const blk = (bs: MdNode[]): ReactNode => bs.map((b, i) => {
+    switch (b.t) {
+      case "h": return <p key={i} className="font-semibold">{inl(b.c)}</p>;
+      case "ul": return <ul key={i} className="list-disc pl-5 space-y-0.5">{b.items.map((it: MdNode[], j: number) => <li key={j}>{blk(it)}</li>)}</ul>;
+      case "ol": return <ol key={i} start={b.start} className="list-decimal pl-5 space-y-0.5">{b.items.map((it: MdNode[], j: number) => <li key={j}>{blk(it)}</li>)}</ol>;
+      case "quote": return <blockquote key={i} className="border-l-2 border-ink-300 pl-3 text-ink-600 space-y-1">{blk(b.c)}</blockquote>;
+      case "pre": return <pre key={i} className="p-2 rounded-lg bg-ink-100 text-[12.5px] font-mono overflow-x-auto">{b.v}</pre>;
+      case "hr": return <hr key={i} className="border-ink-200" />;
+      case "table": return (
+        <div key={i} className="overflow-x-auto">
+          <table className="text-[13px] border-collapse">
+            <thead><tr>{b.head.map((c: MdNode[], j: number) => <th key={j} className="border border-ink-200 px-2 py-1 text-left font-semibold bg-ink-50">{inl(c)}</th>)}</tr></thead>
+            <tbody>{b.rows.map((r: MdNode[][], j: number) => <tr key={j}>{r.map((c, k) => <td key={k} className="border border-ink-200 px-2 py-1 align-top">{inl(c)}</td>)}</tr>)}</tbody>
+          </table>
+        </div>
+      );
+      default: return <p key={i}>{inl(b.c)}</p>;
+    }
+  });
+  return <div data-reply className="text-sm text-ink-900 break-words space-y-2">{blk(tree)}</div>;
+}
+
+const MAX_IMAGES = 6;
+type Att = { key: string; url: string; id?: string; err?: string };
+
+/**
+ * The composer. Normally Enter sends and Shift+Enter starts a new line. The large composer (in the middle of the
+ * screen, for multi-paragraph text; its state is in the URL `soan=1`): Enter starts a new line, Ctrl/⌘+Enter sends
+ * (lib/composer-keys.mjs). Both modes are the same box (text, images and marks stay when switching).
+ */
+function Composer(p: { placeholder: string; draftKey: string; pendingRefs: Ref[]; entry: Entry; annotating: boolean; busy: boolean; expanded: boolean; onExpanded: (on: boolean) => void; onToggleAnnotate: () => void; onRemovePending: (i: number) => void; onFocusRef: (k: string) => void; redrawing: number | null; onRedraw: (i: number) => void; onSend: (text: string, images: string[]) => Promise<boolean> }) {
+  const taRef = useRef<HTMLTextAreaElement>(null);
+  // Opening / folding the large composer → caret at the end of the text, to keep typing right away.
+  useEffect(() => {
+    const ta = taRef.current;
+    if (!ta || !p.expanded) return;
+    ta.focus();
+    ta.setSelectionRange(ta.value.length, ta.value.length);
+  }, [p.expanded]);
+  useEffect(() => {
+    if (!p.expanded) return;
+    const esc = (e: globalThis.KeyboardEvent) => { if (e.key === "Escape") p.onExpanded(false); };
+    addEventListener("keydown", esc);
+    return () => removeEventListener("keydown", esc);
+  }, [p.expanded]); // eslint-disable-line react-hooks/exhaustive-deps
+  const drafts = useRef(new Map<string, string>());
+  // Attached images: pick a file / paste (Ctrl+V) / drag and drop → uploaded at once, sent as ids.
+  const [atts, setAtts] = useState<Att[]>([]);
+  const [drag, setDrag] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const clearAtts = () => setAtts((a) => { a.forEach((x) => URL.revokeObjectURL(x.url)); return []; });
+  useEffect(() => clearAtts, [p.draftKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const addFiles = (files: File[]) => {
+    const imgs = files.filter((f) => f.type.startsWith("image/")).slice(0, Math.max(0, MAX_IMAGES - atts.length));
+    for (const f of imgs) {
+      const key = `${Date.now()}-${Math.random()}`;
+      setAtts((a) => [...a, { key, url: URL.createObjectURL(f) }]);
+      api.upload(f).then(
+        (id) => setAtts((a) => a.map((x) => (x.key === key ? { ...x, id } : x))),
+        (e: Error) => setAtts((a) => a.map((x) => (x.key === key ? { ...x, err: e.message } : x))),
+      );
+    }
+  };
+  const uploading = atts.some((x) => !x.id && !x.err);
+  const ready = atts.filter((x) => x.id).map((x) => x.id!);
+  const [text, setText] = useState(() => drafts.current.get(p.draftKey) ?? "");
+  useEffect(() => { setText(drafts.current.get(p.draftKey) ?? ""); }, [p.draftKey]);
+  useEffect(() => { drafts.current.set(p.draftKey, text); }, [p.draftKey, text]);
+  // A mark the text does not mention yet → append [#k], so the sentence points at the right area.
+  // (Also runs when the composer has just opened: a mark drawn with no thread open opens the composer AFTER the
+  // reference exists.)
+  useEffect(() => {
+    setText((t) => {
+      let out = t;
+      for (let k = 1; k <= p.pendingRefs.length; k++) if (!out.includes(`[#${k}]`)) out = `${out}${out && !out.endsWith(" ") ? " " : ""}[#${k}] `;
+      return out;
+    });
+  }, [p.pendingRefs.length, p.draftKey]);
+  const can = (text.trim() || p.pendingRefs.length || ready.length) && !p.busy && !uploading;
+  const send = async () => {
+    if (!can) return;
+    if (!(await p.onSend(text.trim(), ready))) return;
+    setText(""); drafts.current.delete(p.draftKey); clearAtts();
+    if (p.expanded) p.onExpanded(false);
+  };
+  const box = (
+    <div
+      data-composer={p.expanded ? "lon" : ""}
+      className={cn(
+        "p-3 space-y-2 bg-surface",
+        p.expanded ? "flex-1 min-h-0 flex flex-col" : "border-t border-ink-200",
+        drag && "bg-accent-50 outline-2 outline-dashed outline-accent-400 -outline-offset-4",
+      )}
+      onDragOver={(e) => { if ([...e.dataTransfer.types].includes("Files")) { e.preventDefault(); setDrag(true); } }}
+      onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDrag(false); }}
+      onDrop={(e) => { if (e.dataTransfer.files.length) { e.preventDefault(); setDrag(false); addFiles([...e.dataTransfer.files]); } }}
+    >
+      {p.pendingRefs.length > 0 && (
+        <div data-pending-refs className="max-h-40 overflow-y-auto">
+          {p.pendingRefs.map((r, i) => (
+            <RefRow
+              key={i}
+              chip={<RefChip n={i + 1} pending onClick={() => p.onFocusRef(`pending:${i}`)} />}
+              where={[scLabel(p.entry, r), r.viewport].filter(Boolean).join(" · ")}
+              texts={r.texts}
+              redrawing={p.redrawing === i}
+              onRedraw={() => p.onRedraw(i)}
+              // Removing mark i+1 → the text drops [#i+1] and later numbers shift down by one (still pointing at
+              // the right areas).
+              onRemove={() => { setText((t) => dropMark(t, i + 1)); p.onRemovePending(i); }}
+            />
+          ))}
+        </div>
+      )}
+      {atts.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {atts.map((a) => (
+            <div key={a.key} data-attachment={a.id ?? (a.err ? "loi" : "dang-tai")} className={cn("relative w-16 h-16 rounded-lg border overflow-hidden bg-ink-50", a.err ? "border-rose-400" : "border-ink-200")} title={a.err ?? undefined}>
+              <img src={a.url} alt="" className={cn("w-full h-full object-cover", (!a.id || a.err) && "opacity-50")} />
+              {!a.id && !a.err && <Loader2 size={16} className="absolute inset-0 m-auto animate-spin text-ink-700" />}
+              <button type="button" aria-label={T.removeImage} onClick={() => setAtts((x) => { URL.revokeObjectURL(a.url); return x.filter((y) => y.key !== a.key); })} className="absolute top-0.5 right-0.5 p-1 rounded-md bg-surface/90 border border-ink-200 text-ink-700 hover:text-rose-700"><X size={13} /></button>
+            </div>
+          ))}
+        </div>
+      )}
+      {atts.some((a) => a.err) && <p className="text-xs text-rose-700">{atts.find((a) => a.err)!.err}</p>}
+      <textarea
+        ref={taRef}
+        value={text}
+        onPaste={(e) => { const f = [...e.clipboardData.files].filter((x) => x.type.startsWith("image/")); if (f.length) { e.preventDefault(); addFiles(f); } }}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => {
+          const k = { key: e.key, shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey, isComposing: e.nativeEvent.isComposing, keyCode: e.keyCode };
+          if (enterAction(k, p.expanded) === "send") { e.preventDefault(); send(); }
+        }}
+        rows={3}
+        placeholder={p.placeholder}
+        className={cn("input resize-none", p.expanded && "flex-1 min-h-[40vh] text-[15px] leading-relaxed")}
+      />
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => { if (p.expanded && !p.annotating) p.onExpanded(false); p.onToggleAnnotate(); }}
+          className={cn("inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium border", p.annotating ? "bg-accent-700 border-accent-700 text-white" : "bg-surface border-ink-200 text-ink-700 hover:bg-ink-50")}
+          title={T.markHint}
+        >
+          <SquareDashedMousePointer size={15} /> {p.annotating ? T.marking : T.mark}
+        </button>
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={atts.length >= MAX_IMAGES}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium border bg-surface border-ink-200 text-ink-700 hover:bg-ink-50 disabled:opacity-50"
+          title={T.attachHint(MAX_IMAGES)}
+        >
+          <ImagePlus size={15} /> {T.image}
+        </button>
+        <input ref={fileRef} data-image-input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden onChange={(e) => { addFiles([...(e.target.files ?? [])]); e.target.value = ""; }} />
+        <button
+          type="button"
+          onClick={() => p.onExpanded(!p.expanded)}
+          aria-label={p.expanded ? T.shrinkComposer : T.openBigComposer}
+          title={p.expanded ? T.shrinkComposerHint : T.openBigComposerHint}
+          className="ml-auto self-stretch inline-flex items-center px-2 rounded-lg border border-ink-200 text-ink-600 hover:bg-ink-50 hover:text-ink-900"
+        >
+          {p.expanded ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+        </button>
+        <button type="button" onClick={send} disabled={!can} title={p.expanded ? T.sendHintBig : T.sendHint} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent-700 border border-accent-700 text-white rounded-lg text-sm font-medium hover:bg-accent-800 disabled:opacity-50">
+          {p.busy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} {T.send}
+        </button>
+      </div>
+    </div>
+  );
+  if (!p.expanded) return box;
+  // The large composer in the middle of the screen (phone: the whole screen). Backdrop / Esc / the shrink button →
+  // back to the normal box, text kept.
+  return (
+    <div className="fixed inset-0 z-[60] bg-ink-900/40 flex items-stretch sm:items-center justify-center sm:p-6" onClick={() => p.onExpanded(false)}>
+      <div data-composer-lon role="dialog" aria-label={T.compose} className="w-full sm:max-w-3xl h-full sm:h-[80vh] bg-surface sm:rounded-xl border border-ink-200 flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="px-4 py-2.5 border-b border-ink-200 flex items-center gap-2">
+          <p className="font-semibold flex-1">{T.compose}</p>
+          <button type="button" aria-label={T.shrinkComposer} onClick={() => p.onExpanded(false)} className="p-1.5 rounded-lg hover:bg-ink-100"><X size={17} /></button>
+        </div>
+        {box}
+      </div>
+    </div>
+  );
+}
+
+export function ThreadsPanel(p: Props) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const listEnd = useRef<HTMLDivElement>(null);
+  const thread = p.activeId && p.activeId !== "new" ? p.threads.find((t) => t.id === p.activeId) : undefined;
+  const refs = thread ? allRefs(thread) : [];
+
+  useEffect(() => { listEnd.current?.scrollIntoView({ block: "end" }); }, [thread?.messages.length, thread?.agent.state, agentText(thread?.agent.progress)]);
+
+  const run = async (fn: () => Promise<unknown>) => {
+    setBusy(true); setErr("");
+    try { await fn(); await p.onChanged(); return true; } catch (e) { setErr(String((e as Error).message)); return false; } finally { setBusy(false); }
+  };
+
+  const header = (title: ReactNode, actions?: ReactNode, back = true) => (
+    <div className="px-3 py-2.5 border-b border-ink-200 flex items-center gap-1.5">
+      {back && <button type="button" aria-label={T.backToThreads} onClick={() => p.onOpen(null)} className="p-1.5 rounded-lg hover:bg-ink-100"><ArrowLeft size={17} /></button>}
+      <div className="min-w-0 flex-1">{title}</div>
+      {actions}
+      {p.onClose && <button type="button" aria-label={T.close} onClick={p.onClose} className="p-1.5 rounded-lg hover:bg-ink-100"><X size={17} /></button>}
+    </div>
+  );
+
+  // ── Starting a new thread ──
+  if (p.activeId === "new") {
+    return (
+      <div className="flex-1 min-h-0 flex flex-col">
+        {header(<p className="font-semibold">{T.newThread}</p>)}
+        <div className="flex-1" />
+        {err && <p className="px-3 pb-2 text-xs text-rose-600">{err}</p>}
+        <Composer
+          placeholder={T.messageClaude}
+          draftKey="new" entry={p.entry} pendingRefs={p.pendingRefs} annotating={p.annotating} busy={busy} expanded={p.composeBig} onExpanded={p.onComposeBig}
+          onToggleAnnotate={p.onToggleAnnotate} onRemovePending={p.onRemovePending} onFocusRef={p.onFocusRef}
+          redrawing={p.redraw?.kind === "pending" ? p.redraw.i : null} onRedraw={(i) => p.onRedraw({ kind: "pending", i })}
+          onSend={(text, images) => run(async () => {
+            const t = await api.createThread({ entry: p.entry.id, version: p.version, text, refs: p.pendingRefs, images });
+            p.onClearPending();
+            p.onOpen(t.id);
+          })}
+        />
+      </div>
+    );
+  }
+
+  // ── One thread ──
+  if (thread) {
+    const lastUserUnanswered = thread.agent.state === "idle" && thread.messages[thread.messages.length - 1]?.role === "user";
+    return (
+      <div className="flex-1 min-h-0 flex flex-col">
+        {header(
+          <button type="button" onClick={() => { const v = prompt(T.renamePrompt, thread.title); if (v?.trim()) run(() => api.patchThread(thread.id, { title: v })); }} className="block w-full text-left font-semibold truncate hover:underline" title={T.rename}>
+            {titleOf(thread)}
+          </button>,
+          <>
+            {refs.length > 0 && (
+              <button type="button" data-refs-toggle aria-expanded={p.refsOpen} title={T.marksToggle} onClick={() => p.onRefsOpen(!p.refsOpen)} className={cn("inline-flex items-center gap-1 px-1.5 py-1 rounded-lg text-xs font-medium tabular-nums", p.refsOpen ? "bg-accent-50 text-accent-800" : "text-ink-500 hover:bg-ink-100")}>
+                <SquareDashedMousePointer size={16} /> {refs.filter((r) => !r.removed).length}
+              </button>
+            )}
+            <button type="button" title={thread.status === "open" ? T.closeThread : T.reopenThread} onClick={() => run(() => api.patchThread(thread.id, { status: thread.status === "open" ? "closed" : "open" }))} className="p-1.5 rounded-lg text-ink-500 hover:bg-ink-100">
+              {thread.status === "open" ? <CheckCheck size={17} /> : <RotateCcw size={17} />}
+            </button>
+            <button type="button" title={T.deleteThread} onClick={() => { if (confirm(T.deleteConfirm)) run(async () => { await api.deleteThread(thread.id); p.onOpen(null); }); }} className="p-1.5 rounded-lg text-ink-500 hover:bg-ink-100 hover:text-rose-700">
+              <Trash2 size={16} />
+            </button>
+          </>,
+        )}
+        {p.refsOpen && refs.length > 0 && (
+          <div data-ref-list className="shrink-0 max-h-60 overflow-y-auto px-3 py-1 border-b border-ink-200 bg-ink-50/60 divide-y divide-ink-100">
+            {refs.map((r) => {
+              const on = r.entry ?? thread.entry;
+              const author = thread.messages.find((m) => m.id === r.messageId)?.author ?? "";
+              const edit = (action: "remove" | "restore") => run(() => api.editRef(thread.id, { messageId: r.messageId, index: r.index, action }));
+              return (
+                <RefRow
+                  key={`${r.messageId}:${r.index}`}
+                  chip={<RefChip n={r.n} claude={r.role === "claude"} removed={!!r.removed} onClick={() => p.onFocusRef(`${r.messageId}:${r.index}`)} />}
+                  where={[who(author), scLabel(p.entry, r), r.viewport, on !== p.entry.id ? T.onMember(p.memberLabel(on)) : ""].filter(Boolean).join(" · ")}
+                  texts={r.texts}
+                  status={r.removed ? T.statusRemoved : r.redrawn ? T.statusRedrawn : ""}
+                  busy={busy}
+                  redrawing={p.redraw?.kind === "sent" && p.redraw.messageId === r.messageId && p.redraw.index === r.index}
+                  onRedraw={() => p.onRedraw({ kind: "sent", messageId: r.messageId, index: r.index, n: r.n })}
+                  onRemove={() => edit("remove")}
+                  onRestore={r.removed ? () => edit("restore") : undefined}
+                />
+              );
+            })}
+          </div>
+        )}
+        <div className="flex-1 overflow-y-auto">
+          <div className="divide-y divide-ink-100">
+            {thread.messages.map((m) => {
+              const claude = m.role === "claude";
+              const refOf = (k: number) => refs.find((r) => r.messageId === m.id && r.index === k - 1);
+              return (
+                <div key={m.id} className={cn("px-4 py-3", claude && "bg-sky-50/40")}>
+                  <p className="flex items-center gap-1.5 text-xs text-ink-500 mb-1">
+                    {claude && <Sparkles size={13} className="text-sky-600" />}
+                    <span className={cn("font-medium", claude ? "text-sky-800" : "text-ink-700")}>{who(m.author)}</span> · {hm(m.at)}
+                    {!claude && (m.viewing ?? thread.entry) !== p.entry.id && <span data-message-on className="truncate">· {T.onMember(p.memberLabel(m.viewing ?? thread.entry))}</span>}
+                  </p>
+                  {m.text && (() => {
+                    const chip = (k: number) => { const r = refOf(k); return r ? <RefChip n={r.n} claude={claude} removed={!!r.removed} onClick={() => p.onFocusRef(`${m.id}:${k - 1}`)} /> : `[#${k}]`; };
+                    return claude ? <ReplyBody text={m.text} chip={chip} /> : <MessageText text={m.text} map={chip} />;
+                  })()}
+                  {(m.images?.length ?? 0) > 0 && (
+                    <div className="mt-1.5 flex flex-wrap gap-2">
+                      {m.images!.map((id) => (
+                        <a key={id} data-message-image={id} href={uploadUrl(id)} target="_blank" rel="noreferrer" className="block rounded-lg border border-ink-200 overflow-hidden hover:border-ink-400" title={T.openImage}>
+                          <img src={uploadUrl(id)} alt={T.attachedImage} loading="lazy" className="h-24 max-w-[180px] object-cover" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                  {m.refs.length > 0 && (
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {m.refs.map((r, i) => (
+                        <span key={i} className="inline-flex items-center gap-1 text-[11px] text-ink-500">
+                          <RefChip n={refOf(i + 1)?.n ?? i + 1} claude={claude} removed={!!r.removed} onClick={() => p.onFocusRef(`${m.id}:${i}`)} title={r.texts.slice(0, 4).join(" · ")} />
+                          <span className="truncate max-w-[160px]">{scLabel(p.entry, r)} · {r.viewport}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {thread.agent.state === "running" && (
+            <div className="mx-4 my-3 p-3 rounded-xl border border-sky-200 bg-sky-50 text-sm text-sky-900 flex items-start gap-2">
+              <Loader2 size={16} className="animate-spin mt-0.5 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">{T.workingLong}</p>
+                {agentText(thread.agent.progress) && <p className="text-xs text-sky-800 truncate" title={agentText(thread.agent.progress)!}>{agentText(thread.agent.progress)}</p>}
+              </div>
+              <button type="button" onClick={() => run(() => api.stop(thread.id))} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs border border-sky-300 hover:bg-sky-100"><Square size={11} />{T.stop}</button>
+            </div>
+          )}
+          {thread.agent.state === "queued" && (
+            <div data-queued className="mx-4 my-3 p-3 rounded-xl border border-amber-200 bg-amber-50 text-sm text-amber-900 flex items-start gap-2">
+              <Hourglass size={16} className="mt-0.5 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">{T.waitingTurn}</p>
+                <p className="text-xs text-amber-800">{T.busyElsewhere}</p>
+                <button type="button" onClick={() => run(() => api.stop(thread.id))} className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-surface border border-amber-300 hover:bg-amber-100"><Square size={11} />{T.unqueue}</button>
+              </div>
+            </div>
+          )}
+          {thread.agent.state === "error" && (
+            <div className="mx-4 my-3 p-3 rounded-xl border border-rose-200 bg-rose-50 text-sm text-rose-800 space-y-2">
+              <p className="font-medium">{T.turnFailed}</p>
+              {agentText(thread.agent.error) && <p className="text-xs whitespace-pre-wrap break-words">{agentText(thread.agent.error)}</p>}
+              <button type="button" onClick={() => run(() => api.retry(thread.id))} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-rose-300 text-rose-800 rounded-lg text-sm font-medium hover:bg-rose-100"><RotateCcw size={14} />{T.runAgain}</button>
+            </div>
+          )}
+          {lastUserUnanswered && (
+            <div className="mx-4 my-3">
+              <button type="button" onClick={() => run(() => api.retry(thread.id))} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-ink-200 text-ink-700 rounded-lg text-sm font-medium hover:bg-ink-50"><Sparkles size={14} />{T.askClaude}</button>
+            </div>
+          )}
+          <div ref={listEnd} />
+        </div>
+        {err && <p className="px-3 pb-2 text-xs text-rose-600">{err}</p>}
+        <Composer
+          placeholder={thread.status === "closed" ? T.replyToReopen : T.reply}
+          draftKey={thread.id} entry={p.entry} pendingRefs={p.pendingRefs} annotating={p.annotating} busy={busy} expanded={p.composeBig} onExpanded={p.onComposeBig}
+          onToggleAnnotate={p.onToggleAnnotate} onRemovePending={p.onRemovePending} onFocusRef={p.onFocusRef}
+          redrawing={p.redraw?.kind === "pending" ? p.redraw.i : null} onRedraw={(i) => p.onRedraw({ kind: "pending", i })}
+          onSend={(text, images) => run(async () => { await api.send(thread.id, { text, refs: p.pendingRefs, images, viewing: p.entry.id }); p.onClearPending(); })}
+        />
+      </div>
+    );
+  }
+
+  // ── Thread list ──
+  const open = p.threads.filter((t) => t.status === "open");
+  const closed = p.threads.filter((t) => t.status === "closed");
+  const row = (t: Thread) => {
+    const last = t.messages[t.messages.length - 1];
+    return (
+      <button key={t.id} type="button" onClick={() => p.onOpen(t.id)} className="w-full text-left px-4 py-3 hover:bg-ink-50 block">
+        <div className="flex items-start gap-2">
+          <p className="font-medium text-sm text-ink-900 line-clamp-2 flex-1" title={titleOf(t)}>{titleOf(t)}</p>
+          <StatusBadge t={t} />
+        </div>
+        {last && <p className="mt-0.5 text-xs text-ink-500 truncate">{last.role === "claude" ? T.fromClaude(replyPlain(last.text)) : last.text || ((last.images?.length ?? 0) > 0 ? T.lastImage : T.lastMark)}</p>}
+        <p className="mt-0.5 text-[11px] text-ink-400">{T.messageCount(t.messages.length)} · {hm(t.updatedAt)}{t.entry !== p.entry.id && <span data-thread-on> · {p.memberLabel(t.entry)}</span>}</p>
+      </button>
+    );
+  };
+  return (
+    <div className="flex-1 min-h-0 flex flex-col">
+      {header(<p className="font-semibold">{T.conversation}</p>, (
+        <button type="button" onClick={() => p.onOpen("new")} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-accent-700 border border-accent-700 text-white rounded-lg text-sm font-medium hover:bg-accent-800">
+          <MessageSquarePlus size={15} /> {T.newThread}
+        </button>
+      ), false)}
+      <div className="flex-1 overflow-y-auto">
+        {p.threads.length === 0 ? (
+          <div className="p-6 text-center text-sm text-ink-500">
+            {T.noThreads}
+          </div>
+        ) : (
+          <>
+            <div className="divide-y divide-ink-100">{open.map(row)}</div>
+            {closed.length > 0 && (
+              <>
+                <p className="px-4 pt-4 pb-1 text-[11px] uppercase tracking-wide font-medium text-ink-400">{T.closedCount(closed.length)}</p>
+                <div className="divide-y divide-ink-100 opacity-80">{closed.map(row)}</div>
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

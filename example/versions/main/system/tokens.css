@@ -1,0 +1,99 @@
+/* Acme Tasks design system: colour tokens and base CSS of the boards.
+   Components and boards only use these names, never raw colours:
+   - ink-*      text, borders and grey planes (50 = page background … 900 = headings)
+   - accent-*   the brand: 600 accent text, 700 primary fills, 800 their hover, 500 focus rings, 50–200 tints
+   - surface    raised planes (cards, inputs); surface-2 = a plane nested inside one
+   - success-*, warning-*, danger-*   status colours, three steps each (50 fill, 200 border, 700 text)
+   `@theme static` writes out every variable, even the ones no class uses yet (the Colors board reads them all). */
+@import "tailwindcss";
+
+@theme static {
+  --color-ink-50: #f9fafb;
+  --color-ink-100: #f3f4f6;
+  --color-ink-200: #e5e7eb;
+  --color-ink-300: #d1d5db;
+  --color-ink-400: #9ca3af;
+  --color-ink-500: #6b7280;
+  --color-ink-600: #4b5563;
+  --color-ink-700: #374151;
+  --color-ink-800: #1f2937;
+  --color-ink-900: #111827;
+
+  --color-accent-50: #eff6ff;
+  --color-accent-100: #dbeafe;
+  --color-accent-200: #bfdbfe;
+  --color-accent-300: #93c5fd;
+  --color-accent-400: #60a5fa;
+  --color-accent-500: #3b82f6;
+  --color-accent-600: #2563eb;
+  --color-accent-700: #1d4ed8;
+  --color-accent-800: #1e40af;
+  --color-accent-900: #1e3a8a;
+
+  --color-surface: #ffffff;
+  --color-surface-2: #f9fafb;
+
+  --color-success-50: #ecfdf3;
+  --color-success-200: #abefc6;
+  --color-success-700: #067647;
+  --color-warning-50: #fffaeb;
+  --color-warning-200: #fedf89;
+  --color-warning-700: #b54708;
+  --color-danger-50: #fef3f2;
+  --color-danger-200: #fecdca;
+  --color-danger-700: #b42318;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Dark theme: the same names re-pointed when the frame has data-theme="dark" (the studio's Light / Dark switch).
+   Tailwind utilities read the variables where they are used, so no dark: variants are needed anywhere.
+   - ink flips: 50 = deepest plane … 900 = brightest text.
+   - accent keeps its roles in both themes: 600 = accent text and icons (4.5:1 or more on any surface),
+     700 = fills under white text (buttons, checked boxes), 800 = their hover, 500 = focus ring, 50–200 = tints. */
+:root { color-scheme: light; }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-ink-50: #0b0d10;
+  --color-ink-100: #16191e;
+  --color-ink-200: #262a31;
+  --color-ink-300: #363c45;
+  --color-ink-400: #5f6874;
+  --color-ink-500: #8d96a3;
+  --color-ink-600: #a9b1bc;
+  --color-ink-700: #c7cdd5;
+  --color-ink-800: #dfe3e8;
+  --color-ink-900: #f3f4f6;
+
+  --color-accent-50: #0f1a33;
+  --color-accent-100: #142347;
+  --color-accent-200: #1b2f60;
+  --color-accent-300: #253f84;
+  --color-accent-400: #2f52ab;
+  --color-accent-500: #3d66d4;
+  --color-accent-600: #5a82ee;
+  --color-accent-700: #3d6fe8;
+  --color-accent-800: #2f5bd0;
+  --color-accent-900: #23479f;
+
+  --color-surface: #13161b;
+  --color-surface-2: #181c22;
+
+  --color-success-50: #0b2a1c;
+  --color-success-200: #17603d;
+  --color-success-700: #6fdc9f;
+  --color-warning-50: #2d1d07;
+  --color-warning-200: #6e4a10;
+  --color-warning-700: #f8c46b;
+  --color-danger-50: #331310;
+  --color-danger-200: #7a2a22;
+  --color-danger-700: #fb9b90;
+}
+
+html,
+body {
+  background: var(--color-ink-50);
+  color: var(--color-ink-900);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
