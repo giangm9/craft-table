@@ -53,7 +53,7 @@ await run("coedit", async ({ browser, cleanup }) => {
     const ready = (p) => p.waitForFunction((t) => (document.querySelector("[data-meta-editor] [data-meta-field='title']")?.value ?? "").includes(t), { timeout: 15_000 }, title).then(() => true, () => false);
     ok((await ready(A)) && (await ready(B)), "the screen info form loads on both pages");
     await A.bringToFront();
-    await A.click("[data-meta-editor] [data-meta-field='desc']", { clickCount: 3 });
+    await A.click("[data-meta-editor] [data-meta-field='desc']", { count: 3 });
     await A.keyboard.down("Control"); await A.keyboard.press("a"); await A.keyboard.up("Control");
     await A.keyboard.type(DESC);
     await A.evaluate((t) => [...document.querySelectorAll("[data-meta-editor] button")].find((b) => b.textContent.includes(t))?.click(), UI.addScenario);

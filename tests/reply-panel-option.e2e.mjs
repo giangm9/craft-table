@@ -69,7 +69,7 @@ await run("reply-panel-option", async ({ browser, cleanup }) => {
   const w2 = await p2.$eval("[data-panel]", (el) => el.getBoundingClientRect().width);
   ok(Math.abs(w2 - (PANEL_DEFAULT + 200)) <= 2, `a reload keeps ${PANEL_DEFAULT + 200} (${w2})`);
   const g2 = await p2.$eval("[data-panel-resize]", (el) => { const r = el.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + 300 }; });
-  await p2.mouse.click(g2.x, g2.y, { clickCount: 2 });
+  await p2.mouse.click(g2.x, g2.y, { count: 2 });
   await sleep(300);
   const w3 = await p2.$eval("[data-panel]", (el) => el.getBoundingClientRect().width);
   ok(Math.round(w3) === PANEL_DEFAULT, `double-click → back to ${PANEL_DEFAULT} (${w3})`);
