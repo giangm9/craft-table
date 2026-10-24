@@ -20,7 +20,8 @@ craft-table runs as a small Node server inside your design project folder. Your 
 
 ## Quick start
 
-You need Node.js 22.13 or newer (24 recommended) and Git.
+You need Node.js 22.13 or newer (24 recommended), Git, and `unzip` (Puppeteer uses it to unpack the Chrome that Claude
+looks through).
 
 craft-table is not on the npm registry; install it from GitHub into a new folder (npm also downloads a Chrome,
 which Claude uses to look at the screens):

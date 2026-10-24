@@ -23,9 +23,10 @@
 # (studio/lib/vite-config.mjs). Working data — history, uploads, Claude's session (HOME) — lives in /project/data.
 FROM node:24-bookworm-slim
 
-# Fonts for the screenshots Claude takes of the boards (Latin with diacritics, Greek, Cyrillic…). tini runs as
+# unzip: Puppeteer unpacks Chrome with it. Fonts for the screenshots Claude takes of the boards (Latin with
+# diacritics, Greek, Cyrillic…). tini runs as
 # PID 1: it reaps the helper processes Chrome leaves behind (node as PID 1 would keep them as zombies).
-RUN apt-get update && apt-get install -y --no-install-recommends fonts-dejavu-core fonts-noto-core ca-certificates tini \
+RUN apt-get update && apt-get install -y --no-install-recommends fonts-dejavu-core fonts-noto-core ca-certificates tini unzip \
   && rm -rf /var/lib/apt/lists/*
 
 # Chrome for those screenshots lives outside HOME (HOME is in the project's data/ at run time).
