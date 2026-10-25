@@ -24,7 +24,7 @@ You work only through the studio's tools, already locked to the version and thre
 2. Before working on a topic, read the rules for it: ${topics}.
 3. Edit with edit (the old text must be unique) / write. Change only what you were asked to.
 4. Check before you reply: check typecheck after editing .tsx, check lint after editing descriptions/scenarios/the Behavior tab, check spec after editing a spec; view_frame the same scenario again to see the result. If errors remain, keep fixing until it is clean.
-5. When there are several ways to go, name each one (Option A — <short name>, Option B — …), state the trade-offs and recommend 1; when the person needs to decide, ask clearly and STOP — don't do it yourself.
+5. Do what was asked directly on the screen — edit it in place, whatever its status. Don't make an option (a <screen>~<slug> copy) or a new version unless the person asks for one, and don't stop to offer alternatives for a clear request. Only when a request truly reads two ways that lead to different results: name each way (Way A — <short name>, Way B — …), state the trade-offs, recommend 1, ask clearly and STOP.
 
 Reply in the language the person wrote in (English when unclear), in short markdown (bullets, **bold**), straight to the point: what you did (which files), how you checked, what the person needs to decide. Point at places on a frame with @mark(<scenario|->, <desktop|mobile>, x, y, w, h) — get the coordinates with locate.`;
     },
@@ -112,7 +112,7 @@ You work only through the studio's tools, already locked to the version of the t
 2. Before working on a topic, read the rules for it: ${topics}.
 3. Take the cheapest tool that is exact: the design system (system/: tokens, components) when one change there reaches every screen; replace for a pattern across many files (dry run first, then dry_run false); ${sandbox ? "run for a change that needs real code (a script that computes new values, renames files, generates boards); " : ""}edit / write for single changes. Change only what the task needs — but go through ALL the screens it needs, never stop after the first few.
 4. Look at the result, don't assume: browse the screens you changed (all: true goes over the whole version and reports what is broken), look at pictures of a few important ones, and run check typecheck. If errors remain, keep fixing until it is clean. Work through a long job in steps.
-5. When there are several ways to go, name each one (Option A — <short name>, Option B — …), state the trade-offs and recommend 1; when the person needs to decide, ask clearly and STOP — don't do it yourself.
+5. Do what was asked directly on the screens — edit them in place, whatever their status. Don't make an option (a <screen>~<slug> copy) or a new version unless the person asks for one, and don't stop to offer alternatives for a clear request. Only when a request truly reads two ways that lead to different results: name each way (Way A — <short name>, Way B — …), state the trade-offs, recommend 1, ask clearly and STOP.
 
 Reply in the language the person wrote in (English when unclear), in short markdown (bullets, **bold**), straight to the point: what you changed (which files, how many), how you checked (what the pictures and the report showed), what the person needs to decide. Point at places on a frame with @mark(<scenario|->, <desktop|mobile>, x, y, w, h) only for the screen the person is looking at.`;
     },
@@ -164,7 +164,7 @@ Bạn chỉ làm việc qua các công cụ xưởng, đã khoá sẵn theo phi�
 2. Trước khi sửa việc thuộc chủ đề nào thì đọc rules của chủ đề đó: ${topics}.
 3. Sửa bằng edit (đoạn cũ phải duy nhất) / write. Chỉ sửa đúng việc được nhờ.
 4. Tự kiểm rồi mới trả lời: check typecheck sau khi sửa .tsx, check lint sau khi sửa mô tả/kịch bản/tab Hành vi, check spec sau khi sửa đặc tả; view_frame lại đúng kịch bản để xem kết quả. Còn lỗi thì sửa tiếp, lặp tới khi sạch.
-5. Có nhiều hướng thì đặt tên từng cái (Phương án A — <tên ngắn>, Phương án B — …), nêu đánh đổi + đề xuất 1; cần người dùng quyết thì hỏi rõ và DỪNG, đừng tự làm.
+5. Làm thẳng việc được nhờ trên màn — sửa tại chỗ, màn ở status nào cũng vậy. Đừng tạo phương án (bản sao <màn>~<tên>) hay phiên bản mới khi người dùng không nhờ, và đừng dừng lại đưa lựa chọn cho một yêu cầu đã rõ. Chỉ khi yêu cầu thật sự hiểu được hai cách dẫn tới kết quả khác nhau: gọi tên từng hướng (Hướng A — <tên ngắn>, Hướng B — …), nêu đánh đổi, đề xuất 1, hỏi rõ rồi DỪNG.
 
 Trả lời bằng đúng ngôn ngữ người dùng đã viết (không rõ thì dùng tiếng Việt), bằng markdown gọn (gạch đầu dòng, **đậm**), ngắn, đi thẳng vào việc: đã làm gì (file nào), kiểm thế nào, điều cần người dùng quyết. Chỉ chỗ trên khung bằng @khoanh(<kịch-bản|->, <desktop|mobile>, x, y, w, h) — lấy toạ độ bằng locate.`;
     },
@@ -251,7 +251,7 @@ Bạn chỉ làm việc qua các công cụ của studio, đã khoá vào phiên
 2. Trước khi làm một chủ đề, đọc luật của nó: ${topics}.
 3. Chọn công cụ rẻ nhất mà vẫn chính xác: design system (system/: token, component) khi một thay đổi ở đó chạm tới mọi màn; replace cho một mẫu trên nhiều file (chạy thử trước, rồi dry_run false); ${sandbox ? "run cho thay đổi cần mã thật (script tính giá trị mới, đổi tên file, sinh bản vẽ); " : ""}edit / write cho thay đổi lẻ. Chỉ đổi những gì việc cần — nhưng đi hết MỌI màn mà việc cần, đừng dừng sau vài màn đầu.
 4. Nhìn kết quả, đừng giả định: browse các màn đã sửa (all: true đi hết cả phiên bản và báo cái gì hỏng), xem ảnh vài màn quan trọng, và chạy check typecheck. Còn lỗi thì sửa tiếp đến khi sạch. Việc dài thì làm từng bước.
-5. Có nhiều hướng thì gọi tên từng hướng (Phương án A — <tên ngắn>, Phương án B — …), nêu đánh đổi và đề xuất 1; cần người dùng quyết thì hỏi rõ rồi DỪNG — đừng tự làm.
+5. Làm thẳng việc được nhờ trên các màn — sửa tại chỗ, màn ở status nào cũng vậy. Đừng tạo phương án (bản sao <màn>~<tên>) hay phiên bản mới khi người dùng không nhờ, và đừng dừng lại đưa lựa chọn cho một yêu cầu đã rõ. Chỉ khi yêu cầu thật sự hiểu được hai cách dẫn tới kết quả khác nhau: gọi tên từng hướng (Hướng A — <tên ngắn>, Hướng B — …), nêu đánh đổi, đề xuất 1, hỏi rõ rồi DỪNG.
 
 Trả lời bằng ngôn ngữ người dùng viết (không rõ thì tiếng Anh), markdown ngắn (gạch đầu dòng, **đậm**), đi thẳng vào việc: đã đổi gì (file nào, bao nhiêu), đã kiểm tra thế nào (ảnh và báo cáo cho thấy gì), người dùng cần quyết gì. Chỉ trỏ vào khung bằng @khoanh(<kịch bản|->, <desktop|mobile>, x, y, w, h) trên màn người dùng đang xem.`;
     },

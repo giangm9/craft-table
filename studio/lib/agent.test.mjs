@@ -93,9 +93,12 @@ test("system prompt: reply in the language the person wrote in (the project's la
   assert.match(EN_SYSTEM_PROMPT, /Reply in the language the person wrote in \(English when unclear\)/);
 });
 
-test("system prompt: several ways to go → name each option (Option A — …) so the person can refer to it", () => {
-  assert.match(SYSTEM_PROMPT, /Phương án A — /);
-  assert.match(EN_SYSTEM_PROMPT, /Option A — /);
+test("system prompt: edit in place, an option only on request; two readings → name each way (Way A — …)", () => {
+  assert.match(SYSTEM_PROMPT, /Hướng A — /);
+  assert.match(EN_SYSTEM_PROMPT, /Way A — /);
+  assert.match(EN_SYSTEM_PROMPT, /edit it in place, whatever its status/);
+  assert.match(EN_SYSTEM_PROMPT, /Don't make an option .* unless the person asks for one/);
+  assert.doesNotMatch(EN_SYSTEM_PROMPT, /Option A — /);
 });
 
 test("systemPrompt: names the project + its description, the rule topics it really has, and its source repo (if any)", () => {
@@ -412,6 +415,16 @@ test("designSystemPrompt: tells Claude how a screen is mentioned and that its re
   assert.match(en, /@\[screen-id\]/);
   const vi = designSystemPrompt({ project: { name: "Acme", description: "", language: "vi", source: null }, topics: ["boards"], sandbox: false });
   assert.match(vi, /@\[screen-id\]/);
+});
+
+test("designSystemPrompt: edit the screens in place; an option or a new version only when the person asks", () => {
+  const en = designSystemPrompt({ project: { name: "Acme", description: "", language: "en", source: null }, topics: ["boards"], sandbox: false });
+  assert.match(en, /edit them in place, whatever their status/);
+  assert.match(en, /Don't make an option .* unless the person asks for one/);
+  assert.doesNotMatch(en, /Option A — /);
+  const vi = designSystemPrompt({ project: { name: "Acme", description: "", language: "vi", source: null }, topics: ["boards"], sandbox: false });
+  assert.match(vi, /Đừng tạo phương án .* khi người dùng không nhờ/);
+  assert.match(vi, /Hướng A — /);
 });
 
 test("sdkOptions: effort is passed to the SDK only when one was chosen", () => {
