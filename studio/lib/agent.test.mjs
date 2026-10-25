@@ -97,7 +97,9 @@ test("system prompt: edit in place, an option only on request; two readings → 
   assert.match(SYSTEM_PROMPT, /Hướng A — /);
   assert.match(EN_SYSTEM_PROMPT, /Way A — /);
   assert.match(EN_SYSTEM_PROMPT, /edit it in place, whatever its status/);
-  assert.match(EN_SYSTEM_PROMPT, /Don't make an option .* unless the person asks for one/);
+  assert.match(EN_SYSTEM_PROMPT, /Make an option .* only when the person asks for one — what they call a new version, another version, a variant or an alternative is an option/);
+  assert.match(EN_SYSTEM_PROMPT, /Never make or propose a new version of the whole design/);
+  assert.match(SYSTEM_PROMPT, /Không bao giờ tạo hay đề xuất phiên bản mới/);
   assert.doesNotMatch(EN_SYSTEM_PROMPT, /Option A — /);
 });
 
@@ -419,13 +421,16 @@ test("designSystemPrompt: tells Claude how a screen is mentioned and that its re
   assert.match(vi, /@\[screen-id\]/);
 });
 
-test("designSystemPrompt: edit the screens in place; an option or a new version only when the person asks", () => {
+test("designSystemPrompt: edit the screens in place; an option only when the person asks (their «new version» is an option); never a new version", () => {
   const en = designSystemPrompt({ project: { name: "Acme", description: "", language: "en", source: null }, topics: ["boards"], sandbox: false });
   assert.match(en, /edit them in place, whatever their status/);
-  assert.match(en, /Don't make an option .* unless the person asks for one/);
+  assert.match(en, /Make an option .* only when the person asks for one/);
+  assert.match(en, /a change that reaches several screens is one option, under the same name on each of them/);
+  assert.match(en, /Never make or propose a new version of the whole design/);
   assert.doesNotMatch(en, /Option A — /);
   const vi = designSystemPrompt({ project: { name: "Acme", description: "", language: "vi", source: null }, topics: ["boards"], sandbox: false });
-  assert.match(vi, /Đừng tạo phương án .* khi người dùng không nhờ/);
+  assert.match(vi, /Chỉ tạo phương án .* khi người dùng nhờ/);
+  assert.match(vi, /Không bao giờ tạo hay đề xuất phiên bản mới/);
   assert.match(vi, /Hướng A — /);
 });
 
