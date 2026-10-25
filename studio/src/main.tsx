@@ -26,7 +26,8 @@ import { LangSwitch } from "./i18n/LangSwitch";
 import { SpecPanel, type SpecKind } from "./SpecPanel";
 import { Sidebar } from "./Sidebar";
 import { loadProject } from "./project";
-import { allRefs, featureOf, isDesignThread, waitingForUser } from "../lib/thread-core.mjs";
+import { allRefs, attentionOn, featureOf, isDesignThread, needsAttention } from "../lib/thread-core.mjs";
+import { threadTitle } from "./i18n/threads";
 import { afterRemovePending, placeDrawn } from "../lib/ref-redraw.mjs";
 
 type VpMode = "both" | Viewport;
@@ -207,7 +208,10 @@ function App() {
   const claudeBusy = !!entry && versionThreads.some((t) => t.agent.state === "running" && (isDesignThread(t) || featureOf(t.entry) === featureOf(entry.id)));
   const activeThread = tParam && tParam !== "new" ? versionThreads.find((t) => t.id === tParam) : undefined;
   // Count in the board list: threads waiting for a person's answer (Claude spoke last) or in error.
-  const attention = useCallback((id: string) => threads.filter((t) => t.entry === id && t.version === version && (waitingForUser(t) || t.agent.state === "error")).length, [threads, version]);
+  // The red badge of a screen: conversations that wait for the person and concern it (a thread made on it, or a global conversation that mentions it).
+  const attention = useCallback((id: string) => attentionOn(threads, version, id).length, [threads, version]);
+  const attentionTitles = useCallback((id: string) => attentionOn(threads, version, id).map((t: Thread) => threadTitle(t.title)), [threads, version]);
+  const needing = versionThreads.filter(needsAttention).length;
 
   // Another board → drop the marks being composed (they belong to the old board).
   useEffect(() => { setPendingRefs([]); setRedraw((r) => (r?.kind === "pending" ? null : r)); }, [entry?.id]);
@@ -273,7 +277,7 @@ function App() {
             onClick={() => setParams({ rp: k === "history" ? "history" : null, hist: null })}
             className={cn("inline-flex min-w-0 items-center gap-1 px-1.5 py-2 text-[13px] font-medium whitespace-nowrap border-b-2 -mb-px", rightTab === k ? "border-accent-700 text-accent-800" : "border-transparent text-ink-500 hover:text-ink-800")}
           >
-            <Icon size={14} className="shrink-0" /> <span className="truncate">{label}</span>{k === "threads" && versionThreads.length ? <span className="text-xs text-ink-400 tabular-nums">{versionThreads.length}</span> : null}
+            <Icon size={14} className="shrink-0" /> <span className="truncate">{label}</span>{k === "threads" && needing > 0 ? <span data-attention-count className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[11px] font-semibold inline-flex items-center justify-center">{needing}</span> : k === "threads" && versionThreads.length ? <span className="text-xs text-ink-400 tabular-nums">{versionThreads.length}</span> : null}
           </button>
         ))}
       </div>
@@ -326,7 +330,7 @@ function App() {
             <p className="text-[11px] text-ink-500">{T.studioTagline}</p>
           </div>
         </div>
-        <Sidebar entries={entries} activeId={entry?.id} openCount={attention} peersAt={peersAt} onPick={(id) => setParams({ e: id, t: keepT(id), rf: null, nav: null, vp: null, s: null, spp: null, spec: null, hist: null, meta: null, opt: null })} />
+        <Sidebar entries={entries} activeId={entry?.id} openCount={attention} openTitles={attentionTitles} peersAt={peersAt} onPick={(id) => setParams({ e: id, t: keepT(id), rf: null, nav: null, vp: null, s: null, spp: null, spec: null, hist: null, meta: null, opt: null })} />
         {/* Foot: the viewer's language, then who is signed in. The same aside is the phone's board-list drawer. */}
         <div data-sidebar-foot className="p-3 border-t border-ink-200 space-y-2 text-xs text-ink-500">
           <div className="flex items-center gap-2">

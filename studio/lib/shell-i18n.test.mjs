@@ -27,6 +27,7 @@ function shellSample(t) {
   return Object.assign(s, {
     "scenarioCount#1": t.scenarioCount(1),
     "scenarioCount#3": t.scenarioCount(3),
+    attentionHint: t.attentionHint("A, B"),
     "versionOption#live": t.versionOption({ title: "V1", live: true }),
     "versionOption#other": t.versionOption({ title: "V1", live: false }),
     compareWith: t.compareWith("V2"),
@@ -83,6 +84,7 @@ test("shell (en): counts agree with their number", () => {
   const en = SHELL_TEXTS.en;
   assert.equal(en.scenarioCount(1), "1 scenario");
   assert.equal(en.scenarioCount(3), "3 scenarios");
+  assert.equal(en.attentionHint("A, B"), "Waiting for you: A, B");
   assert.equal(en.othersHere(1), "1 other person has the studio open");
   assert.equal(en.othersHere(4), "4 other people have the studio open");
   assert.equal(en.boardRowTitle({ title: "Today", n: 1 }), "Today · 1 scenario");
@@ -106,6 +108,7 @@ const VI_SHELL = {
   editScreenInfo: "Sửa thông tin màn",
   "scenarioCount#1": "1 kịch bản",
   "scenarioCount#3": "3 kịch bản",
+  attentionHint: "Đang chờ bạn: A, B",
   version: "Phiên bản",
   "versionOption#live": "V1 · đang chạy",
   "versionOption#other": "V1",

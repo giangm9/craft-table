@@ -73,6 +73,8 @@ const en = {
   optionRowTitle: ({ name, of, status }: { name: string; of: string; status: string }) => `Option “${name}” of ${of} · ${status}`,
   boardRowTitle: ({ title, n }: { title: string; n: number }) => `${title} · ${scenariosEn(n)}`,
   changedHint: "Changed from the source version",
+  /** Title of the red badge on a screen: the conversations waiting for the person that mention the screen. */
+  attentionHint: (titles: string) => `Waiting for you: ${titles}`,
   changedLabel: "changed from the source version",
   viewingNow: (names: string) => `Viewing: ${names}`,
 
@@ -153,6 +155,7 @@ const vi: typeof en = {
   optionRowTitle: ({ name, of, status }) => `Phương án “${name}” của ${of} · ${status}`,
   boardRowTitle: ({ title, n }) => `${title} · ${scenariosVi(n)}`,
   changedHint: "Khác bản nguồn",
+  attentionHint: (titles) => `Đang chờ bạn: ${titles}`,
   changedLabel: "đã đổi so với bản nguồn",
   viewingNow: (names) => `Đang xem: ${names}`,
 

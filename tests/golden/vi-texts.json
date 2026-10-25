@@ -789,6 +789,11 @@
       "two": "undefined · undefined kịch bản"
     },
     "changedHint": "Khác bản nguồn",
+    "attentionHint": {
+      "params": "Đang chờ bạn: ‹a0›",
+      "one": "Đang chờ bạn: 1",
+      "two": "Đang chờ bạn: 2"
+    },
     "changedLabel": "đã đổi so với bản nguồn",
     "viewingNow": {
       "params": "Đang xem: ‹a0›",

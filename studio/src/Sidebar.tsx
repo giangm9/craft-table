@@ -30,12 +30,14 @@ type Props = {
   entries: Entry[];
   activeId?: string;
   openCount: (id: string) => number;
+  /** Titles of the conversations behind a screen's badge (its tooltip). */
+  openTitles?: (id: string) => string[];
   /** Other people viewing this screen (same version) → coloured dots. */
   peersAt?: (id: string) => Who[];
   onPick: (id: string) => void;
 };
 
-export function Sidebar({ entries, activeId, openCount, peersAt, onPick }: Props) {
+export function Sidebar({ entries, activeId, openCount, openTitles, peersAt, onPick }: Props) {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<Set<string>>(() => loadOpen() ?? new Set());
   const active = entries.find((e) => e.id === activeId);
@@ -165,7 +167,7 @@ export function Sidebar({ entries, activeId, openCount, peersAt, onPick }: Props
                                 <span data-changed={e.id} title={T.changedHint} aria-label={T.changedLabel} className={cn("w-2 h-2 rounded-full shrink-0", isActive ? "bg-white" : "bg-amber-500")} />
                               )}
                               {n > 0 ? (
-                                <Badge n={n} inverted={isActive} />
+                                <Badge n={n} inverted={isActive} title={T.attentionHint((openTitles?.(e.id) ?? []).join(", "))} />
                               ) : sc > 0 ? (
                                 <span className={cn("inline-flex items-center gap-0.5 text-[11px] tabular-nums shrink-0", isActive ? "text-white" : "text-ink-400")} aria-label={T.scenarioCount(sc)}>
                                   <Layers size={11} />{sc}
@@ -189,9 +191,9 @@ export function Sidebar({ entries, activeId, openCount, peersAt, onPick }: Props
   );
 }
 
-function Badge({ n, inverted }: { n: number; inverted?: boolean }) {
+function Badge({ n, inverted, title }: { n: number; inverted?: boolean; title?: string }) {
   return (
-    <span className={cn(
+    <span data-attention title={title} className={cn(
       "shrink-0 min-w-[20px] h-5 px-1.5 rounded-full text-[11px] font-semibold inline-flex items-center justify-center normal-case tracking-normal",
       inverted ? "bg-surface text-accent-800" : "bg-rose-600 text-white",
     )}>{n}</span>

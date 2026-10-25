@@ -431,3 +431,36 @@ test("plainMentions: a mention in a text that becomes a title is written as the 
   assert.equal(plainMentions("no mention here"), "no mention here");
   assert.equal(plainMentions("@[../x] stays"), "@[../x] stays");
 });
+
+// ── which screens a conversation concerns, and who needs the person ──
+test("threadScreens: a thread of one screen is about that screen; a global conversation is about the screens it mentions and the screens its marks are on", async () => {
+  const { threadScreens } = await import("./thread-core.mjs");
+  assert.deepEqual(threadScreens({ entry: "screens/a", messages: [{ text: "see @[screens/b]", refs: [] }] }), ["screens/a"], "a screen thread ignores mentions");
+  const g = { entry: "*", messages: [
+    { role: "user", text: "make @[screens/a] like @[screens/b~opt]", refs: [] },
+    { role: "claude", text: "Done on @[screens/a] and @[screens/c]", refs: [] },
+    { role: "user", text: "and here", refs: [{ entry: "screens/d", viewport: "desktop", rect: { x: 0, y: 0, w: 1, h: 1 } }, { entry: "screens/e", removed: { at: "x" } }] },
+  ] };
+  assert.deepEqual(threadScreens(g).sort(), ["screens/a", "screens/b~opt", "screens/c", "screens/d"], "mentions of both sides, marks that are still there, each once");
+  assert.deepEqual(threadScreens({ entry: "*", messages: [{ text: "no screen", refs: [] }] }), []);
+  assert.deepEqual(threadScreens(null), []);
+});
+
+test("attentionOn: conversations waiting for the person (Claude spoke last) or failed, that concern the screen, in this version", async () => {
+  const { attentionOn, needsAttention } = await import("./thread-core.mjs");
+  const mk = (id, entry, version, last, state = "idle", text = "") => ({ id, entry, version, status: "open", agent: { state }, messages: [{ role: "user", text: `${text} hi`, refs: [] }, { role: last, text: `${text} re`, refs: [] }] });
+  const threads = [
+    mk("t1", "*", "v1", "claude", "idle", "@[screens/a]"),   // waiting for you, mentions a
+    mk("t2", "*", "v1", "user", "idle", "@[screens/a]"),     // you spoke last: nothing to answer
+    mk("t3", "*", "v1", "user", "error", "@[screens/a]"),    // failed: needs you
+    mk("t4", "*", "v2", "claude", "idle", "@[screens/a]"),   // another version
+    mk("t5", "*", "v1", "claude", "idle", "@[screens/b]"),   // another screen
+    mk("t6", "screens/a", "v1", "claude"),                   // a thread made on screen a
+    { ...mk("t7", "*", "v1", "claude", "idle", "@[screens/a]"), status: "closed" },
+  ];
+  assert.deepEqual(attentionOn(threads, "v1", "screens/a").map((t) => t.id), ["t1", "t3", "t6"]);
+  assert.deepEqual(attentionOn(threads, "v1", "screens/b").map((t) => t.id), ["t5"]);
+  assert.deepEqual(attentionOn(threads, "v1", "screens/z"), []);
+  assert.equal(needsAttention(threads[1]), false);
+  assert.equal(needsAttention(threads[2]), true);
+});

@@ -7,7 +7,7 @@
 //   • the mention is shown as a link with the screen's title; clicking it goes to that screen and the conversation STAYS open
 //   • a message sent while looking at another screen says which one; there is a Mark button
 //   • a running turn makes every screen say Claude is editing it; a reload keeps everything; the console stays clean
-// Screenshot: tests/shots/global-chat-1280.png
+// Screenshots: tests/shots/global-chat-1280.png, global-chat-badge-1280.png
 import fs from "node:fs";
 import { DESKTOP, UI, api, gotoReady, newPage, ok, projectFile, run, shot, sleep, studioUrl, until } from "./lib/e2e.mjs";
 
@@ -33,6 +33,12 @@ await run("global-chat", async ({ browser, cleanup }) => {
   const panelHas = (text) => page.waitForFunction((s, t) => document.querySelector(s)?.textContent.includes(t), { timeout: 10_000 }, PANEL, text);
   const clickPanel = (text) => page.evaluate((s, t) => [...document.querySelectorAll(`${s} button`)].find((b) => b.textContent.includes(t))?.click(), PANEL, text);
 
+  // Whatever the page creates is removed at the end, even when a check fails first (queued before anything is sent).
+  cleanup("conversations made by the page", async () => {
+    for (const t of (await api("GET", `/__api/threads?entry=${encodeURIComponent("*")}`)).threads) {
+      if (t.messages[0]?.text.startsWith("make @[")) await api("DELETE", `/__api/threads/${t.id}`);
+    }
+  });
   // A thread from before: made on one screen.
   const { thread: legacy } = await api("POST", "/__api/threads", { entry: A, title: "E2E legacy screen thread", text: "an old thread of the task list", refs: [], noAgent: true });
   cleanup(`thread ${legacy.id}`, () => api("DELETE", `/__api/threads/${legacy.id}`));
@@ -73,7 +79,8 @@ await run("global-chat", async ({ browser, cleanup }) => {
   ok(created[0].entry === "*", `the conversation belongs to the version: entry "*" (${created[0].entry})`);
   ok(created[0].viewing === B, `the screen being looked at is sent as viewing (${created[0].viewing})`);
   ok(created[0].text === `make @[${A}] tighter, like @[${B}]`, `the mentions travel in the text (${created[0].text})`);
-  const mine = (await api("GET", "/__api/threads?entry=*")).threads.find((t) => t.messages[0]?.text.startsWith("make @["));
+  let mine;
+  await until(async () => { mine = (await api("GET", "/__api/threads?entry=*")).threads.find((t) => t.messages[0]?.text.startsWith("make @[")); return !!mine; }, "the server stored the conversation");
   if (mine) cleanup(`thread ${mine.id}`, () => api("DELETE", `/__api/threads/${mine.id}`)); // queued first: it runs even if a check below fails
   ok(!!mine, "the server has it as a global thread");
   ok(mine.title === "make list tighter, like detail", `the title reads well, no raw @[…] in it ("${mine.title}")`);
@@ -94,6 +101,27 @@ await run("global-chat", async ({ browser, cleanup }) => {
   const on = await page.$eval("[data-message-on]", (el) => el.textContent);
   ok(on.includes(UI.lookingAt) && on.includes("Task list"), `a message sent while looking at another screen says which one ("${on.trim()}")`);
   await shot(page, "global-chat-1280");
+
+  // ── The quiet link: a conversation that waits for you shows on the screens it mentions, and on the tab ──
+  const row = (id) => `a[href="?e=${encodeURIComponent(id)}"]`;
+  const badge = (id) => page.$eval(row(id), (a) => { const b = a.querySelector("[data-attention]"); return b ? b.textContent.trim() : null; }).catch(() => null);
+  await api("POST", `/__api/threads/${mine.id}/claude`, { text: `Done on @[${A}] and @[${B}].`, refs: [] });
+  await gotoReady(page, studioUrl({ e: B }));
+  await page.waitForSelector(`${row(A)} [data-attention]`, { timeout: 10_000 });
+  ok((await badge(A)) === "1" && (await badge(B)) === "1", `the screens the conversation mentions show it waits for you (A ${await badge(A)}, B ${await badge(B)})`);
+  await shot(page, "global-chat-badge-1280");
+  const hint = await page.$eval(`${row(A)} [data-attention]`, (el) => el.getAttribute("title"));
+  ok(hint.startsWith(UI.waitingForYouHint) && hint.includes("make list tighter"), `hovering the badge names the conversation ("${hint}")`);
+  const others = await page.$$eval("nav a[data-option-of], nav a[href^='?e=']", (as) => as.filter((a) => a.querySelector("[data-attention]")).map((a) => a.getAttribute("href")));
+  ok(others.length === 2, `no other screen is marked (${others.join(", ")})`);
+  const tabBadge = await page.$eval(`${PANEL} [role=tab] [data-attention-count]`, (el) => el.textContent.trim());
+  ok(tabBadge === "1", `the Conversation tab says how many conversations wait for you (${tabBadge})`);
+  const preview = await page.$eval(`${PANEL}`, (el) => el.textContent);
+  ok(preview.includes("Claude: Done on Task list and Task detail".replace("Task list", "list").replace("Task detail", "detail")) && !preview.includes("@["), "the list's preview line names the screens without the raw @[…]");
+  await api("POST", `/__api/threads/${mine.id}/messages`, { text: "thanks, go on", refs: [], noAgent: true });
+  await gotoReady(page, studioUrl({ e: B }));
+  await sleep(600);
+  ok((await badge(A)) === null && (await badge(B)) === null && (await page.$(`${PANEL} [data-attention-count]`)) === null, "once you answer, the badges are gone");
 
   // ── A running turn: every screen says Claude is editing ──
   const file = projectFile("threads", `${mine.id}.json`);

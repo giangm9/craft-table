@@ -1,10 +1,10 @@
 // The "Conversation" tab: the threads of the open board. A thread is a whole conversation between people and Claude
 // (Claude runs in the background and can edit the board). Marking an area on the canvas attaches a reference to the
 // message being written ([#n] in the text); clicking the reference brings that area to the middle of the canvas.
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, AtSign, CheckCheck, Hourglass, ImagePlus, LayoutPanelLeft, Loader2, Maximize2, MessageSquarePlus, Minimize2, Pencil, RotateCcw, Send, Sparkles, Square, SquareDashedMousePointer, Trash2, Undo2, X } from "lucide-react";
 import { cn } from "../ui";
-import { allRefs, dropMark, waitingForUser, DESIGN_ENTRY, featureOf, isDesignThread, mentionsOf, splitMentions } from "../lib/thread-core.mjs";
+import { allRefs, dropMark, waitingForUser, DESIGN_ENTRY, featureOf, isDesignThread, mentionsOf, plainMentions, splitMentions } from "../lib/thread-core.mjs";
 import { replyBlocks, replyPlain } from "../lib/reply-md.mjs";
 import { enterAction } from "../lib/composer-keys.mjs";
 import { api, refScenario, scenariosOf, uploadUrl, type Entry, type Ref, type Thread } from "./api";
@@ -234,7 +234,17 @@ function Composer(p: { screens: ScreenItem[]; noMarks?: boolean; placeholder: st
   const menuOpen = !!mq && !menuOff;
   const items = useMemo(() => (mq ? p.screens.filter((s) => !mq.query || s.title.toLowerCase().includes(mq.query) || s.id.toLowerCase().includes(mq.query)).slice(0, 30) : []), [mq, p.screens]);
   useEffect(() => { setMenuIdx(0); }, [mq?.query]);
-  const putCaret = (pos: number) => { setCaret(pos); requestAnimationFrame(() => { const ta = taRef.current; ta?.focus(); ta?.setSelectionRange(pos, pos); }); };
+  // The caret is put back RIGHT AFTER the new text is drawn (a layout effect, not a later frame): whoever types fast must not
+  // have the caret jump back under the letters already typed.
+  const caretTo = useRef<number | null>(null);
+  const putCaret = (pos: number) => { caretTo.current = pos; setCaret(pos); };
+  useLayoutEffect(() => {
+    if (caretTo.current == null) return;
+    const ta = taRef.current;
+    ta?.focus();
+    ta?.setSelectionRange(caretTo.current, caretTo.current);
+    caretTo.current = null;
+  });
   const chooseScreen = (s: ScreenItem) => {
     if (!mq) return;
     const ins = `@[${s.id}] `;
@@ -604,7 +614,7 @@ export function ThreadsPanel(p: Props) {
           <p className="font-medium text-sm text-ink-900 line-clamp-2 flex-1" title={titleOf(t)}>{titleOf(t)}</p>
           <StatusBadge t={t} />
         </div>
-        {last && <p className="mt-0.5 text-xs text-ink-500 truncate">{last.role === "claude" ? T.fromClaude(replyPlain(last.text)) : last.text || ((last.images?.length ?? 0) > 0 ? T.lastImage : T.lastMark)}</p>}
+        {last && <p className="mt-0.5 text-xs text-ink-500 truncate">{last.role === "claude" ? T.fromClaude(plainMentions(replyPlain(last.text))) : plainMentions(last.text) || ((last.images?.length ?? 0) > 0 ? T.lastImage : T.lastMark)}</p>}
         <p className="mt-0.5 text-[11px] text-ink-400">{T.messageCount(t.messages.length)} · {hm(t.updatedAt)}{!isDesignThread(t) && t.entry !== p.entry.id && <span data-thread-on> · {onLabel(t.entry)}</span>}</p>
       </button>
     );

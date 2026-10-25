@@ -202,11 +202,32 @@ export function textWithThreadMarks(thread, m, refs = allRefs(thread)) {
   return String(m.text ?? "").replace(/\[#(\d+)\]/g, (s, k) => { const r = mine[Number(k) - 1]; return r ? `[#${r.n}]` : s; });
 }
 
+/**
+ * The screens a thread is about: its own screen (a thread made on one screen), or — for a global conversation — every
+ * screen a message mentions with @[id] and every screen a mark (still there) was drawn on. This is the quiet link between
+ * a conversation and the screens: what the conversation needs from the person shows on the screens it names.
+ */
+export function threadScreens(t) {
+  if (!t) return [];
+  if (!isDesignThread(t)) return t.entry ? [t.entry] : [];
+  const out = new Set();
+  for (const m of t.messages ?? []) {
+    for (const id of mentionsOf(m.text)) out.add(id);
+    for (const r of m.refs ?? []) if (r.entry && !r.removed) out.add(r.entry);
+  }
+  return [...out];
+}
+
 /** Claude spoke last (a question / a proposal) and is idle → waiting for the person to answer. */
 export function waitingForUser(t) {
   const last = t.messages[t.messages.length - 1];
   return t.status === "open" && t.agent?.state !== "running" && !!last && last.role === "claude";
 }
+
+/** The thread needs the person: Claude is waiting for the answer, or the turn failed. */
+export const needsAttention = (t) => waitingForUser(t) || t.agent?.state === "error";
+/** The open conversations of a version that need the person and concern the screen (the red badge of the screen's row). */
+export const attentionOn = (threads, version, entryId) => threads.filter((t) => t.version === version && needsAttention(t) && threadScreens(t).includes(entryId));
 
 /** The person's messages after Claude's last reply — what the agent has to handle. */
 export function pendingUserMessages(t) {

@@ -60,6 +60,7 @@ const en = {
   conversation: "Conversation", // the right panel's tab — shell.ts conversation
   history: "History", // the right panel's other tab — shell.ts history
   lookingAt: "looking at", // on a whole-design message sent while looking at another screen — threads.ts lookingAt
+  waitingForYouHint: "Waiting for you", // title of the red badge on a screen row — shell.ts attentionHint
   newThread: "New thread", // the button that starts a thread — threads.ts newThread
   mark: "Mark", // the composer's mark button — shell.ts / threads.ts mark
 };
@@ -102,6 +103,7 @@ const vi = {
   conversation: "Hội thoại",
   history: "Lịch sử",
   lookingAt: "đang xem",
+  waitingForYouHint: "Đang chờ bạn",
   newThread: "Luồng mới",
   mark: "Khoanh",
 };
