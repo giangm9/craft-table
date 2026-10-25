@@ -21,7 +21,8 @@ const MAX_FILE_BYTES = 1_500_000;
 const MAX_FRAMES = 40;        // frames one browse call may list
 const MAX_ALL_FRAMES = 600;   // frames browse all: true goes over
 const MAX_PICTURES = 6;
-const BROWSE_PARALLEL = 3;
+const BROWSE_PARALLEL = 3;    // frames loading at once when pictures are taken (shooting itself goes one at a time)
+const SWEEP_PARALLEL = 8;     // frames at once when only measuring (all: true, or more frames than pictures)
 const RUN_MAX_S = 300, RUN_DEFAULT_S = 120;
 const OUT_MAX = 12_000;       // characters of command output given back
 
@@ -145,20 +146,37 @@ export function createDesignTools({ root, ctx, shots, sandbox = null, lang = "en
       }
       const withPictures = !all && list.length <= MAX_PICTURES;
       const results = new Array(list.length);
+      const failed = (e) => ({ png: null, height: 0, errors: [String(e?.message ?? e).slice(0, 200)], boardError: true });
+      // A picture is one page load per frame; measuring only goes screen by screen — every scenario of a screen in one
+      // page load (shots.inspectScenarios).
+      const tasks = [];
+      if (withPictures) list.forEach((f, i) => tasks.push([i]));
+      else {
+        const byScreen = new Map();
+        list.forEach((f, i) => {
+          const k = `${f.entry}\n${f.viewport}\n${f.theme ?? ""}`;
+          if (!byScreen.has(k)) { byScreen.set(k, []); tasks.push(byScreen.get(k)); }
+          byScreen.get(k).push(i);
+        });
+      }
       let next = 0;
       const worker = async () => {
-        while (next < list.length) {
-          const i = next++;
-          const f = list[i];
+        while (next < tasks.length) {
+          const idx = tasks[next++];
+          const f = list[idx[0]];
           try {
-            const r = await shots.inspect({ version: ctx.version, entry: f.entry, scenario: f.scenario === "-" ? undefined : f.scenario, viewport: f.viewport, theme: f.theme, evalJs, shot: withPictures });
-            results[i] = { f, r };
+            if (withPictures) {
+              results[idx[0]] = { f, r: await shots.inspect({ version: ctx.version, entry: f.entry, scenario: f.scenario === "-" ? undefined : f.scenario, viewport: f.viewport, theme: f.theme, evalJs, shot: true }) };
+            } else {
+              const rs = await shots.inspectScenarios({ version: ctx.version, entry: f.entry, scenarios: idx.map((i) => list[i].scenario ?? "-"), viewport: f.viewport, theme: f.theme, evalJs });
+              idx.forEach((i, k) => { results[i] = { f: list[i], r: rs[k] ?? failed("no result") }; });
+            }
           } catch (e) {
-            results[i] = { f, r: { png: null, height: 0, errors: [String(e?.message ?? e).slice(0, 200)], boardError: true } };
+            for (const i of idx) results[i] = { f: list[i], r: failed(e) };
           }
         }
       };
-      await Promise.all(Array.from({ length: Math.min(BROWSE_PARALLEL, list.length) }, worker));
+      await Promise.all(Array.from({ length: Math.min(withPictures ? BROWSE_PARALLEL : SWEEP_PARALLEL, tasks.length) }, worker));
       const problems = (r) => [...(r.boardError ? ["the board did not draw"] : []), ...r.errors, ...(r.evalError ? [`eval: ${r.evalError}`] : [])];
       const lines = results.map(({ f, r }) => T("browseLine", { entry: f.entry, scenario: f.scenario, viewport: f.viewport, height: r.height, problems: problems(r), value: r.value === undefined ? undefined : JSON.stringify(r.value) }));
       const broken = results.filter(({ r }) => problems(r).length);

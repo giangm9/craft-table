@@ -19,15 +19,17 @@ function fixture(over = {}) {
   fs.writeFileSync(path.join(b, "b.tsx"), 'z("p-3");\n');
   fs.writeFileSync(path.join(b, "b.meta.json"), JSON.stringify({ title: "B", scenarios: [{ id: "only", title: "Only" }] }));
   fs.writeFileSync(path.join(v, "system", "t.css"), "--a: 3px;\n");
-  const inspected = [];
+  const inspected = [], swept = [];
   const shots = {
-    inspect: async (a) => { inspected.push(a); return { png: Buffer.from([0x89, 0x50, 0x4e, 0x47, 1]), height: 800, errors: a.entry === "screens/b" ? ["pageerror: boom"] : [], boardError: false, value: a.evalJs ? { n: 3 } : undefined }; },
+    inspect: async (a) => { inspected.push(a); return { png: a.shot === false ? null : Buffer.from([0x89, 0x50, 0x4e, 0x47, 1]), height: 800, errors: a.entry === "screens/b" ? ["pageerror: boom"] : [], boardError: false, value: a.evalJs ? { n: 3 } : undefined }; },
+    // One page load per screen: every scenario of it, in order (lib/shots.mjs).
+    inspectScenarios: async (a) => { swept.push(a); return Promise.all(a.scenarios.map((scenario) => shots.inspect({ ...a, scenario, shot: false }))); },
   };
   const ran = [];
   const sandbox = { backend: "process", run: async (a) => { ran.push(a); return { code: 0, stdout: "hello\n", stderr: "", applied: ["boards/screens/a.tsx"], deleted: [], rejected: [{ rel: "boards/x.sh", reason: "not an editable file type" }], conflicts: [] }; } };
   const tools = createDesignTools({ root, ctx: { version: "ban-1", threadId: "t_1", entry: null }, shots, sandbox, lang: "en", ...over });
   const by = Object.fromEntries(tools.map((t) => [t.name, t]));
-  return { root, v, by, tools, inspected, ran, read: (rel) => fs.readFileSync(path.join(v, rel), "utf8") };
+  return { root, v, by, tools, inspected, swept, ran, read: (rel) => fs.readFileSync(path.join(v, rel), "utf8") };
 }
 const textOf = (r) => r.content.filter((c) => c.type === "text").map((c) => c.text).join("\n");
 
@@ -96,6 +98,8 @@ test("browse: all=true goes over every scenario of every screen, with no picture
   const f = fixture();
   const r = await f.by.browse.handler({ all: true });
   assert.equal(f.inspected.length, 3);
+  // Screen by screen: a's two scenarios in one page load, b's one.
+  assert.deepEqual(f.swept.map((s) => [s.entry, s.scenarios]), [["screens/a", ["one", "two"]], ["screens/b", ["only"]]]);
   assert.equal(r.content.filter((c) => c.type === "image").length, 0);
   const t = textOf(r);
   assert.match(t, /3 frames/);

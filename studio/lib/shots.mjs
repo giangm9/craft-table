@@ -6,6 +6,25 @@
 const WIDTH = { desktop: 1280, mobile: 390 };
 const PAD = 32;
 const MAX_H = 2000;
+// After the board is built, the page is "settled" once no request has been in flight for QUIET_MS (late images, fonts,
+// lazy modules), and the fonts are ready — at most SETTLE_MAX_MS. A fixed 400 ms wait was most of a sweep's time.
+const QUIET_MS = 150;
+const SETTLE_MAX_MS = 1500;
+const POLL_MS = 50; // waitForFunction checks every POLL_MS
+
+/** Resolve once `inflight` (a Set of requests the page has open) has been empty for quietMs, or after maxMs. */
+export async function waitQuiet(inflight, { quietMs = QUIET_MS, maxMs = SETTLE_MAX_MS, stepMs = 25 } = {}) {
+  const start = Date.now();
+  let quietSince = inflight.size ? null : start;
+  while (Date.now() - start < maxMs) {
+    await new Promise((r) => setTimeout(r, stepMs));
+    const now = Date.now();
+    if (inflight.size) quietSince = null;
+    else if (quietSince == null) quietSince = now;
+    else if (now - quietSince >= quietMs) return true;
+  }
+  return false;
+}
 
 export function frameUrl(base, { version, entry, scenario, theme = "light" }) {
   return `${base}/frame?v=${version}&e=${encodeURIComponent(entry)}${scenario && scenario !== "-" ? `&s=${encodeURIComponent(scenario)}` : ""}&th=${theme}`;
@@ -78,15 +97,25 @@ export function createShots({ base, tool = "", externalOrigins = [], idleMs = 30
   // Schedule the close only when NO page is in use (another turn may be shooting a spec page for minutes).
   const armIdle = () => { clearTimeout(timer); if (busy > 0) return; timer = setTimeout(() => { if (busy === 0) api.close(); }, idleMs); timer.unref?.(); };
 
-  /** Open a page at the URL with the frame's width, run fn(page), always close the page. */
-  async function withPage(viewport, url, fn, version, before = null) {
+  /**
+   * Open a page at the URL with the frame's width, run fn(page), always close the page.
+   * front: fn takes a picture → it runs one page at a time, the page brought to front (shooting a background tab can
+   * hang). Measuring only (front: false) needs neither, so a sweep of many frames runs in parallel all the way.
+   */
+  async function withPage(viewport, url, fn, version, before = null, { front = true } = {}) {
     busy++;
     let p = null;
     try {
       const b = await getBrowser();
       p = await b.newPage();
       await p.setRequestInterception(true);
-      p.on("request", (r) => (allowedRequest(r.url(), r.method(), { origin, version, tool, externalOrigins }) ? r.continue() : r.abort("blockedbyclient")).catch(() => {}));
+      const inflight = new Set();
+      p.on("request", (r) => {
+        inflight.add(r);
+        (allowedRequest(r.url(), r.method(), { origin, version, tool, externalOrigins }) ? r.continue() : r.abort("blockedbyclient")).catch(() => {});
+      });
+      p.on("requestfinished", (r) => inflight.delete(r));
+      p.on("requestfailed", (r) => inflight.delete(r));
       const d = viewport === "desktop" ? desktop() : { w: WIDTH[viewport] ?? 390, h: 800 };
       await p.setViewport({ width: d.w, height: d.h });
       const errors = [];
@@ -95,11 +124,13 @@ export function createShots({ base, tool = "", externalOrigins = [], idleMs = 30
       // The "built" signal is #root having content (the board loads dynamically after DOMContentLoaded) — not "load"
       // of every resource: a sluggish shared machine can hold "load" for a very long time after the board is drawn.
       await p.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
-      await p.waitForFunction(() => document.getElementById("root")?.children.length, { timeout: 45_000 }).catch(() => {});
-      await new Promise((r) => setTimeout(r, 400));
-      // Pages load in parallel; measuring + SHOOTING go one page at a time, the page brought to front (shooting a
-      // background tab can hang).
-      return await exclusive(async () => { await p.bringToFront(); return fn(p, errors); });
+      // polling by time, not Puppeteer's default (requestAnimationFrame): a tab that is not in front gets no animation
+      // frames, so with several pages open at once all but one waited the full timeout (measured: 45 s each).
+      await p.waitForFunction(() => document.getElementById("root")?.children.length, { timeout: 45_000, polling: POLL_MS }).catch(() => {});
+      await waitQuiet(inflight);
+      await Promise.race([p.evaluate(() => document.fonts.ready.then(() => true)), new Promise((r) => setTimeout(r, 1000))]).catch(() => {});
+      // Pages load in parallel; SHOOTING goes one page at a time, the page brought to front.
+      return front ? await exclusive(async () => { await p.bringToFront(); return fn(p, errors, inflight); }) : await fn(p, errors, inflight);
     } finally {
       await p?.close().catch(() => {});
       busy--;
@@ -123,25 +154,56 @@ export function createShots({ base, tool = "", externalOrigins = [], idleMs = 30
    * the page reported (uncaught errors, console errors, requests that failed), whether the board itself failed to draw, and the
    * JSON result of `evalJs` — a JavaScript expression run INSIDE the page (e.g. a count or a size); it sees only that frame.
    */
+  const measure = async (p, errors, { viewport, part, evalJs, shot }) => {
+    const height = await p.evaluate(() => document.documentElement.scrollHeight);
+    const boardError = await p.evaluate(() => !!document.querySelector("[data-board-error]"));
+    let value, evalError;
+    if (evalJs) {
+      try { value = await p.evaluate(`(async () => (${evalJs}))()`); } catch (e) { evalError = String(e?.message ?? e).slice(0, 300); }
+    }
+    let png = null;
+    if (shot) {
+      png = Buffer.from(part === "full"
+        ? await p.screenshot({ captureBeyondViewport: true, clip: { x: 0, y: 0, width: viewport === "desktop" ? desktop().w : WIDTH[viewport] ?? 390, height: Math.min(height, MAX_H) } })
+        : await p.screenshot());
+    }
+    return { png, errors: [...errors], height, boardError, value, evalError };
+  };
+  const listenProblems = (p, errors) => {
+    p.on("console", (m) => { if (m.type() === "error" && !NOISE.test(m.text())) errors.push(`console: ${m.text().slice(0, 200)}`); });
+    p.on("response", (r) => { if (r.status() >= 400 && !r.url().endsWith("/favicon.ico")) errors.push(`http ${r.status()}: ${r.url().replace(origin, "").slice(0, 160)}`); });
+  };
   api.inspect = ({ version, entry, scenario, viewport = "desktop", theme = "light", part = "top", evalJs, shot = true }) =>
-    withPage(viewport, frameUrl(base, { version, entry, scenario, theme }), async (p, errors) => {
-      const height = await p.evaluate(() => document.documentElement.scrollHeight);
-      const boardError = await p.evaluate(() => !!document.querySelector("[data-board-error]"));
-      let value, evalError;
-      if (evalJs) {
-        try { value = await p.evaluate(`(async () => (${evalJs}))()`); } catch (e) { evalError = String(e?.message ?? e).slice(0, 300); }
+    withPage(viewport, frameUrl(base, { version, entry, scenario, theme }), (p, errors) => measure(p, errors, { viewport, part, evalJs, shot }),
+      version, listenProblems, { front: shot });
+
+  /**
+   * inspect (no picture) of many scenarios of ONE screen in one page load: the frame mounts each scenario from scratch
+   * (frame-entry.tsx __craftShow) instead of loading ~100–230 modules again — a page load per frame is what made a sweep
+   * of a whole version take minutes. Returns one result per scenario, in order. When the page cannot switch (the board
+   * did not load, a hot reload in between), the rest are inspected one page load each, as before.
+   */
+  api.inspectScenarios = async ({ version, entry, scenarios, viewport = "desktop", theme = "light", evalJs }) => {
+    if (!scenarios.length) return [];
+    const out = [];
+    await withPage(viewport, frameUrl(base, { version, entry, scenario: scenarios[0], theme }), async (p, errors, inflight) => {
+      out.push(await measure(p, errors, { viewport, evalJs, shot: false }));
+      for (const s of scenarios.slice(1)) {
+        errors.length = 0;
+        const ok = await p.evaluate((sc) => {
+          const show = window.__craftShow;
+          if (typeof show !== "function") return false;
+          show(sc);
+          return true;
+        }, s === "-" ? undefined : s).catch(() => false);
+        if (!ok) return;
+        await waitQuiet(inflight);
+        out.push(await measure(p, errors, { viewport, evalJs, shot: false }));
       }
-      let png = null;
-      if (shot) {
-        png = Buffer.from(part === "full"
-          ? await p.screenshot({ captureBeyondViewport: true, clip: { x: 0, y: 0, width: viewport === "desktop" ? desktop().w : WIDTH[viewport] ?? 390, height: Math.min(height, MAX_H) } })
-          : await p.screenshot());
-      }
-      return { png, errors: [...errors], height, boardError, value, evalError };
-    }, version, (p, errors) => {
-      p.on("console", (m) => { if (m.type() === "error" && !NOISE.test(m.text())) errors.push(`console: ${m.text().slice(0, 200)}`); });
-      p.on("response", (r) => { if (r.status() >= 400 && !r.url().endsWith("/favicon.ico")) errors.push(`http ${r.status()}: ${r.url().replace(origin, "").slice(0, 160)}`); });
-    });
+    }, version, listenProblems, { front: false });
+    for (const s of scenarios.slice(out.length)) out.push(await api.inspect({ version, entry, scenario: s, viewport, theme, evalJs, shot: false }));
+    return out;
+  };
 
   api.region = ({ version, entry, ref }) =>
     withPage(ref.viewport, frameUrl(base, { version, entry, scenario: ref.scenario }), async (p) => {
@@ -179,12 +241,12 @@ export function createShots({ base, tool = "", externalOrigins = [], idleMs = 30
         const r = el.getBoundingClientRect();
         return { tag: el.tagName.toLowerCase(), text: (el.textContent ?? "").trim().slice(0, 60), x: Math.round(r.left + scrollX), y: Math.round(r.top + scrollY), w: Math.round(r.width), h: Math.round(r.height) };
       });
-    }, text), version);
+    }, text), version, null, { front: false });
 
   api.specPage = ({ version, entry, kind = "behavior" }) =>
     withPage("desktop", `${base}/spec?v=${version}&e=${encodeURIComponent(entry)}&k=${kind}&p=all`, async (p, errs) => {
       await p.waitForFunction(() => ![...document.querySelectorAll("figure.mmd")].some((f) => !f.querySelector("svg") && !f.classList.contains("mmd-err"))
-        && ![...document.querySelectorAll(".src-embed")].some((e) => e.querySelector(".src-load")), { timeout: 30_000 }).catch(() => {});
+        && ![...document.querySelectorAll(".src-embed")].some((e) => e.querySelector(".src-load")), { timeout: 30_000, polling: POLL_MS }).catch(() => {});
       const report = await p.evaluate(() => ({
         diagrams: document.querySelectorAll("figure.mmd svg").length,
         badDiagrams: [...document.querySelectorAll("figure.mmd-err figcaption")].map((f) => f.textContent),

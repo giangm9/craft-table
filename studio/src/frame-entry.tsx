@@ -8,6 +8,7 @@
 // The frame sits on the studio's infinite canvas: the mouse wheel (zoom) and the middle button (pan) fire inside
 // the iframe and never reach the studio → they are forwarded up to the studio here.
 import { StrictMode, type ComponentType } from "react";
+import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { boardError } from "../lib/vite-error.mjs";
 import { frameVersion } from "../lib/frame-version.mjs";
@@ -116,5 +117,11 @@ async function boot() {
       <C scenario={scenario} />
     </StrictMode>,
   );
+  // Claude's sweep of a screen (lib/shots.mjs inspectScenarios) draws every scenario in ONE page load: each call
+  // mounts the board from scratch with another scenario, as if the page had been opened with that ?s=.
+  (window as Window & { __craftShow?: (s?: string) => void }).__craftShow = (s) => {
+    flushSync(() => root.render(<StrictMode><C key={s ?? "-"} scenario={s} /></StrictMode>));
+    scrollTo(0, 0);
+  };
 }
 void boot();

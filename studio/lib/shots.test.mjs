@@ -215,3 +215,58 @@ test("a desktop frame is shot at the project's desktop size (what the person see
   const m = await shots.frame({ version: "ban-1", entry: "screens/a", viewport: "mobile" });
   assert.equal(pngSize(m.png).w, 390, "mobile is unchanged");
 });
+
+// A frame page like frame-entry.tsx: draws its ?s= scenario a moment after loading, and redraws on __craftShow(s).
+// Scenario "tall" is 1500 px tall, "err" reports a console error and throws.
+const SWITCH_PAGE = (hook) => `<!doctype html><html><body style="margin:0"><div id="root"></div><script>
+const draw = (s) => { const r = document.getElementById("root"); r.innerHTML = "";
+  if (s === "err") { console.error("boom in " + s); setTimeout(() => { throw new Error("thrown in " + s); }); }
+  const p = document.createElement("p"); p.style.cssText = "margin:0;height:" + (s === "tall" ? 1500 : 100) + "px"; p.textContent = s; r.appendChild(p); };
+setTimeout(() => draw(new URLSearchParams(location.search).get("s") ?? "-"), 300);
+${hook ? 'window.__craftShow = (s) => draw(s ?? "-");' : ""}
+</script></body></html>`;
+
+async function switchServer(hook) {
+  const urls = [];
+  const s = http.createServer((req, res) => { urls.push(req.url); res.writeHead(200, { "Content-Type": "text/html" }); res.end(SWITCH_PAGE(hook)); });
+  await new Promise((r) => s.listen(0, "127.0.0.1", r));
+  return { base: `http://127.0.0.1:${s.address().port}`, urls, close: () => new Promise((r) => s.close(r)) };
+}
+
+test("inspectScenarios: every scenario of a screen in ONE page load — results in order, each with its own problems", async (t) => {
+  const srv = await switchServer(true);
+  const shots = createShots({ base: srv.base, idleMs: 60_000 });
+  t.after(async () => { await shots.close(); await srv.close(); });
+  const rs = await shots.inspectScenarios({ version: "ban-1", entry: "screens/a", scenarios: ["one", "tall", "err", "two"], evalJs: "document.querySelector('p').textContent" });
+  assert.deepEqual(rs.map((r) => r.value), ["one", "tall", "err", "two"]);
+  assert.ok(rs[1].height >= 1500 && rs[0].height < 1500 && rs[3].height < 1500, JSON.stringify(rs.map((r) => r.height)));
+  assert.ok(rs[2].errors.some((e) => /console: boom in err/.test(e)) && rs[2].errors.some((e) => /thrown in err/.test(e)), JSON.stringify(rs[2].errors));
+  assert.deepEqual([rs[0].errors, rs[1].errors, rs[3].errors], [[], [], []], "a scenario's problems stay with it");
+  assert.ok(rs.every((r) => r.png === null));
+  assert.equal(srv.urls.filter((u) => u.startsWith("/frame")).length, 1, JSON.stringify(srv.urls));
+});
+
+test("inspectScenarios: a page that cannot switch scenarios → one page load per scenario, same results", async (t) => {
+  const srv = await switchServer(false);
+  const shots = createShots({ base: srv.base, idleMs: 60_000 });
+  t.after(async () => { await shots.close(); await srv.close(); });
+  const rs = await shots.inspectScenarios({ version: "ban-1", entry: "screens/a", scenarios: ["one", "tall", "-"], evalJs: "document.querySelector('p').textContent" });
+  assert.deepEqual(rs.map((r) => r.value), ["one", "tall", "-"]);
+  assert.equal(srv.urls.filter((u) => u.startsWith("/frame")).length, 3);
+});
+
+test("several pages at once finish together: waiting for the board does not hang on animation frames (only the tab in front gets them)", async (t) => {
+  const srv = await switchServer(true);
+  const shots = createShots({ base: srv.base, idleMs: 60_000 });
+  t.after(async () => { await shots.close(); await srv.close(); });
+  const t0 = Date.now();
+  const names = Array.from({ length: 16 }, (_, i) => `s${i}`);
+  const done = await Promise.all(names.map(async (s) => {
+    const r = await shots.inspect({ version: "ban-1", entry: "screens/a", scenario: s, shot: false, evalJs: "document.querySelector('p')?.textContent" });
+    assert.equal(r.value, s);
+    return Date.now() - t0;
+  }));
+  // Polling on animation frames served the pages one after another: 16 pages ended 2.6 s apart (measured); by time, ~0.1 s.
+  const spread = Math.max(...done) - Math.min(...done);
+  assert.ok(spread < 1200, `16 pages ended ${spread} ms apart`);
+});
