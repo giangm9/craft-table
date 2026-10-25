@@ -74,6 +74,28 @@ export function cleanEnv(env) {
   return Object.fromEntries(Object.entries(env).filter(([k, v]) => v !== undefined && (k === "CLAUDE_CODE_OAUTH_TOKEN" || !/^CLAUDE/.test(k))));
 }
 
+/**
+ * When a thread's conversation gets compacted (summarised, then carried on): STUDIO_AGENT_COMPACT_WINDOW — tokens
+ * ("200000", "200k", "1m", 100k–1M) or "auto" (the SDK's own window for the model). A thread is ONE session for all its
+ * turns, every file and picture included; on "auto" a Sonnet 5.5 thread re-read 167k → 282k tokens per step and was
+ * never compacted (measured). Default 200k: compacted at about 170k, like Claude Code's classic window.
+ */
+export const COMPACT_WINDOW = { def: 200_000, min: 100_000, max: 1_000_000 };
+export function compactWindow(raw) {
+  const s = String(raw ?? "").trim().toLowerCase();
+  if (s === "auto") return null;
+  const m = /^(\d+(?:\.\d+)?)\s*(k|m)?$/.exec(s);
+  if (!m) return COMPACT_WINDOW.def;
+  const n = Math.round(Number(m[1]) * (m[2] === "m" ? 1e6 : m[2] === "k" ? 1e3 : 1));
+  return Math.min(COMPACT_WINDOW.max, Math.max(COMPACT_WINDOW.min, n));
+}
+
+/** Environment of one turn's Claude process: cleanEnv + the compact window (CLAUDE_CODE_AUTO_COMPACT_WINDOW). */
+export function agentEnv(env) {
+  const w = compactWindow(env.STUDIO_AGENT_COMPACT_WINDOW);
+  return { ...cleanEnv(env), ...(w ? { CLAUDE_CODE_AUTO_COMPACT_WINDOW: String(w) } : {}) };
+}
+
 /** Mark of a session created by this sandbox — a thread holding an unmarked session (the old `claude -p` way) does not resume it. */
 export const SESSION_KIND = "sandbox";
 
@@ -173,6 +195,7 @@ export function buildPrompt({ thread, meta, pending, resume, viewing = thread.en
 
 /** SDK event → what Claude is doing now, for the UI ({ key, params }); null when not worth showing. */
 export function progressOf(ev) {
+  if (ev?.type === "system" && ev.subtype === "status" && ev.status === "compacting") return stored("compacting");
   if (ev?.type !== "assistant") return null;
   const t = ev.message?.content?.find((c) => c.type === "tool_use");
   if (!t) return null;
@@ -233,7 +256,7 @@ export function runAgent({ root, project = { name: path.basename(root), descript
     try {
       let result = null;
       const hooks = { Stop: [{ hooks: [makeStopHook(guard, { lang })] }] };
-      const q = queryImpl({ prompt, options: { ...sdkOptions({ model, effort, sessionId, mcpServer, systemPrompt: instructions, design, run: !!sandbox }), hooks, abortController, cwd: ensureAgentHome(), env: cleanEnv(process.env) } });
+      const q = queryImpl({ prompt, options: { ...sdkOptions({ model, effort, sessionId, mcpServer, systemPrompt: instructions, design, run: !!sandbox }), hooks, abortController, cwd: ensureAgentHome(), env: agentEnv(process.env) } });
       for await (const ev of q) {
         // Fail closed: the SDK reports a tool outside the studio's set (e.g. an SDK upgrade changed a default) → cancel the turn now.
         if (ev.type === "system" && ev.subtype === "init") {
@@ -246,6 +269,10 @@ export function runAgent({ root, project = { name: path.basename(root), descript
         }
         if (ev.type === "assistant" && ev.error === "authentication_failed") loginLost = true;
         if (ev.session_id && ev.session_id !== sid) { sid = ev.session_id; onSession?.(sid); }
+        if (ev.type === "system" && ev.subtype === "compact_boundary") {
+          const m = ev.compact_metadata ?? {};
+          console.log(`[agent] ${ctx.threadId}: conversation compacted (${m.trigger}) ${m.pre_tokens} → ${m.post_tokens ?? "?"} tokens${m.duration_ms ? ` in ${Math.round(m.duration_ms / 1000)} s` : ""}`);
+        }
         const p = progressOf(ev);
         if (p) onProgress?.(p);
         if (ev.type === "result") result = ev;

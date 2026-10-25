@@ -207,7 +207,9 @@ Other settings: `STUDIO_PORT` (default 5180), `STUDIO_AGENT_MODEL` (Claude model
 `STUDIO_ENV_FILE` (another file instead of the project's `.env`), `CRAFT_PROJECT` (the project folder),
 `STUDIO_AGENT_MODELS` (the models the message box offers, see [Conversations](#conversations)),
 `CRAFT_SANDBOX` / `CRAFT_SANDBOX_IMAGE` (where Claude may run scripts, see
-[Conversations](#conversations)).
+[Conversations](#conversations)), `STUDIO_AGENT_COMPACT_WINDOW` (when a conversation is compacted — summarised and
+carried on — so a long thread does not re-read every earlier file and picture at each step: tokens such as `200000`,
+`200k` or `1m`, 100k–1M, default `200k`, compacted at about 170k; `auto` leaves it to the model's own window).
 
 ### Docker
 

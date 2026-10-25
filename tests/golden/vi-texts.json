@@ -1429,6 +1429,11 @@
       "one": "Đang chạy: ",
       "two": "Đang chạy: "
     },
+    "compacting": {
+      "params": "Đang thu gọn hội thoại…",
+      "one": "Đang thu gọn hội thoại…",
+      "two": "Đang thu gọn hội thoại…"
+    },
     "usingTool": {
       "params": "Đang dùng ‹a0.name›",
       "one": "Đang dùng ",

@@ -27,6 +27,7 @@ const en = {
   replacing: (p: Params) => `Replacing across files: ${s(p.pattern)}`,
   browsing: (p: Params) => (p.what === "all" ? "Looking at all screens" : `Looking at ${s(p.what)} screens`),
   running: (p: Params) => `Running: ${s(p.command)}`,
+  compacting: () => "Compacting the conversation…",
   usingTool: (p: Params) => `Using ${s(p.name)}`,
   // A turn's state.
   queued: "Waiting for Claude to finish another thread of this screen",
@@ -62,6 +63,7 @@ const vi: typeof en = {
   replacing: (p) => `Đang thay trên nhiều file: ${s(p.pattern)}`,
   browsing: (p) => (p.what === "all" ? "Đang xem mọi màn" : `Đang xem ${s(p.what)} màn`),
   running: (p) => `Đang chạy: ${s(p.command)}`,
+  compacting: () => "Đang thu gọn hội thoại…",
   usingTool: (p) => `Đang dùng ${s(p.name)}`,
   queued: "Chờ Claude xong luồng khác trên màn này",
   readingConversation: "Đang đọc hội thoại…",

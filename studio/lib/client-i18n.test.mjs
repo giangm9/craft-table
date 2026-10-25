@@ -69,6 +69,7 @@ const VI = [
   [{ key: "browsing", params: { what: "all" } }, "Đang xem mọi màn"],
   [{ key: "browsing", params: { what: "12" } }, "Đang xem 12 màn"],
   [{ key: "running", params: { command: "node codemod.js" } }, "Đang chạy: node codemod.js"],
+  [{ key: "compacting" }, "Đang thu gọn hội thoại…"],
 ];
 
 test("renderStored (vi): exactly the texts the studio wrote in earlier versions", () => {

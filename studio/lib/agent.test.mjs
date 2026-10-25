@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
-import { systemPrompt, loginLostError, sdkOptions, cleanEnv, buildPrompt, progressOf, runAgent, rulesDirsFor, TOOL_NAMES, makeStopHook } from "./agent.mjs";
+import { systemPrompt, loginLostError, sdkOptions, cleanEnv, buildPrompt, progressOf, runAgent, rulesDirsFor, TOOL_NAMES, makeStopHook, compactWindow } from "./agent.mjs";
 import { RULES_ROOT } from "./agent-tools.mjs";
 import { createVerifyGuard } from "./verify-guard.mjs";
 import { VIETNAMESE } from "./i18n-gate.mjs";
@@ -276,7 +276,9 @@ test("runAgent: reads the SDK's event stream (session, progress, result); stop()
   assert.equal(seen.session, "s-1");
   assert.deepEqual(seen.progress, [{ key: "listing", params: { what: "screens" } }]);
   assert.equal(seen.prompt, "P");
-  assert.ok(!Object.keys(seen.options.env).some((k) => k.startsWith("CLAUDE")));
+  // Nothing CLAUDE* of the session that started the studio — only the compact window the studio sets itself.
+  assert.deepEqual(Object.keys(seen.options.env).filter((k) => k.startsWith("CLAUDE") && k !== "CLAUDE_CODE_OAUTH_TOKEN"), ["CLAUDE_CODE_AUTO_COMPACT_WINDOW"]);
+  assert.equal(seen.options.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW, String(compactWindow(process.env.STUDIO_AGENT_COMPACT_WINDOW)));
   assert.ok(seen.options.abortController);
   assert.deepEqual(seen.options.tools, []);
   // The Stop hook carries this turn's self-check guard (nothing edited → it lets the turn end).
@@ -438,6 +440,27 @@ test("read-only tools are marked so the calls of one step that only look run at 
   // The SDK keeps the hint on the tool it hands to Claude Code (which runs read-only MCP tools concurrently).
   const { tool } = await import("@anthropic-ai/claude-agent-sdk");
   assert.deepEqual(tool("browse", "d", {}, async () => ({ content: [] }), toolExtras("browse")).annotations, { readOnlyHint: true });
+});
+
+test("compact window: 200k by default, tokens / 200k / 1m, clamped to 100k–1M, auto = the SDK's own; only CLAUDE_CODE_AUTO_COMPACT_WINDOW reaches Claude", async () => {
+  const { compactWindow, agentEnv } = await import("./agent.mjs");
+  assert.equal(compactWindow(undefined), 200_000);
+  assert.equal(compactWindow(""), 200_000);
+  assert.equal(compactWindow("150000"), 150_000);
+  assert.equal(compactWindow("300k"), 300_000);
+  assert.equal(compactWindow("1m"), 1_000_000);
+  assert.equal(compactWindow("20k"), 100_000);
+  assert.equal(compactWindow("5m"), 1_000_000);
+  assert.equal(compactWindow("lots"), 200_000);
+  assert.equal(compactWindow("AUTO"), null);
+  const env = agentEnv({ PATH: "/bin", CLAUDE_CODE_OAUTH_TOKEN: "t", CLAUDECODE: "1", CLAUDE_CODE_AUTO_COMPACT_WINDOW: "999999", STUDIO_AGENT_COMPACT_WINDOW: "150k" });
+  assert.deepEqual(env, { PATH: "/bin", CLAUDE_CODE_OAUTH_TOKEN: "t", STUDIO_AGENT_COMPACT_WINDOW: "150k", CLAUDE_CODE_AUTO_COMPACT_WINDOW: "150000" });
+  assert.equal(agentEnv({ STUDIO_AGENT_COMPACT_WINDOW: "auto" }).CLAUDE_CODE_AUTO_COMPACT_WINDOW, undefined);
+});
+
+test("progressOf: the SDK compacting the conversation → «compacting»", () => {
+  assert.deepEqual(progressOf({ type: "system", subtype: "status", status: "compacting" }), { key: "compacting" });
+  assert.equal(progressOf({ type: "system", subtype: "status", status: null }), null);
 });
 
 test("sdkOptions: effort is passed to the SDK only when one was chosen", () => {
