@@ -1,31 +1,38 @@
-// Claude's queue PER SCREEN: only one Claude turn edits a screen at a time (key = "<version>:<screen>"), so two
-// threads on the same screen do not overwrite each other's files. Other screens / other versions run in parallel.
-// First in, first out. Calling a release function more than once only counts the first time.
+// Claude's queue: a turn on a SCREEN holds "<version>:<screen>" — only one turn edits a screen at a time, so two threads on
+// the same screen do not overwrite each other's files; other screens / other versions run in parallel. A WHOLE-DESIGN turn
+// holds "<version>:*" — the whole version: it waits for every running turn of that version and blocks the rest of that
+// version until it is done. Strictly first in, first out among turns that conflict (a design turn waiting is never overtaken
+// by a screen turn that came later, so it cannot be starved). Calling a release function more than once only counts the first time.
+
+const DESIGN = "*";
+const split = (key) => { const i = String(key).indexOf(":"); return { version: key.slice(0, i), screen: key.slice(i + 1) }; };
+const conflicts = (a, b) => a.version === b.version && (a.screen === DESIGN || b.screen === DESIGN || a.screen === b.screen);
 
 export function createQueue() {
-  const locks = new Map(); // key → array of the "let in" functions of the waiting turns (key present in the Map = a turn holds it)
+  const active = new Set();   // requests holding the queue
+  const pending = [];         // requests waiting, in arrival order
 
-  const grant = (key) => {
-    let done = false;
-    return () => {
-      if (done) return;
-      done = true;
-      const waiters = locks.get(key);
-      const next = waiters?.shift();
-      if (next) next(grant(key));
-      else locks.delete(key);
-    };
+  const pump = () => {
+    for (let i = 0; i < pending.length; ) {
+      const req = pending[i];
+      const blocked = [...active].some((a) => conflicts(a, req)) || pending.slice(0, i).some((p) => conflicts(p, req));
+      if (blocked) { i++; continue; }
+      pending.splice(i, 1);
+      active.add(req);
+      let done = false;
+      req.resolve(() => { if (done) return; done = true; active.delete(req); pump(); });
+    }
   };
 
+  const same = (r, key) => r.key === key;
   return {
     /** Waits for its turn; resolves to the release function. */
     acquire(key) {
-      if (!locks.has(key)) { locks.set(key, []); return Promise.resolve(grant(key)); }
-      return new Promise((resolve) => locks.get(key).push(resolve));
+      return new Promise((resolve) => { pending.push({ key, ...split(key), resolve }); pump(); });
     },
-    /** A turn holds this screen. */
-    busy: (key) => locks.has(key),
-    /** Number of waiting turns (not counting the one holding it). */
-    waiting: (key) => locks.get(key)?.length ?? 0,
+    /** A turn started now with this key would have to wait (a design turn conflicts with every turn of its version). */
+    busy: (key) => { const k = split(key); return [...active, ...pending].some((r) => conflicts(r, k)); },
+    /** Number of waiting turns of this key (not counting the one holding it). */
+    waiting: (key) => pending.filter((p) => same(p, key)).length,
   };
 }

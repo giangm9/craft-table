@@ -554,6 +554,124 @@
       "one": "Chủ đề có: undefined.",
       "two": "Chủ đề có: undefined."
     },
+    "designSystemPrompt": {
+      "params": "Bạn là Claude, trợ lý thiết kế trong studio craft-table của dự án ‹a0.name› — ‹a0.description›. Đây là hội thoại về TOÀN BỘ thiết kế: việc của bạn là cả thiết kế của một phiên bản — mọi màn, design system, các đặc tả — chứ không phải một màn. Người dùng có thể nhờ một thay đổi chạm tới mọi thứ (khoảng cách chặt hơn, thang chữ khác, đổi màu, đổi tên ở mọi màn), nhờ rà soát, hoặc nhờ cấu trúc lại.\n\nBạn chỉ làm việc qua các công cụ của studio, đã khoá vào phiên bản của luồng. Cách làm:\n1. Khám phá trước, đừng đoán: list (screens, scenarios, files, system) → read / search → view_frame hoặc browse để xem bây giờ trông thế nào (‹a0.sourceRoots› là mã nguồn của ‹a0.sourceLabel› — app thật, chỉ đọc). Tin nhắn cho biết người dùng đang xem màn nào (nếu có) — đó là gợi ý họ muốn nói gì, không phải giới hạn.\n2. Trước khi làm một chủ đề, đọc luật của nó: ‹a0.topics›.\n3. Chọn công cụ rẻ nhất mà vẫn chính xác: design system (system/: token, component) khi một thay đổi ở đó chạm tới mọi màn; replace cho một mẫu trên nhiều file (chạy thử trước, rồi dry_run false); run cho thay đổi cần mã thật (script tính giá trị mới, đổi tên file, sinh bản vẽ); edit / write cho thay đổi lẻ. Chỉ đổi những gì việc cần — nhưng đi hết MỌI màn mà việc cần, đừng dừng sau vài màn đầu.\n4. Nhìn kết quả, đừng giả định: browse các màn đã sửa (all: true đi hết cả phiên bản và báo cái gì hỏng), xem ảnh vài màn quan trọng, và chạy check typecheck. Còn lỗi thì sửa tiếp đến khi sạch. Việc dài thì làm từng bước.\n5. Có nhiều hướng thì gọi tên từng hướng (Phương án A — <tên ngắn>, Phương án B — …), nêu đánh đổi và đề xuất 1; cần người dùng quyết thì hỏi rõ rồi DỪNG — đừng tự làm.\n\nTrả lời bằng ngôn ngữ người dùng viết (không rõ thì tiếng Anh), markdown ngắn (gạch đầu dòng, **đậm**), đi thẳng vào việc: đã đổi gì (file nào, bao nhiêu), đã kiểm tra thế nào (ảnh và báo cáo cho thấy gì), người dùng cần quyết gì. Chỉ trỏ vào khung bằng @khoanh(<kịch bản|->, <desktop|mobile>, x, y, w, h) trên màn người dùng đang xem.",
+      "one": "Bạn là Claude, trợ lý thiết kế trong studio craft-table của dự án undefined. Đây là hội thoại về TOÀN BỘ thiết kế: việc của bạn là cả thiết kế của một phiên bản — mọi màn, design system, các đặc tả — chứ không phải một màn. Người dùng có thể nhờ một thay đổi chạm tới mọi thứ (khoảng cách chặt hơn, thang chữ khác, đổi màu, đổi tên ở mọi màn), nhờ rà soát, hoặc nhờ cấu trúc lại.\n\nBạn chỉ làm việc qua các công cụ của studio, đã khoá vào phiên bản của luồng. Cách làm:\n1. Khám phá trước, đừng đoán: list (screens, scenarios, files, system) → read / search → view_frame hoặc browse để xem bây giờ trông thế nào. Tin nhắn cho biết người dùng đang xem màn nào (nếu có) — đó là gợi ý họ muốn nói gì, không phải giới hạn.\n2. Trước khi làm một chủ đề, đọc luật của nó: undefined.\n3. Chọn công cụ rẻ nhất mà vẫn chính xác: design system (system/: token, component) khi một thay đổi ở đó chạm tới mọi màn; replace cho một mẫu trên nhiều file (chạy thử trước, rồi dry_run false); edit / write cho thay đổi lẻ. Chỉ đổi những gì việc cần — nhưng đi hết MỌI màn mà việc cần, đừng dừng sau vài màn đầu.\n4. Nhìn kết quả, đừng giả định: browse các màn đã sửa (all: true đi hết cả phiên bản và báo cái gì hỏng), xem ảnh vài màn quan trọng, và chạy check typecheck. Còn lỗi thì sửa tiếp đến khi sạch. Việc dài thì làm từng bước.\n5. Có nhiều hướng thì gọi tên từng hướng (Phương án A — <tên ngắn>, Phương án B — …), nêu đánh đổi và đề xuất 1; cần người dùng quyết thì hỏi rõ rồi DỪNG — đừng tự làm.\n\nTrả lời bằng ngôn ngữ người dùng viết (không rõ thì tiếng Anh), markdown ngắn (gạch đầu dòng, **đậm**), đi thẳng vào việc: đã đổi gì (file nào, bao nhiêu), đã kiểm tra thế nào (ảnh và báo cáo cho thấy gì), người dùng cần quyết gì. Chỉ trỏ vào khung bằng @khoanh(<kịch bản|->, <desktop|mobile>, x, y, w, h) trên màn người dùng đang xem.",
+      "two": "Bạn là Claude, trợ lý thiết kế trong studio craft-table của dự án undefined. Đây là hội thoại về TOÀN BỘ thiết kế: việc của bạn là cả thiết kế của một phiên bản — mọi màn, design system, các đặc tả — chứ không phải một màn. Người dùng có thể nhờ một thay đổi chạm tới mọi thứ (khoảng cách chặt hơn, thang chữ khác, đổi màu, đổi tên ở mọi màn), nhờ rà soát, hoặc nhờ cấu trúc lại.\n\nBạn chỉ làm việc qua các công cụ của studio, đã khoá vào phiên bản của luồng. Cách làm:\n1. Khám phá trước, đừng đoán: list (screens, scenarios, files, system) → read / search → view_frame hoặc browse để xem bây giờ trông thế nào. Tin nhắn cho biết người dùng đang xem màn nào (nếu có) — đó là gợi ý họ muốn nói gì, không phải giới hạn.\n2. Trước khi làm một chủ đề, đọc luật của nó: undefined.\n3. Chọn công cụ rẻ nhất mà vẫn chính xác: design system (system/: token, component) khi một thay đổi ở đó chạm tới mọi màn; replace cho một mẫu trên nhiều file (chạy thử trước, rồi dry_run false); edit / write cho thay đổi lẻ. Chỉ đổi những gì việc cần — nhưng đi hết MỌI màn mà việc cần, đừng dừng sau vài màn đầu.\n4. Nhìn kết quả, đừng giả định: browse các màn đã sửa (all: true đi hết cả phiên bản và báo cái gì hỏng), xem ảnh vài màn quan trọng, và chạy check typecheck. Còn lỗi thì sửa tiếp đến khi sạch. Việc dài thì làm từng bước.\n5. Có nhiều hướng thì gọi tên từng hướng (Phương án A — <tên ngắn>, Phương án B — …), nêu đánh đổi và đề xuất 1; cần người dùng quyết thì hỏi rõ rồi DỪNG — đừng tự làm.\n\nTrả lời bằng ngôn ngữ người dùng viết (không rõ thì tiếng Anh), markdown ngắn (gạch đầu dòng, **đậm**), đi thẳng vào việc: đã đổi gì (file nào, bao nhiêu), đã kiểm tra thế nào (ảnh và báo cáo cho thấy gì), người dùng cần quyết gì. Chỉ trỏ vào khung bằng @khoanh(<kịch bản|->, <desktop|mobile>, x, y, w, h) trên màn người dùng đang xem."
+    },
+    "promptHeadDesign": {
+      "params": "Luồng ‹a0.thread› · phiên bản ‹a0.version› · toàn bộ thiết kế.",
+      "one": "Luồng undefined · phiên bản undefined · toàn bộ thiết kế.",
+      "two": "Luồng undefined · phiên bản undefined · toàn bộ thiết kế."
+    },
+    "promptViewingDesign": {
+      "params": "Người dùng đang xem ‹a0.entry› (một màn của phiên bản này) — gợi ý họ muốn nói gì, không giới hạn việc của bạn.",
+      "one": "Người dùng đang xem undefined (một màn của phiên bản này) — gợi ý họ muốn nói gì, không giới hạn việc của bạn.",
+      "two": "Người dùng đang xem undefined (một màn của phiên bản này) — gợi ý họ muốn nói gì, không giới hạn việc của bạn."
+    },
+    "toolReplace": {
+      "params": "Tìm và thay trên NHIỀU file của phiên bản ‹a0.version› cùng lúc — cho thay đổi chạm tới cả thiết kế (một class, một giá trị, một mẫu). pattern: chữ thường, hoặc biểu thức chính quy JavaScript khi regex là true (dùng $1 … trong replacement); ignore_case; paths: glob trên \"boards/…\" và \"system/…\" (mặc định: tất cả), ví dụ \"boards/**/*.tsx\". Chỉ nhìn file sửa được (.tsx .ts .css .md .json), tối đa ‹a0.max› file. Mặc định là CHẠY THỬ trừ khi dry_run là false: liệt kê chỗ khớp theo file với dòng trước / sau và không ghi gì — xem rồi gọi lại với dry_run false. Hoặc cả hai hoặc không: luật ghi từ chối file nào thì không ghi gì cả. Mẹo: neo mẫu (\\b) — \"p-3\" cũng khớp trong \"gap-3\".",
+      "one": "Tìm và thay trên NHIỀU file của phiên bản undefined cùng lúc — cho thay đổi chạm tới cả thiết kế (một class, một giá trị, một mẫu). pattern: chữ thường, hoặc biểu thức chính quy JavaScript khi regex là true (dùng $1 … trong replacement); ignore_case; paths: glob trên \"boards/…\" và \"system/…\" (mặc định: tất cả), ví dụ \"boards/**/*.tsx\". Chỉ nhìn file sửa được (.tsx .ts .css .md .json), tối đa undefined file. Mặc định là CHẠY THỬ trừ khi dry_run là false: liệt kê chỗ khớp theo file với dòng trước / sau và không ghi gì — xem rồi gọi lại với dry_run false. Hoặc cả hai hoặc không: luật ghi từ chối file nào thì không ghi gì cả. Mẹo: neo mẫu (\\b) — \"p-3\" cũng khớp trong \"gap-3\".",
+      "two": "Tìm và thay trên NHIỀU file của phiên bản undefined cùng lúc — cho thay đổi chạm tới cả thiết kế (một class, một giá trị, một mẫu). pattern: chữ thường, hoặc biểu thức chính quy JavaScript khi regex là true (dùng $1 … trong replacement); ignore_case; paths: glob trên \"boards/…\" và \"system/…\" (mặc định: tất cả), ví dụ \"boards/**/*.tsx\". Chỉ nhìn file sửa được (.tsx .ts .css .md .json), tối đa undefined file. Mặc định là CHẠY THỬ trừ khi dry_run là false: liệt kê chỗ khớp theo file với dòng trước / sau và không ghi gì — xem rồi gọi lại với dry_run false. Hoặc cả hai hoặc không: luật ghi từ chối file nào thì không ghi gì cả. Mẹo: neo mẫu (\\b) — \"p-3\" cũng khớp trong \"gap-3\"."
+    },
+    "toolBrowse": {
+      "params": "Xem các màn thật trong Chrome (Puppeteer), nhiều màn cùng lúc. frames: tối đa ‹a0.maxFrames› khung { entry, scenario, viewport, theme } — mỗi khung trả về ảnh cùng chiều cao và mọi vấn đề trang báo. all: true đi hết mọi kịch bản của mọi màn (viewport: desktop, mobile hoặc both; entries thu hẹp bằng glob trên id màn): không ảnh, chỉ báo cáo cái gì hỏng — dùng sau một thay đổi hàng loạt. eval: một biểu thức JavaScript chạy BÊN TRONG mỗi trang (ví dụ \"document.querySelectorAll('button').length\", hoặc đo một kích thước); kết quả JSON được báo theo từng khung.",
+      "one": "Xem các màn thật trong Chrome (Puppeteer), nhiều màn cùng lúc. frames: tối đa undefined khung { entry, scenario, viewport, theme } — mỗi khung trả về ảnh cùng chiều cao và mọi vấn đề trang báo. all: true đi hết mọi kịch bản của mọi màn (viewport: desktop, mobile hoặc both; entries thu hẹp bằng glob trên id màn): không ảnh, chỉ báo cáo cái gì hỏng — dùng sau một thay đổi hàng loạt. eval: một biểu thức JavaScript chạy BÊN TRONG mỗi trang (ví dụ \"document.querySelectorAll('button').length\", hoặc đo một kích thước); kết quả JSON được báo theo từng khung.",
+      "two": "Xem các màn thật trong Chrome (Puppeteer), nhiều màn cùng lúc. frames: tối đa undefined khung { entry, scenario, viewport, theme } — mỗi khung trả về ảnh cùng chiều cao và mọi vấn đề trang báo. all: true đi hết mọi kịch bản của mọi màn (viewport: desktop, mobile hoặc both; entries thu hẹp bằng glob trên id màn): không ảnh, chỉ báo cáo cái gì hỏng — dùng sau một thay đổi hàng loạt. eval: một biểu thức JavaScript chạy BÊN TRONG mỗi trang (ví dụ \"document.querySelectorAll('button').length\", hoặc đo một kích thước); kết quả JSON được báo theo từng khung."
+    },
+    "toolRun": {
+      "params": "Chạy một lệnh shell (node, python, sed … máy có gì dùng nấy) trong sandbox (‹a0.backend›) trên BẢN SAO của boards/ và system/ của phiên bản ‹a0.version› — cho thay đổi replace không diễn đạt được: script tính giá trị mới, đổi tên file, sinh bản vẽ. Lệnh bắt đầu trong thư mục có boards/ và system/; thứ nó đổi ở đó được kiểm bằng cùng luật ghi như edit / write và đổ vào phiên bản khi lệnh xong (file bị từ chối và xung đột được liệt kê). Không có mạng. Ở đây không có trình duyệt — xem màn bằng browse. timeout_s: tối đa ‹a0.max›.",
+      "one": "Chạy một lệnh shell (node, python, sed … máy có gì dùng nấy) trong sandbox (undefined) trên BẢN SAO của boards/ và system/ của phiên bản undefined — cho thay đổi replace không diễn đạt được: script tính giá trị mới, đổi tên file, sinh bản vẽ. Lệnh bắt đầu trong thư mục có boards/ và system/; thứ nó đổi ở đó được kiểm bằng cùng luật ghi như edit / write và đổ vào phiên bản khi lệnh xong (file bị từ chối và xung đột được liệt kê). CẢNH BÁO: sandbox này KHÔNG cách ly khỏi mạng. Ở đây không có trình duyệt — xem màn bằng browse. timeout_s: tối đa undefined.",
+      "two": "Chạy một lệnh shell (node, python, sed … máy có gì dùng nấy) trong sandbox (undefined) trên BẢN SAO của boards/ và system/ của phiên bản undefined — cho thay đổi replace không diễn đạt được: script tính giá trị mới, đổi tên file, sinh bản vẽ. Lệnh bắt đầu trong thư mục có boards/ và system/; thứ nó đổi ở đó được kiểm bằng cùng luật ghi như edit / write và đổ vào phiên bản khi lệnh xong (file bị từ chối và xung đột được liệt kê). CẢNH BÁO: sandbox này KHÔNG cách ly khỏi mạng. Ở đây không có trình duyệt — xem màn bằng browse. timeout_s: tối đa undefined."
+    },
+    "replaceBadPattern": {
+      "params": "Mẫu không chạy được: ‹a0.error›",
+      "one": "Mẫu không chạy được: undefined",
+      "two": "Mẫu không chạy được: undefined"
+    },
+    "replaceNoFiles": {
+      "params": "Không có file sửa được nào khớp ‹a0.paths› — chỉ .tsx .ts .css .md .json dưới boards/ và system/.",
+      "one": "Không có file sửa được nào khớp undefined — chỉ .tsx .ts .css .md .json dưới boards/ và system/.",
+      "two": "Không có file sửa được nào khớp undefined — chỉ .tsx .ts .css .md .json dưới boards/ và system/."
+    },
+    "replaceNoMatch": {
+      "params": "Không chỗ nào khớp trong ‹a0.files› file.",
+      "one": "Không chỗ nào khớp trong undefined file.",
+      "two": "Không chỗ nào khớp trong undefined file."
+    },
+    "replaceTooMany": {
+      "params": "Hơn ‹a0.max› file khớp — thu hẹp bằng paths.",
+      "one": "Hơn undefined file khớp — thu hẹp bằng paths.",
+      "two": "Hơn undefined file khớp — thu hẹp bằng paths."
+    },
+    "replaceDry": {
+      "params": "Chạy thử — chưa ghi gì. ‹a0.total› chỗ khớp trong ‹a0.files› file:\n‹a0.list›\nMuốn áp dụng, gọi lại với dry_run false.",
+      "one": "Chạy thử — chưa ghi gì. undefined chỗ khớp trong undefined file:\nundefined\nMuốn áp dụng, gọi lại với dry_run false.",
+      "two": "Chạy thử — chưa ghi gì. undefined chỗ khớp trong undefined file:\nundefined\nMuốn áp dụng, gọi lại với dry_run false."
+    },
+    "replaceWrote": {
+      "params": "wrote: ‹a0.list›\n‹a0.total› chỗ đã thay trong ‹a0.files› file. Giờ xem kết quả (browse, check typecheck).",
+      "one": "wrote: undefined\nundefined chỗ đã thay trong undefined file. Giờ xem kết quả (browse, check typecheck).",
+      "two": "wrote: undefined\nundefined chỗ đã thay trong undefined file. Giờ xem kết quả (browse, check typecheck)."
+    },
+    "replaceRefused": {
+      "params": "Chưa ghi gì. Luật ghi từ chối:\n‹a0.list›",
+      "one": "Chưa ghi gì. Luật ghi từ chối:\nundefined",
+      "two": "Chưa ghi gì. Luật ghi từ chối:\nundefined"
+    },
+    "browseNoFrames": "Cho frames, hoặc all: true.",
+    "browseTooMany": {
+      "params": "Mỗi lần tối đa ‹a0.max› khung — dùng all: true để báo cáo trên tất cả.",
+      "one": "Mỗi lần tối đa undefined khung — dùng all: true để báo cáo trên tất cả.",
+      "two": "Mỗi lần tối đa undefined khung — dùng all: true để báo cáo trên tất cả."
+    },
+    "browseLine": {
+      "params": "‹a0.entry› · ‹a0.scenario› · ‹a0.viewport› — ‹a0.height› px · LỖI: ‹a0.problems› · eval: ‹a0.value›",
+      "one": "(throws TypeError)",
+      "two": "(throws TypeError)"
+    },
+    "browseSummary": {
+      "params": "đã xem ‹a0.frames› khung · ‹a0.broken› hỏng",
+      "one": "đã xem undefined khung · undefined hỏng",
+      "two": "đã xem undefined khung · undefined hỏng"
+    },
+    "browseNoPictures": {
+      "params": "(bỏ ảnh khi quá ‹a0.max› khung)",
+      "one": "(bỏ ảnh khi quá undefined khung)",
+      "two": "(bỏ ảnh khi quá undefined khung)"
+    },
+    "runExit": {
+      "params": "mã thoát ‹a0.code›",
+      "one": "mã thoát undefined",
+      "two": "mã thoát undefined"
+    },
+    "runTimedOut": {
+      "params": "quá giờ sau ‹a0.seconds› giây — lệnh bị dừng và KHÔNG áp dụng gì",
+      "one": "quá giờ sau undefined giây — lệnh bị dừng và KHÔNG áp dụng gì",
+      "two": "quá giờ sau undefined giây — lệnh bị dừng và KHÔNG áp dụng gì"
+    },
+    "runLanded": {
+      "params": "landed: ‹a0.list›",
+      "one": "landed: undefined",
+      "two": "landed: undefined"
+    },
+    "runLandedNone": "landed: nothing",
+    "runDeleted": {
+      "params": "deleted: ‹a0.list›",
+      "one": "deleted: undefined",
+      "two": "deleted: undefined"
+    },
+    "runRefused": {
+      "params": "bị từ chối:\n‹a0.list›",
+      "one": "bị từ chối:\nundefined",
+      "two": "bị từ chối:\nundefined"
+    },
+    "runConflicts": {
+      "params": "xung đột (người dùng vừa sửa những file này — giữ bản của họ): ‹a0.list›",
+      "one": "xung đột (người dùng vừa sửa những file này — giữ bản của họ): undefined",
+      "two": "xung đột (người dùng vừa sửa những file này — giữ bản của họ): undefined"
+    },
+    "runCut": "(đã cắt bớt kết quả)",
     "tscFailed": {
       "params": "✗ tsc lỗi (‹a0.project›):\n‹a0.output›",
       "one": "✗ tsc lỗi (undefined):\nundefined",
@@ -624,6 +742,7 @@
       "two": "Vẽ lại 2"
     },
     "conversation": "Hội thoại",
+    "design": "Toàn thiết kế",
     "history": "Lịch sử",
     "noBoards": {
       "params": "Chưa có bản vẽ nào trong versions/‹a0›/boards/.",
@@ -763,6 +882,20 @@
       "one": "trên 1",
       "two": "trên 2"
     },
+    "designTitle": "Toàn thiết kế",
+    "noDesignThreads": "Trao đổi về toàn bộ thiết kế của phiên bản này: một thay đổi chạm tới mọi màn, một đợt rà soát, một lần cấu trúc lại.",
+    "designMessageClaude": "Nhờ đổi trên toàn bộ thiết kế…",
+    "lookingAt": {
+      "params": "đang xem ‹a0›",
+      "one": "đang xem 1",
+      "two": "đang xem 2"
+    },
+    "scriptsOn": {
+      "params": "Script: ‹a0›",
+      "one": "Script: 1",
+      "two": "Script: 2"
+    },
+    "scriptsOff": "Script: tắt",
     "openImage": "Mở ảnh",
     "attachedImage": "Ảnh đính kèm",
     "workingLong": "Claude đang làm…",
@@ -1217,6 +1350,21 @@
       "params": "Đang đọc luật ‹a0.topic›",
       "one": "Đang đọc luật ",
       "two": "Đang đọc luật "
+    },
+    "replacing": {
+      "params": "Đang thay trên nhiều file: ‹a0.pattern›",
+      "one": "Đang thay trên nhiều file: ",
+      "two": "Đang thay trên nhiều file: "
+    },
+    "browsing": {
+      "params": "Đang xem ‹a0.what› màn",
+      "one": "Đang xem  màn",
+      "two": "Đang xem  màn"
+    },
+    "running": {
+      "params": "Đang chạy: ‹a0.command›",
+      "one": "Đang chạy: ",
+      "two": "Đang chạy: "
     },
     "usingTool": {
       "params": "Đang dùng ‹a0.name›",

@@ -4,7 +4,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, CheckCheck, Hourglass, ImagePlus, Loader2, Maximize2, MessageSquarePlus, Minimize2, Pencil, RotateCcw, Send, Sparkles, Square, SquareDashedMousePointer, Trash2, Undo2, X } from "lucide-react";
 import { cn } from "../ui";
-import { allRefs, dropMark, waitingForUser } from "../lib/thread-core.mjs";
+import { allRefs, dropMark, waitingForUser, DESIGN_ENTRY } from "../lib/thread-core.mjs";
 import { replyBlocks, replyPlain } from "../lib/reply-md.mjs";
 import { enterAction } from "../lib/composer-keys.mjs";
 import { api, refScenario, scenariosOf, uploadUrl, type Entry, type Ref, type Thread } from "./api";
@@ -37,6 +37,12 @@ type Props = {
   /** "Redraw" on a mark → the next mark drawn on the canvas replaces it (keeping its number). */
   redraw: Redraw | null;
   onRedraw: (r: Redraw) => void;
+  /** The "Whole design" tab: the threads belong to the version, not to `entry` (the screen being looked at, sent as `viewing`). No marks are drawn here. */
+  design?: boolean;
+  /** Title of a screen by id (the "looking at …" label of a design message). */
+  screenTitle?: (id: string) => string;
+  /** The design tab: where Claude may run scripts — the backend name, null = off, undefined = not known yet (nothing shown). */
+  scripts?: string | null;
   /** The marks list of the open thread is shown (URL `kh=1`). */
   refsOpen: boolean;
   onRefsOpen: (on: boolean) => void;
@@ -164,7 +170,7 @@ type Att = { key: string; url: string; id?: string; err?: string };
  * screen, for multi-paragraph text; its state is in the URL `soan=1`): Enter starts a new line, Ctrl/⌘+Enter sends
  * (lib/composer-keys.mjs). Both modes are the same box (text, images and marks stay when switching).
  */
-function Composer(p: { placeholder: string; draftKey: string; pendingRefs: Ref[]; entry: Entry; annotating: boolean; busy: boolean; expanded: boolean; onExpanded: (on: boolean) => void; onToggleAnnotate: () => void; onRemovePending: (i: number) => void; onFocusRef: (k: string) => void; redrawing: number | null; onRedraw: (i: number) => void; onSend: (text: string, images: string[]) => Promise<boolean> }) {
+function Composer(p: { noMarks?: boolean; placeholder: string; draftKey: string; pendingRefs: Ref[]; entry: Entry; annotating: boolean; busy: boolean; expanded: boolean; onExpanded: (on: boolean) => void; onToggleAnnotate: () => void; onRemovePending: (i: number) => void; onFocusRef: (k: string) => void; redrawing: number | null; onRedraw: (i: number) => void; onSend: (text: string, images: string[]) => Promise<boolean> }) {
   const taRef = useRef<HTMLTextAreaElement>(null);
   // Opening / folding the large composer → caret at the end of the text, to keep typing right away.
   useEffect(() => {
@@ -274,14 +280,14 @@ function Composer(p: { placeholder: string; draftKey: string; pendingRefs: Ref[]
         className={cn("input resize-none", p.expanded && "flex-1 min-h-[40vh] text-[15px] leading-relaxed")}
       />
       <div className="flex items-center gap-1.5">
-        <button
+        {!p.noMarks && <button
           type="button"
           onClick={() => { if (p.expanded && !p.annotating) p.onExpanded(false); p.onToggleAnnotate(); }}
           className={cn("inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium border", p.annotating ? "bg-accent-700 border-accent-700 text-white" : "bg-surface border-ink-200 text-ink-700 hover:bg-ink-50")}
           title={T.markHint}
         >
           <SquareDashedMousePointer size={15} /> {p.annotating ? T.marking : T.mark}
-        </button>
+        </button>}
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
@@ -354,12 +360,12 @@ export function ThreadsPanel(p: Props) {
         <div className="flex-1" />
         {err && <p className="px-3 pb-2 text-xs text-rose-600">{err}</p>}
         <Composer
-          placeholder={T.messageClaude}
+          placeholder={p.design ? T.designMessageClaude : T.messageClaude} noMarks={p.design}
           draftKey="new" entry={p.entry} pendingRefs={p.pendingRefs} annotating={p.annotating} busy={busy} expanded={p.composeBig} onExpanded={p.onComposeBig}
           onToggleAnnotate={p.onToggleAnnotate} onRemovePending={p.onRemovePending} onFocusRef={p.onFocusRef}
           redrawing={p.redraw?.kind === "pending" ? p.redraw.i : null} onRedraw={(i) => p.onRedraw({ kind: "pending", i })}
           onSend={(text, images) => run(async () => {
-            const t = await api.createThread({ entry: p.entry.id, version: p.version, text, refs: p.pendingRefs, images });
+            const t = await api.createThread({ entry: p.design ? DESIGN_ENTRY : p.entry.id, version: p.version, text, refs: p.design ? [] : p.pendingRefs, images, ...(p.design ? { viewing: p.entry.id } : {}) });
             p.onClearPending();
             p.onOpen(t.id);
           })}
@@ -424,7 +430,9 @@ export function ThreadsPanel(p: Props) {
                   <p className="flex items-center gap-1.5 text-xs text-ink-500 mb-1">
                     {claude && <Sparkles size={13} className="text-sky-600" />}
                     <span className={cn("font-medium", claude ? "text-sky-800" : "text-ink-700")}>{who(m.author)}</span> · {hm(m.at)}
-                    {!claude && (m.viewing ?? thread.entry) !== p.entry.id && <span data-message-on className="truncate">· {T.onMember(p.memberLabel(m.viewing ?? thread.entry))}</span>}
+                    {!claude && (p.design
+                      ? m.viewing && m.viewing !== p.entry.id && <span data-message-on className="truncate">· {T.lookingAt(p.screenTitle?.(m.viewing) ?? m.viewing)}</span>
+                      : (m.viewing ?? thread.entry) !== p.entry.id && <span data-message-on className="truncate">· {T.onMember(p.memberLabel(m.viewing ?? thread.entry))}</span>)}
                   </p>
                   {m.text && (() => {
                     const chip = (k: number) => { const r = refOf(k); return r ? <RefChip n={r.n} claude={claude} removed={!!r.removed} onClick={() => p.onFocusRef(`${m.id}:${k - 1}`)} /> : `[#${k}]`; };
@@ -490,7 +498,7 @@ export function ThreadsPanel(p: Props) {
         {err && <p className="px-3 pb-2 text-xs text-rose-600">{err}</p>}
         <Composer
           placeholder={thread.status === "closed" ? T.replyToReopen : T.reply}
-          draftKey={thread.id} entry={p.entry} pendingRefs={p.pendingRefs} annotating={p.annotating} busy={busy} expanded={p.composeBig} onExpanded={p.onComposeBig}
+          noMarks={p.design} draftKey={thread.id} entry={p.entry} pendingRefs={p.pendingRefs} annotating={p.annotating} busy={busy} expanded={p.composeBig} onExpanded={p.onComposeBig}
           onToggleAnnotate={p.onToggleAnnotate} onRemovePending={p.onRemovePending} onFocusRef={p.onFocusRef}
           redrawing={p.redraw?.kind === "pending" ? p.redraw.i : null} onRedraw={(i) => p.onRedraw({ kind: "pending", i })}
           onSend={(text, images) => run(async () => { await api.send(thread.id, { text, refs: p.pendingRefs, images, viewing: p.entry.id }); p.onClearPending(); })}
@@ -511,21 +519,22 @@ export function ThreadsPanel(p: Props) {
           <StatusBadge t={t} />
         </div>
         {last && <p className="mt-0.5 text-xs text-ink-500 truncate">{last.role === "claude" ? T.fromClaude(replyPlain(last.text)) : last.text || ((last.images?.length ?? 0) > 0 ? T.lastImage : T.lastMark)}</p>}
-        <p className="mt-0.5 text-[11px] text-ink-400">{T.messageCount(t.messages.length)} · {hm(t.updatedAt)}{t.entry !== p.entry.id && <span data-thread-on> · {p.memberLabel(t.entry)}</span>}</p>
+        <p className="mt-0.5 text-[11px] text-ink-400">{T.messageCount(t.messages.length)} · {hm(t.updatedAt)}{!p.design && t.entry !== p.entry.id && <span data-thread-on> · {p.memberLabel(t.entry)}</span>}</p>
       </button>
     );
   };
   return (
     <div className="flex-1 min-h-0 flex flex-col">
-      {header(<p className="font-semibold">{T.conversation}</p>, (
+      {header(<p className="font-semibold">{p.design ? T.designTitle : T.conversation}</p>, (
         <button type="button" onClick={() => p.onOpen("new")} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-accent-700 border border-accent-700 text-white rounded-lg text-sm font-medium hover:bg-accent-800">
           <MessageSquarePlus size={15} /> {T.newThread}
         </button>
       ), false)}
+      {p.design && p.scripts !== undefined && <p data-scripts className="px-4 py-1 text-[11px] text-ink-400 border-b border-ink-100">{p.scripts ? T.scriptsOn(p.scripts) : T.scriptsOff}</p>}
       <div className="flex-1 overflow-y-auto">
         {p.threads.length === 0 ? (
           <div className="p-6 text-center text-sm text-ink-500">
-            {T.noThreads}
+            {p.design ? T.noDesignThreads : T.noThreads}
           </div>
         ) : (
           <>

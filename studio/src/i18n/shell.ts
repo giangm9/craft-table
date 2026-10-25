@@ -53,6 +53,7 @@ const en = {
   /** The mark button while redrawing mark `mark` ("#2" sent, "+1" not sent yet). */
   redrawing: (mark: string) => `Redraw ${mark}`,
   conversation: "Conversation",
+  design: "Whole design",
   history: "History",
   noBoards: (version: string) => `No boards yet in versions/${version}/boards/.`,
   /** Avatars of the other people in the studio. */
@@ -138,6 +139,7 @@ const vi: typeof en = {
   marking: "Đang khoanh",
   redrawing: (mark) => `Vẽ lại ${mark}`,
   conversation: "Hội thoại",
+  design: "Toàn thiết kế",
   history: "Lịch sử",
   noBoards: (version) => `Chưa có bản vẽ nào trong versions/${version}/boards/.`,
   othersHere: (n) => `${n} người khác đang mở xưởng`,

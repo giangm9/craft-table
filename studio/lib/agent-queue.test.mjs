@@ -52,3 +52,54 @@ test("first in, first out; releasing twice does not let a later turn in early", 
   assert.equal(q.busy("k"), false);
   assert.equal(q.waiting("k"), 0);
 });
+
+// ── whole-design turns: key "<version>:*" holds the WHOLE version ──
+test("design turn: waits for the running screen turns of its version, and a later screen turn waits behind it", async () => {
+  const q = createQueue();
+  const log = [];
+  const a = await q.acquire("v1:a");
+  const b = await q.acquire("v1:b");
+  const d = q.acquire("v1:*").then((rel) => { log.push("design in"); return rel; });
+  const c = q.acquire("v1:c").then((rel) => { log.push("c in"); return rel; }); // arrives AFTER the design turn: no jumping the line
+  await tick();
+  assert.deepEqual(log, []);
+  assert.equal(q.busy("v1:*"), true);
+  a();
+  await tick();
+  assert.deepEqual(log, [], "still waiting for b");
+  b();
+  const dr = await d;
+  assert.deepEqual(log, ["design in"]);
+  await tick();
+  assert.deepEqual(log, ["design in"], "c waits while the design turn runs");
+  dr();
+  (await c)();
+  assert.deepEqual(log, ["design in", "c in"]);
+  assert.equal(q.busy("v1:c"), false);
+});
+
+test("design turn: another version is not blocked, and two design turns of one version take turns", async () => {
+  const q = createQueue();
+  const d1 = await q.acquire("v1:*");
+  let other = false, second = false;
+  q.acquire("v2:a").then(() => { other = true; });
+  q.acquire("v2:*").then(() => { second = true; });
+  const d1b = q.acquire("v1:*").then((rel) => { second = "v1 second"; return rel; });
+  await tick();
+  assert.equal(other, true, "a screen of another version runs at once");
+  assert.equal(q.waiting("v1:*"), 1);
+  d1();
+  const rel = await d1b;
+  assert.equal(second, "v1 second");
+  rel();
+  assert.equal(q.busy("v1:*"), false);
+});
+
+test("screen turns of one version still run in parallel when no design turn is around", async () => {
+  const q = createQueue();
+  await q.acquire("v1:a");
+  let bIn = false;
+  q.acquire("v1:b").then(() => { bIn = true; });
+  await tick();
+  assert.equal(bIn, true);
+});

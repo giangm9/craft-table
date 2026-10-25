@@ -9,8 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { allRefs, textWithThreadMarks } from "./thread-core.mjs";
-import { cssDangers } from "./css-guard.mjs";
-import { optionMetaIssue } from "./option-meta.mjs";
+import { writableRel, contentIssue } from "./write-guard.mjs";
 import { listThreads, loadThread } from "./threads.mjs";
 import { isValidEntryId } from "./entries.mjs";
 import { safeSrcPath } from "./spec-core.mjs";
@@ -19,7 +18,6 @@ import { normalizeLang, translate } from "./i18n.mjs";
 import AGENT from "./i18n/agent.mjs";
 
 const READ_LINES = 400, SEARCH_MAX = 60, THREAD_PAGE = 20, LIST_MAX = 200;
-const WRITABLE_EXT = /\.(tsx|ts|css|md|json)$/;
 /** craft-table's own rules (boards, specs, marks): one folder per language, the same file names in each. */
 export const RULES_ROOT = path.join(import.meta.dirname, "..", "agent-rules");
 /** Folder of craft-table's own rules in the project's language (unknown → English). A project adds / overrides rules in its rules/. */
@@ -54,7 +52,7 @@ const inside = (dir, p) => p === dir || p.startsWith(dir + path.sep);
  * source: { path, label, roots, extensions } of the project's app repo, or null (no source reading).
  * lang: the project's language — every description and result Claude reads (unknown → English).
  */
-export function createAgentTools({ root, source = null, ctx, shots, checks, threadsDir, uploadsDir, lang = "en", rulesDirs = [defaultRules(lang)] }) {
+export function createAgentTools({ root, source = null, ctx, shots, checks, threadsDir, uploadsDir, lang = "en", rulesDirs = [defaultRules(lang)], design = false }) {
   const T = (key, params) => translate(AGENT, lang, key, params);
   const rules = ruleFiles(rulesDirs);
   const topics = [...rules.keys()];
@@ -80,12 +78,6 @@ export function createAgentTools({ root, source = null, ctx, shots, checks, thre
     try { real = path.join(fs.realpathSync(base), ...rest); } catch { return null; }
     return inside(fs.realpathSync(vdir), real) ? { abs: real, rel } : null;
   }
-  /** CSS with a directive that makes Tailwind load/run another file → the error text; safe → null. */
-  const cssBlocked = (rel, content) => {
-    if (!rel.endsWith(".css")) return null;
-    const bad = cssDangers(content, { lang });
-    return bad.length ? T("cssBlocked", { found: bad.join(", ") }) : null;
-  };
   function inSource(rel) {
     const ok = safeSrcPath(rel, source);
     if (!ok) return null;
@@ -98,9 +90,7 @@ export function createAgentTools({ root, source = null, ctx, shots, checks, thre
   const srcArea = source ? `"src:<${source.roots.join("|")}>/…"` : "";
   function resolveWrite(p) {
     const r = inVersion(p);
-    if (!r || !/^(boards|system)\//.test(r.rel) || !WRITABLE_EXT.test(r.rel)) return null;
-    if (/(^|\/)(version|tsconfig)\.json$/.test(r.rel)) return null;
-    return r;
+    return r && writableRel(r.rel) ? r : null;
   }
   const writeAtomic = (abs, content) => {
     fs.mkdirSync(path.dirname(abs), { recursive: true });
@@ -109,7 +99,7 @@ export function createAgentTools({ root, source = null, ctx, shots, checks, thre
     fs.renameSync(tmp, abs);
   };
   const OUT_OF_SCOPE = T("outOfScope", { version: ctx.version, srcArea });
-  const optionIssue = (rel, content) => optionMetaIssue(rel, content, { lang });
+  const blockedContent = (rel, content) => contentIssue(rel, content, { lang });
 
   function walk(dir, fn, skip = (n) => n.startsWith(".") || n === "node_modules") {
     if (!fs.existsSync(dir)) return;
@@ -279,7 +269,7 @@ export function createAgentTools({ root, source = null, ctx, shots, checks, thre
         const count = s.split(old).length - 1;
         if (count !== 1) return fail(count ? T("editAmbiguous", { count }) : T("editNotFound"));
         const next = s.replace(old, () => neu);
-        const blocked = cssBlocked(r.rel, next) ?? optionIssue(r.rel, next);
+        const blocked = blockedContent(r.rel, next);
         if (blocked) return fail(blocked);
         writeAtomic(r.abs, next);
         return text(T("edited", { path: p }));
@@ -292,7 +282,7 @@ export function createAgentTools({ root, source = null, ctx, shots, checks, thre
       async handler({ path: p, content }) {
         const r = resolveWrite(p);
         if (!r) return fail(T("cannotWrite", { path: p, version: ctx.version }));
-        const blocked = cssBlocked(r.rel, content) ?? optionIssue(r.rel, content);
+        const blocked = blockedContent(r.rel, content);
         if (blocked) return fail(blocked);
         writeAtomic(r.abs, content);
         return text(T("written", { path: p, lines: content.split("\n").length }));
@@ -307,8 +297,8 @@ export function createAgentTools({ root, source = null, ctx, shots, checks, thre
         if (what === "typecheck") { const r = await checks.typecheck(root, ctx.version, { studio: false, lang }); return r.ok ? text(r.out || T("typecheckClean")) : fail(r.out); }
         if (what === "lint") {
           // Only the thread's screen by default — errors on other screens (someone else is editing them) are not this turn's job.
-          const ids = [entry ?? ctx.entry];
           if (entry && !validEntry(entry)) return fail(T("noScreen", { entry }));
+          const ids = entry ? [entry] : design ? screens().map((s) => s.id) : [ctx.entry]; // a whole-design turn checks every screen
           const r = checks.lint(root, ctx.version, ids);
           if (r.skipped) return text(T("lintOff"));
           return r.ok ? text(T("lintClean")) : fail(T("lintFailed", { count: r.issues.length, issues: r.issues.slice(0, 40).join("\n") }));

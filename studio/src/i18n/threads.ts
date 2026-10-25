@@ -54,6 +54,14 @@ const en = {
   statusRedrawn: "redrawn",
   /** Where a mark or message was made when it is another screen of the group; label = "the main screen", "option “X”"… */
   onMember: (label: string) => `on ${label}`,
+  // The "Whole design" tab: conversations about every screen of the version, not one screen.
+  designTitle: "Whole design",
+  noDesignThreads: "Talk about the whole design of this version: a change that reaches every screen, an audit, a restructure.",
+  designMessageClaude: "Ask for a change across the whole design…",
+  /** On a message sent while looking at a screen: `title` is that screen. */
+  lookingAt: (title: string) => `looking at ${title}`,
+  scriptsOn: (backend: string) => `Scripts: ${backend}`,
+  scriptsOff: "Scripts: off",
   // Messages and Claude's turn.
   openImage: "Open image",
   attachedImage: "Attached image",
@@ -125,6 +133,12 @@ const vi: typeof en = {
   statusRemoved: "đã bỏ",
   statusRedrawn: "đã vẽ lại",
   onMember: (label) => `trên ${label}`,
+  designTitle: "Toàn thiết kế",
+  noDesignThreads: "Trao đổi về toàn bộ thiết kế của phiên bản này: một thay đổi chạm tới mọi màn, một đợt rà soát, một lần cấu trúc lại.",
+  designMessageClaude: "Nhờ đổi trên toàn bộ thiết kế…",
+  lookingAt: (title) => `đang xem ${title}`,
+  scriptsOn: (backend) => `Script: ${backend}`,
+  scriptsOff: "Script: tắt",
   openImage: "Mở ảnh",
   attachedImage: "Ảnh đính kèm",
   workingLong: "Claude đang làm…",

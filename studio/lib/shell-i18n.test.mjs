@@ -131,6 +131,7 @@ const VI_SHELL = {
   "redrawing#sent": "Vẽ lại #2",
   "redrawing#pending": "Vẽ lại +1",
   conversation: "Hội thoại",
+  design: "Toàn thiết kế",
   history: "Lịch sử",
   noBoards: "Chưa có bản vẽ nào trong versions/main/boards/.",
   "othersHere#1": "1 người khác đang mở xưởng",

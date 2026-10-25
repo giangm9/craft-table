@@ -13,6 +13,10 @@ next to their specs, in versions you can compare, with Claude in the room as a d
 - **History**: every change to a screen is kept as a snapshot you can compare and restore.
 - **Threads with Claude**: talk about a screen, mark areas on its frames, and Claude edits the boards, specs and
   screen info, looks at the result in a real browser, and checks its own work before answering.
+- **Whole-design conversation**: a tab next to *Conversation* where a thread belongs to the version, not to one
+  screen. Ask for a change that reaches everything (denser spacing, a new type scale, a rename on every screen),
+  an audit or a restructure; Claude changes many files at once, looks at the result in Chrome across every
+  screen, and can run scripts in a sandbox. See [Whole-design conversation](#whole-design-conversation).
 - **English and Vietnamese**: the studio follows each viewer's choice; Claude answers in the language you write in.
 
 craft-table runs as a small Node server inside your design project folder. Your design lives in plain files
@@ -115,6 +119,42 @@ Claude reads craft-table's own rules (how boards, specs and marks work) and the 
 `rules/` folder. A file in `rules/` with the same name as a built-in topic (`boards.md`, `specs.md`, `marks.md`)
 replaces it. Typical project rules: how to use your design system, words to use on screen, what the spec must cover.
 
+## Whole-design conversation
+
+The *Whole design* tab (right panel, between *Conversation* and *History*) lists the threads of the version you are
+looking at, the same on every screen. A message there says which screen you were looking at (a hint, not a limit), and
+Claude works on the **whole version**: every screen, the design system, the specs. There are no marks in this tab.
+
+What Claude has there, on top of the tools of a screen thread:
+
+| Tool | What it does |
+|---|---|
+| `replace` | Find and replace across many files — plain text or a JavaScript regular expression, optionally limited by a glob. A **dry run** by default (matches per file with the lines before / after); applying is all-or-nothing under the same write rules as `edit` / `write`. |
+| `browse` | Looks at the real screens in Chrome (Puppeteer): pictures of the frames you name, or `all: true` for a report over **every scenario of every screen** (what failed to draw, console errors, failed requests). `eval` runs a JavaScript expression inside each page, e.g. a measurement. |
+| `run` | A shell command (node, python, sed … whatever the machine has) in a sandbox. Only when the machine has one — see below. |
+
+A whole-design turn has up to 300 steps and an hour, **holds the whole version** while it runs (a screen turn of the
+same version waits for it, and the other way round), and works in the version of the thread — start it in a draft
+version, not in the live one. Every change is in *History* and can be restored.
+
+**What a script can touch.** `run` starts in a throwaway copy of `boards/` and `system/`. When the command ends,
+each changed file is checked by the same rules as `edit` / `write` (only `boards/` and `system/`, only
+`.tsx .ts .css .md .json`, never `version.json` or `tsconfig.json`, CSS that makes Tailwind run code is refused,
+symlinks are refused, 1.5 MB per file) and only then lands in the version. A file you changed in the meantime is a
+conflict: yours stays. A command that times out applies nothing.
+
+**Where it runs** — `CRAFT_SANDBOX`:
+
+| Value | What happens |
+|---|---|
+| unset / `auto` | `bwrap` (bubblewrap) when it exists and is allowed to run; otherwise scripts are **off** (`replace` and `browse` still work) |
+| `bwrap` | New user, pid, network and ipc namespaces: no network, the system read-only, only the copy writable |
+| `docker` | `docker run --network none --cap-drop ALL --security-opt no-new-privileges` with only the copy mounted (`CRAFT_SANDBOX_IMAGE`, default `node:22-slim`) |
+| `process` | **No isolation from the machine.** A child process with an empty environment (no tokens or keys), its own home, time and output limits — as the user `nobody` when the studio runs as root, **as the studio's own user otherwise**. The network and every file that user may read stay reachable — including this studio's own local-only API. Only for a studio nobody else can reach. |
+| `off` | Scripts are off |
+
+The start-up log says which one is on (`Claude's scripts: …`), and the tab shows it.
+
 ## Languages
 
 The studio speaks English and Vietnamese. Each viewer picks a language with the switch in the sidebar (also on the
@@ -143,7 +183,9 @@ Register `<STUDIO_PUBLIC_URL>/__auth/callback` as the redirect URI. Sign-in turn
 `OIDC_CLIENT_SECRET` and `SESSION_SECRET` are all set; the start-up log says which mode is on.
 
 Other settings: `STUDIO_PORT` (default 5180), `STUDIO_AGENT_MODEL` (Claude model alias, default `sonnet`),
-`STUDIO_ENV_FILE` (another file instead of the project's `.env`), `CRAFT_PROJECT` (the project folder).
+`STUDIO_ENV_FILE` (another file instead of the project's `.env`), `CRAFT_PROJECT` (the project folder),
+`CRAFT_SANDBOX` / `CRAFT_SANDBOX_IMAGE` (where Claude may run scripts, see
+[Whole-design conversation](#whole-design-conversation)).
 
 ### Docker
 
@@ -175,6 +217,11 @@ on Docker Desktop (Mac, Windows), either turn on sign-in or run the studio with 
   read the thread's version, its conversation and the rules, and write only boards, specs, screen info and the
   design system inside that version. Claude cannot read `.env` or `data/`, and the real app's source (`source`) is
   read-only.
+- **Scripts are off unless the machine can isolate them.** A whole-design thread can run shell commands, but only
+  in a sandbox that is chosen (`CRAFT_SANDBOX`): `bwrap` or `docker` (no network), or — when you ask for it —
+  `process`, which does **not** isolate the network. Anyone who can write in a whole-design thread can then run
+  commands there, so never turn `process` on for a studio that people you do not trust can reach (it has no sign-in
+  by default, and behind a proxy that hides who is connecting every visitor counts as "this machine").
 - **Without sign-in, only this machine gets in.** A request counts as "this machine" when it comes from a loopback
   address, carries no forwarding headers and names `localhost` as its host. Requests from this machine also skip
   sign-in when sign-in is on, so tools on the server (and Claude's own browser) can use the studio.

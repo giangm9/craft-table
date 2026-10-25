@@ -35,6 +35,12 @@ const fail = (lang, code, params = {}) => ({ ok: false, code, params, error: dat
  * screen it was drawn on) when it differs from the thread's screen.
  */
 export const featureOf = (id) => String(id ?? "").split("~")[0];
+/**
+ * A WHOLE-DESIGN thread belongs to a version, not to a screen: its `entry` is this marker (never a valid screen id).
+ * The person's messages say which screen they were looking at (`viewing`); a mark names its own screen (`entry`).
+ */
+export const DESIGN_ENTRY = "*";
+export const isDesignThread = (t) => t?.entry === DESIGN_ENTRY;
 /** Threads of the whole cluster holding `entry`, in one version. */
 export const threadsOfFeature = (threads, entry, version) => threads.filter((t) => t.version === version && featureOf(t.entry) === featureOf(entry));
 const inFeature = (id, base) => isValidEntryId(id) && featureOf(id) === featureOf(base);
@@ -45,7 +51,8 @@ function cleanRef(r, base) {
   if (!VIEWPORTS.has(x.viewport)) return null;
   const q = x.rect ?? {};
   if (![q.x, q.y, q.w, q.h].every(isNum) || q.x < 0 || q.y < 0 || q.w <= 0 || q.h <= 0) return null;
-  if (x.entry != null && !(base ? inFeature(x.entry, base) : isValidEntryId(x.entry))) return null;
+  if (base === DESIGN_ENTRY) { if (!isValidEntryId(x.entry)) return null; } // a design thread's mark names its own screen
+  else if (x.entry != null && !(base ? inFeature(x.entry, base) : isValidEntryId(x.entry))) return null;
   const texts = Array.isArray(x.texts) ? x.texts.filter((t) => typeof t === "string").slice(0, 30) : [];
   return {
     scenario: x.scenario ?? null,
@@ -59,7 +66,7 @@ function cleanRef(r, base) {
 /** opts: { id, now, lang? } — lang words a refusal (default "en"). */
 export function newThread(input, { id, now, lang }) {
   const i = input ?? {};
-  if (!isValidEntryId(i.entry)) return fail(lang, "threadEntryInvalid");
+  if (i.entry !== DESIGN_ENTRY && !isValidEntryId(i.entry)) return fail(lang, "threadEntryInvalid");
   if (typeof i.version !== "string" || !VERSION_RE.test(i.version)) return fail(lang, "threadVersionInvalid");
   const title = typeof i.title === "string" ? i.title.trim().slice(0, 120) : "";
   if (!title) return fail(lang, "threadTitleMissing");
@@ -80,7 +87,7 @@ export function addMessage(thread, input, { id, now, lang }) {
   const refs = raw.map((r) => cleanRef(r, thread.entry));
   if (refs.some((r) => !r)) return fail(lang, "markInvalid");
   const viewing = i.viewing != null && i.viewing !== thread.entry ? i.viewing : null;
-  if (viewing && !inFeature(viewing, thread.entry)) return fail(lang, "messageViewingOutside");
+  if (viewing && !(isDesignThread(thread) ? isValidEntryId(viewing) : inFeature(viewing, thread.entry))) return fail(lang, "messageViewingOutside");
   const images = Array.isArray(i.images) ? i.images : [];
   if (images.length > MAX_IMAGES) return fail(lang, "messageTooManyImages", { max: MAX_IMAGES });
   if (images.some((x) => typeof x !== "string" || !UPLOAD_RE.test(x))) return fail(lang, "messageImageInvalid");
@@ -97,8 +104,12 @@ export function setAgent(thread, patch, now) {
 // is told to write follows the project language; both are always read.
 const MARK_CALL = /@(?:khoanh|mark)\(\s*([a-z0-9-]+)\s*,\s*(desktop|mobile|[a-z]+)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)/g;
 
-/** The agent's reply → text (marks replaced by [#n]) + the list of valid marks. */
-export function parseAgentReply(raw) {
+/**
+ * The agent's reply → text (marks replaced by [#n]) + the list of valid marks.
+ * opts.marks === false: there is no screen to put marks on (a design turn nobody looked at a screen for) → the calls are removed.
+ */
+export function parseAgentReply(raw, { marks = true } = {}) {
+  if (!marks) return { text: String(raw ?? "").replace(MARK_CALL, "").replace(/[ \t]{2,}/g, " ").trim(), refs: [] };
   const refs = [];
   const text = String(raw ?? "").replace(MARK_CALL, (whole, sc, vp, x, y, w, h) => {
     const r = cleanRef({ scenario: sc === "-" ? null : sc, viewport: vp, rect: { x: +x, y: +y, w: +w, h: +h } });

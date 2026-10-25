@@ -15,9 +15,9 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { newThread, addMessage, editRef, setAgent, parseAgentReply, pendingUserMessages, loadThread, saveThread, deleteThread, listThreads, featureOf } from "./lib/threads.mjs";
+import { newThread, addMessage, editRef, setAgent, parseAgentReply, pendingUserMessages, loadThread, saveThread, deleteThread, listThreads, featureOf, isDesignThread } from "./lib/threads.mjs";
 import { isValidEntryId } from "./lib/entries.mjs";
-import { buildPrompt, runAgent, SESSION_KIND } from "./lib/agent.mjs";
+import { buildPrompt, runAgent, SESSION_KIND, DESIGN_TIMEOUT_MS } from "./lib/agent.mjs";
 import { createQueue } from "./lib/agent-queue.mjs";
 import { specName, safeSrcPath, sliceLines } from "./lib/spec-core.mjs";
 import { boardsDir } from "./lib/versions.mjs";
@@ -47,7 +47,8 @@ export function apiError(lang, err) {
 
 // runAgent/buildPrompt can be injected so tests run with a fake Claude. shots: the shared screenshot taker (lib/shots.mjs).
 /** project: the loaded craft-table.json (name, description, language, source) — for Claude's brief and the source page. */
-export function createThreadsApi({ root, project = null, hot, listEntries, live, pickVersion, readBody, send, model, shots, runAgent: run = runAgent, buildPrompt: build = buildPrompt }) {
+// sandbox: where a whole-design turn may run scripts (lib/sandbox.mjs createSandbox), or null — then those turns have no `run` tool.
+export function createThreadsApi({ root, project = null, hot, listEntries, live, pickVersion, readBody, send, model, shots, sandbox = null, runAgent: run = runAgent, buildPrompt: build = buildPrompt }) {
   const source = project?.source ?? null;
   /** Language of what a Claude turn stores in the conversation (and of the screen info it is given). */
   const projectLang = normalizeLang(project?.language) ?? "en";
@@ -87,7 +88,8 @@ export function createThreadsApi({ root, project = null, hot, listEntries, live,
     const t0 = await loadThread(dir, id);
     if (!t0 || t0.status !== "open" || !pendingUserMessages(t0).length) return;
     if (running.has(id) || queued.has(id)) return; // called twice while the file was being read
-    const key = `${t0.version}:${featureOf(t0.entry)}`; // the whole group (main screen + options) one turn at a time
+    // A screen's whole group (main screen + options) takes one turn at a time; a whole-design turn holds the whole version.
+    const key = isDesignThread(t0) ? `${t0.version}:*` : `${t0.version}:${featureOf(t0.entry)}`;
     const wasBusy = queue.busy(key);
     const turn = queue.acquire(key); // take the place now → first in, first out
     queued.add(id);
@@ -113,9 +115,11 @@ export function createThreadsApi({ root, project = null, hot, listEntries, live,
       return;
     }
     const lastPendingId = pending[pending.length - 1].id;
-    const meta = listEntries(t.version, { lang: projectLang }).find((e) => e.id === t.entry)?.meta ?? { title: t.entry };
+    const design = isDesignThread(t);
+    const meta = design ? { title: t.title } : listEntries(t.version, { lang: projectLang }).find((e) => e.id === t.entry)?.meta ?? { title: t.entry };
     // A thread is shared by the whole group: this turn works on the screen the sender is looking at (an option or the main screen).
-    const turnEntry = pending[pending.length - 1].viewing ?? t.entry;
+    // A whole-design thread has no screen of its own: the one the sender was looking at, if they said, else none.
+    const turnEntry = design ? pending[pending.length - 1].viewing ?? null : pending[pending.length - 1].viewing ?? t.entry;
 
     const attempt = async (sessionId) => {
       // The prompt carries only the new messages + ids; Claude opens the rest itself with the sandbox tools (locked by ctx).
@@ -124,6 +128,7 @@ export function createThreadsApi({ root, project = null, hot, listEntries, live,
       const r = run({
         root, ...(project ? { project } : {}), model, sessionId, prompt, shots,
         ctx: { version: t.version, threadId: t.id, entry: turnEntry },
+        ...(design ? { design: true, sandbox, timeoutMs: DESIGN_TIMEOUT_MS } : {}),
         onSession: (sid) => withThread(id, (x) => setAgent(x, { sessionId: sid, sessionKind: SESSION_KIND })),
         onProgress: (p) => {
           const n = Date.now();
@@ -133,7 +138,7 @@ export function createThreadsApi({ root, project = null, hot, listEntries, live,
         },
       });
       running.set(id, r);
-      runOf.set(id, { version: t.version, entry: turnEntry });
+      runOf.set(id, { version: t.version, entry: design ? "*" : turnEntry });
       return r;
     };
 
@@ -154,7 +159,7 @@ export function createThreadsApi({ root, project = null, hot, listEntries, live,
     await withThread(id, (x) => {
       let y = setAgent(x, { state: r.ok ? "idle" : "error", progress: null, error: r.ok ? null : r.error, lastCostUsd: r.costUsd, finishedAt: nowIso() }, nowIso());
       if (r.ok) {
-        const { text, refs } = parseAgentReply(r.text);
+        const { text, refs } = parseAgentReply(r.text, { marks: !design || !!turnEntry });
         // Claude marks on the frame of the screen this turn worked on (possibly an option).
         const m = addMessage(y, { role: "claude", author: "claude", text: text || translate(SERVER_TEXT, projectLang, "claudeNoReply"), refs: refs.map((x) => ({ ...x, entry: turnEntry })) }, { id: rid("m_"), now: nowIso() });
         if (m.ok) {
@@ -243,7 +248,7 @@ export function createThreadsApi({ root, project = null, hot, listEntries, live,
       if (!version) return fail(400, "apiVersionMissing");
       const nt = newThread({ entry: b.entry, version, title, author }, { id: rid("t_"), now: nowIso() });
       if (!nt.ok) return refuse(nt);
-      const withMsg = addMessage(nt.thread, { role: "user", author, text: firstText, refs: b.refs, images: b.images }, { id: rid("m_"), now: nowIso() });
+      const withMsg = addMessage(nt.thread, { role: "user", author, text: firstText, refs: b.refs, images: b.images, viewing: b.viewing }, { id: rid("m_"), now: nowIso() });
       if (!withMsg.ok) return refuse(withMsg);
       await saveThread(dir, withMsg.thread);
       // noAgent: only for tests run on this very machine (no real Claude turn spent).
@@ -369,7 +374,7 @@ tr.hit td{background:#eef9f3}tr.hit td.n{color:#155f3d;font-weight:700;border-ri
   }
 
   /** The Claude turn running on screen (version, entry) → its thread id, or null. */
-  const activeRunFor = (version, entry) => { for (const [id, r] of runOf) if (r.version === version && r.entry === entry) return id; return null; };
+  const activeRunFor = (version, entry) => { for (const [id, r] of runOf) if (r.version === version && (r.entry === entry || r.entry === "*")) return id; return null; };
 
   const close = () => { for (const w of watchers) w.close(); clearTimeout(timer); clearTimeout(specTimer); };
   return { handle, recover, startAgent, stop, activeRunFor, close };

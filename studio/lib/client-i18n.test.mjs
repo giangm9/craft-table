@@ -65,6 +65,10 @@ const VI = [
   [{ key: "restoredSnapshot", params: { id: 12, ts: "2026-10-24T10:00:00.000Z" } }, "khôi phục mốc #12 (2026-10-24T10:00:00.000Z)"],
   [{ key: "adoptedOption", params: { name: "Ba nút" } }, 'chốt phương án "Ba nút"'],
   [{ key: "changedWhileOff" }, "đổi khi xưởng tắt"],
+  [{ key: "replacing", params: { pattern: "p-3" } }, "Đang thay trên nhiều file: p-3"],
+  [{ key: "browsing", params: { what: "all" } }, "Đang xem mọi màn"],
+  [{ key: "browsing", params: { what: "12" } }, "Đang xem 12 màn"],
+  [{ key: "running", params: { command: "node codemod.js" } }, "Đang chạy: node codemod.js"],
 ];
 
 test("renderStored (vi): exactly the texts the studio wrote in earlier versions", () => {

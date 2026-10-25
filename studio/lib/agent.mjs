@@ -19,6 +19,8 @@ import path from "node:path";
 import { createSdkMcpServer, query, tool } from "@anthropic-ai/claude-agent-sdk";
 import { allRefs, refChangesSince, textWithThreadMarks } from "./thread-core.mjs";
 import { createAgentTools, defaultRules, ruleTopics } from "./agent-tools.mjs";
+import { createDesignTools, DESIGN_TOOL_NAMES } from "./agent-tools-design.mjs";
+import { isDesignThread } from "./thread-core.mjs";
 import { lint, typecheck } from "./checks.mjs";
 import { createVerifyGuard } from "./verify-guard.mjs";
 import { normalizeLang, translate } from "./i18n.mjs";
@@ -44,6 +46,10 @@ export function makeStopHook(guard, { lang = "en" } = {}) {
 }
 
 export const agentCwd = () => path.join(os.homedir(), ".design-agent");
+export { DESIGN_TOOL_NAMES };
+/** A whole-design turn: many more steps and a long time — one change can reach every screen. */
+export const DESIGN_MAX_TURNS = 300;
+export const DESIGN_TIMEOUT_MS = 60 * 60_000;
 export const TOOL_NAMES = ["list", "read", "search", "read_thread", "view_frame", "view_region", "view_image", "locate", "edit", "write", "check", "rules"];
 
 /**
@@ -85,8 +91,21 @@ const stoppedError = (why) => (why ? { ...why, key: STOPPED[why.key] ?? why.key 
  */
 export const loginLostError = (env = process.env) => stored("loginLost", { command: env.CRAFT_LOGIN_HINT || "npx craft-table login" });
 
-/** SDK options of the sandbox (pure — for tests). */
-export function sdkOptions({ model, sessionId, mcpServer, systemPrompt: prompt }) {
+/** The system prompt of a WHOLE-DESIGN thread; `sandbox`: scripts (the run tool) are available. */
+export function designSystemPrompt({ project, topics, sandbox }) {
+  return say(project.language, "designSystemPrompt", {
+    name: project.name,
+    description: project.description || "",
+    sourceRoots: project.source ? project.source.roots.map((r) => `src:${r}/…`).join(", ") : null,
+    sourceLabel: project.source?.label ?? null,
+    topics: topics.join(", "),
+    sandbox: !!sandbox,
+  });
+}
+
+/** SDK options of the sandbox (pure — for tests). design: a whole-design turn (more steps, the design tools; `run` only when run !== false). */
+export function sdkOptions({ model, sessionId, mcpServer, systemPrompt: prompt, design = false, run = true }) {
+  const names = design ? [...TOOL_NAMES, ...DESIGN_TOOL_NAMES.filter((n) => n !== "run" || run)] : TOOL_NAMES;
   return {
     model,
     systemPrompt: prompt,
@@ -95,9 +114,9 @@ export function sdkOptions({ model, sessionId, mcpServer, systemPrompt: prompt }
     skills: [],
     strictMcpConfig: true,
     mcpServers: { studio: mcpServer },
-    allowedTools: TOOL_NAMES.map((n) => `mcp__studio__${n}`),
+    allowedTools: names.map((n) => `mcp__studio__${n}`),
     permissionMode: "dontAsk",
-    maxTurns: 80,
+    maxTurns: design ? DESIGN_MAX_TURNS : 80,
     ...(sessionId ? { resume: sessionId } : {}),
   };
 }
@@ -115,6 +134,8 @@ export function ensureAgentHome() {
  * lang: the project's language (unknown → English).
  */
 export function buildPrompt({ thread, meta, pending, resume, viewing = thread.entry, lang = "en" }) {
+  const design = isDesignThread(thread);
+  if (design && viewing === thread.entry) viewing = null; // "*" is no screen
   const refs = allRefs(thread);
   const before = thread.messages.findIndex((m) => m.id === pending[0]?.id);
   const body = pending.map((m) => {
@@ -131,8 +152,9 @@ export function buildPrompt({ thread, meta, pending, resume, viewing = thread.en
   const changes = changed.length ? `${say(lang, "promptMarkChanges", { changes: changed })}\n` : "";
   // A thread is shared by the main screen + its options: once an option was viewed, say which screen this turn is on.
   const mixed = viewing !== thread.entry || thread.messages.some((m) => m.viewing && m.viewing !== thread.entry);
-  const where = mixed ? `${say(lang, "promptViewing", { main: viewing === thread.entry, entry: viewing })}\n` : "";
+  const where = design ? (viewing ? `${say(lang, "promptViewingDesign", { entry: viewing })}\n` : "") : mixed ? `${say(lang, "promptViewing", { main: viewing === thread.entry, entry: viewing })}\n` : "";
   if (resume) return `${where}${changes}${body}`;
+  if (design) return `${say(lang, "promptHeadDesign", { thread: thread.id, version: thread.version, before: Math.max(before, 0) })}\n${where}${changes}${body}`;
   const head = say(lang, "promptHead", { thread: thread.id, version: thread.version, entry: thread.entry, title: meta?.title ?? thread.entry, before: Math.max(before, 0) });
   return `${head}\n${where}${changes}${body}`;
 }
@@ -156,6 +178,9 @@ export function progressOf(ev) {
     case "edit": case "write": return stored("editing", { path: s(i.path) });
     case "check": return stored("checking", { what: s(i.what) });
     case "rules": return stored("readingRules", { topic: s(i.topic) });
+    case "replace": return stored("replacing", { pattern: s(i.pattern) });
+    case "browse": return stored("browsing", { what: i.all ? "all" : String(Array.isArray(i.frames) ? i.frames.length : 0) });
+    case "run": return stored("running", { command: s(i.command).slice(0, 80) });
     default: return stored("usingTool", { name: s(t.name) });
   }
 }
@@ -167,19 +192,21 @@ export function progressOf(ev) {
 /** Rules: craft-table's own in the project's language, then the project's rules/ (same name → the project's wins). */
 export const rulesDirsFor = (root, lang) => [defaultRules(lang), path.join(root, "rules")];
 
-export function runAgent({ root, project = { name: path.basename(root), description: "", language: "en", source: null }, model, sessionId, prompt, ctx, shots, onProgress, onSession, timeoutMs = 15 * 60_000, queryImpl = query }) {
+export function runAgent({ root, project = { name: path.basename(root), description: "", language: "en", source: null }, model, sessionId, prompt, ctx, shots, onProgress, onSession, design = false, sandbox = null, timeoutMs = design ? DESIGN_TIMEOUT_MS : 15 * 60_000, queryImpl = query }) {
   const lang = normalizeLang(project.language) ?? "en";
   const abortController = new AbortController();
   let why = null; // { key, params? } of why the turn was cut short (see STOPPED)
   const timer = setTimeout(() => { why = stored("timedOut", { minutes: Math.round(timeoutMs / 60_000) }); abortController.abort(); }, timeoutMs);
   const rulesDirs = rulesDirsFor(root, lang);
   const plainLanguage = project.lint?.plainLanguage ?? false;
-  const tools = createAgentTools({
-    root, source: project.source, ctx, shots, rulesDirs, lang,
+  const baseTools = createAgentTools({
+    root, source: project.source, ctx, shots, rulesDirs, lang, design,
     checks: { typecheck, lint: (r, v, e) => lint(r, v, e, { plainLanguage, lang }) },
     threadsDir: path.join(root, "threads"), uploadsDir: path.join(root, "data", "uploads"),
   });
-  const instructions = systemPrompt({ project: { ...project, language: lang }, topics: ruleTopics(rulesDirs) });
+  // A whole-design turn also gets the bulk / browser / script tools; `run` only when the machine has a sandbox.
+  const tools = design ? [...baseTools, ...createDesignTools({ root, ctx, shots, sandbox, lang })] : baseTools;
+  const instructions = (design ? designSystemPrompt : systemPrompt)({ project: { ...project, language: lang }, topics: ruleTopics(rulesDirs), sandbox });
   // The self-check guard: records every tool call of this turn (succeeded or failed).
   const guard = createVerifyGuard({ lang });
   const watched = tools.map((t) => tool(t.name, t.description, t.shape, async (args, extra) => {
@@ -194,7 +221,7 @@ export function runAgent({ root, project = { name: path.basename(root), descript
     try {
       let result = null;
       const hooks = { Stop: [{ hooks: [makeStopHook(guard, { lang })] }] };
-      const q = queryImpl({ prompt, options: { ...sdkOptions({ model, sessionId, mcpServer, systemPrompt: instructions }), hooks, abortController, cwd: ensureAgentHome(), env: cleanEnv(process.env) } });
+      const q = queryImpl({ prompt, options: { ...sdkOptions({ model, sessionId, mcpServer, systemPrompt: instructions, design, run: !!sandbox }), hooks, abortController, cwd: ensureAgentHome(), env: cleanEnv(process.env) } });
       for await (const ev of q) {
         // Fail closed: the SDK reports a tool outside the studio's set (e.g. an SDK upgrade changed a default) → cancel the turn now.
         if (ev.type === "system" && ev.subtype === "init") {

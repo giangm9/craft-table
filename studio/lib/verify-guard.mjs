@@ -30,14 +30,19 @@ export function createVerifyGuard() {
       step++;
       if (!ok && name === "check" && (args.what === "typecheck" || args.what === "lint") && onlyOthers(out)) ok = true;
       if (!ok) return;
-      if (name === "edit" || name === "write") {
-        const p = String(args.path ?? "");
+      const touched = (p) => {
         edited.add(p);
         if (/\.(tsx|ts|css)$/.test(p)) lastEdit.code = step;
         if (/\.meta\.json$/.test(p) || /\.behavior\.md$/.test(p)) lastEdit.text = step;
         if (/\.(behavior|tech)\.md$/.test(p)) lastEdit.spec = step;
-      } else if (name === "check") lastCheck[`check ${args.what}`] = step;
-      else if (name === "view_frame") lastCheck.view_frame = step;
+      };
+      // The files a bulk replace wrote / a script landed are named in the result ("wrote: …" / "landed: …", "deleted: …").
+      const named = (marker) => { const m = new RegExp(`^${marker}:(.*)$`, "m").exec(out); return m ? (m[1].match(/(?:boards|system)\/[^\s,]+/g) ?? []) : []; };
+      if (name === "edit" || name === "write") touched(String(args.path ?? ""));
+      else if (name === "replace") { if (args.dry_run === false) named("wrote").forEach(touched); }
+      else if (name === "run") { [...named("landed"), ...named("deleted")].forEach(touched); }
+      else if (name === "check") lastCheck[`check ${args.what}`] = step;
+      else if (name === "view_frame" || name === "browse") lastCheck.view_frame = step; // looking at the screens, one or many
     },
     /** The checks still missing (after the last edit of each kind). */
     missing() {

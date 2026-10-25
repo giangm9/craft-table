@@ -361,3 +361,46 @@ test("dropMark: removing mark k while composing → deletes [#k] from the text, 
   assert.equal(dropMark("[#1] a [#2] b", 1), "a [#1] b");
   assert.equal(dropMark("không có mốc", 1), "không có mốc");
 });
+
+// ── whole-design threads: entry "*" ──
+test("design thread: entry '*' is allowed for a thread, but is still not a valid screen id", async () => {
+  const { DESIGN_ENTRY, isDesignThread } = await import("./thread-core.mjs");
+  const { isValidEntryId } = await import("./entries.mjs");
+  assert.equal(DESIGN_ENTRY, "*");
+  assert.equal(isValidEntryId("*"), false);
+  const r = newThread({ entry: "*", version: "ban-2", title: "Whole design", author: "a@b.c" }, { id: "t_d", now });
+  assert.equal(r.ok, true);
+  assert.equal(isDesignThread(r.thread), true);
+  assert.equal(isDesignThread({ entry: "screens/a" }), false);
+  assert.equal(newThread({ entry: "**", version: "ban-2", title: "x", author: "a" }, { id: "t", now }).ok, false);
+});
+
+test("design thread: a message may say which screen the person is looking at (any valid screen); marks need a screen of their own", () => {
+  const t = newThread({ entry: "*", version: "ban-2", title: "D", author: "a" }, { id: "t_d", now }).thread;
+  const ok = addMessage(t, { role: "user", author: "a", text: "make it tighter", viewing: "screens/a~opt-1", refs: [] }, { id: "m_1", now });
+  assert.equal(ok.ok, true);
+  assert.equal(ok.thread.messages[0].viewing, "screens/a~opt-1");
+  assert.equal(addMessage(t, { role: "user", author: "a", text: "x", viewing: "../x", refs: [] }, { id: "m_2", now }).ok, false);
+  assert.equal(addMessage(t, { role: "user", author: "a", text: "x", refs: [ref] }, { id: "m_3", now }).ok, false, "a mark with no screen is refused");
+  const withEntry = addMessage(t, { role: "user", author: "a", text: "x", refs: [{ ...ref, entry: "screens/b" }] }, { id: "m_4", now });
+  assert.equal(withEntry.ok, true);
+  assert.equal(withEntry.thread.messages[0].refs[0].entry, "screens/b");
+});
+
+test("design thread: listThreads('*') returns only the design threads of a version; a screen's list never shows them", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "dt-"));
+  const mk = (id, entry, version) => newThread({ entry, version, title: id, author: "a" }, { id, now: new Date().toISOString() }).thread;
+  await saveThread(dir, mk("t_a", "*", "ban-1"));
+  await saveThread(dir, mk("t_b", "*", "ban-2"));
+  await saveThread(dir, mk("t_c", "screens/a", "ban-1"));
+  assert.deepEqual((await listThreads(dir, "*", "ban-1")).map((t) => t.id), ["t_a"]);
+  assert.deepEqual((await listThreads(dir, "screens/a", "ban-1")).map((t) => t.id), ["t_c"]);
+  const { featureOf } = await import("./thread-core.mjs");
+  assert.equal(featureOf("*"), "*");
+});
+
+test("parseAgentReply: with marks off (a design reply with no screen to mark) the @mark calls are removed, not left dangling", () => {
+  const r = parseAgentReply("See @mark(-, desktop, 1, 2, 3, 4) here", { marks: false });
+  assert.deepEqual(r, { text: "See here", refs: [] });
+  assert.equal(parseAgentReply("See @mark(-, desktop, 1, 2, 3, 4)").refs.length, 1);
+});

@@ -63,3 +63,26 @@ test("design system (system/*.tsx) → typecheck + view_frame, same as a board",
   g.record("edit", { path: "system/components/primitives.tsx" }, true);
   assert.deepEqual(g.missing().sort(), ["check typecheck", "view_frame"]);
 });
+
+test("browse counts as having looked at the result (like view_frame); a design turn that edited code and browsed and typechecked is done", () => {
+  const g = createVerifyGuard();
+  g.record("replace", { pattern: "p-3", dry_run: false }, true, "wrote: boards/screens/a.tsx, boards/screens/b.tsx");
+  assert.deepEqual(g.missing().sort(), ["check typecheck", "view_frame"]);
+  g.record("check", { what: "typecheck" }, true);
+  g.record("browse", { all: true }, true);
+  assert.deepEqual(g.missing(), []);
+});
+
+test("a dry-run replace is not an edit; a run that landed files is", () => {
+  const g = createVerifyGuard();
+  g.record("replace", { pattern: "p-3", dry_run: true }, true, "dry run");
+  assert.deepEqual(g.missing(), []);
+  g.record("run", { command: "node codemod.js" }, true, "exit code 0\nlanded: boards/screens/a.tsx, system/tokens.css");
+  assert.deepEqual(g.missing().sort(), ["check typecheck", "view_frame"]);
+});
+
+test("a run that landed nothing is not an edit", () => {
+  const g = createVerifyGuard();
+  g.record("run", { command: "ls" }, true, "exit code 0\nstdout:\nboards\nlanded: nothing");
+  assert.deepEqual(g.missing(), []);
+});

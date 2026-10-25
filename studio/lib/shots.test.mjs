@@ -179,3 +179,24 @@ test("Chrome that never starts: the third failure is the error", async () => {
   await assert.rejects(shots.shrink(Buffer.from("png")), /Failed to launch/);
   assert.equal(calls, 3);
 });
+
+test("inspect: a picture, the height, the problems the page reported, and the result of a check run inside the page", async (t) => {
+  const urls = [];
+  const html = `<!doctype html><html><body style="margin:0"><div id="root"><button>a</button><button>b</button><p style="height:900px">tall</p></div><script>console.error("boom from the board")</script></body></html>`;
+  const s = http.createServer((req, res) => { urls.push(req.url); if (req.url.startsWith("/missing")) { res.writeHead(404); res.end(); return; } res.writeHead(200, { "Content-Type": "text/html" }); res.end(html); });
+  await new Promise((r) => s.listen(0, "127.0.0.1", r));
+  const shots = createShots({ base: `http://127.0.0.1:${s.address().port}`, idleMs: 60_000 });
+  t.after(async () => { await shots.close(); await new Promise((r) => s.close(r)); });
+  const r = await shots.inspect({ version: "ban-1", entry: "screens/a", scenario: "x", theme: "dark", evalJs: "document.querySelectorAll('button').length" });
+  assert.deepEqual([...r.png.subarray(0, 4)], [0x89, 0x50, 0x4e, 0x47]);
+  assert.ok(r.height >= 900);
+  assert.equal(r.value, 2);
+  assert.equal(r.boardError, false);
+  assert.ok(r.errors.some((e) => /console: boom from the board/.test(e)), JSON.stringify(r.errors));
+  assert.match(urls[0], /th=dark/);
+  const bad = await shots.inspect({ version: "ban-1", entry: "screens/a", evalJs: "this is not js", shot: false });
+  assert.equal(bad.png, null);
+  assert.match(bad.evalError, /./);
+  const obj = await shots.inspect({ version: "ban-1", entry: "screens/a", evalJs: "({ w: innerWidth, n: [1,2] })", shot: false });
+  assert.deepEqual(obj.value, { w: 1280, n: [1, 2] });
+});

@@ -101,6 +101,47 @@ Reply in the language the person wrote in (English when unclear), in short markd
     specReport: ({ diagrams, badDiagrams, embeds, badEmbeds, rules, errors }) => `diagrams: ${diagrams} drawn${badDiagrams.length ? `, ${badDiagrams.length} ${plural(badDiagrams.length, "ERROR", "ERRORS")}: ${badDiagrams.join(" | ")}` : ""} · embedded code: ${embeds}${badEmbeds.length ? `, ${badEmbeds.length} BROKEN: ${badEmbeds.join(" | ")}` : ""} · rules: ${rules}${errors.length ? ` · JS ERRORS: ${errors.join(" | ")}` : ""}`,
     unknownTopic: ({ topics }) => `Topics: ${topics}.`,
 
+    // ── design turns: a conversation about the WHOLE design of a version (agent-tools-design.mjs, agent.mjs) ──
+    designSystemPrompt: ({ name, description, sourceRoots, sourceLabel, topics, sandbox }) => {
+      const about = description ? ` — ${description}` : "";
+      const src = sourceRoots ? ` (${sourceRoots} is the source code of ${sourceLabel} — the real app, read-only)` : "";
+      return `You are Claude, the design assistant in the craft-table design studio of the project ${name}${about}. This is a WHOLE-DESIGN conversation: your job is the whole design of one version — every screen, the design system, the specs — not one screen. The person may ask for a change that reaches everything (denser spacing, another type scale, a colour, a rename across all screens), for an audit, or for a restructure.
+
+You work only through the studio's tools, already locked to the version of the thread. How to work:
+1. Explore first, don't guess: list (screens, scenarios, files, system) → read / search → view_frame or browse to see how it looks now${src}. The message says which screen the person is looking at, if any — a hint of what they mean, not a limit.
+2. Before working on a topic, read the rules for it: ${topics}.
+3. Take the cheapest tool that is exact: the design system (system/: tokens, components) when one change there reaches every screen; replace for a pattern across many files (dry run first, then dry_run false); ${sandbox ? "run for a change that needs real code (a script that computes new values, renames files, generates boards); " : ""}edit / write for single changes. Change only what the task needs — but go through ALL the screens it needs, never stop after the first few.
+4. Look at the result, don't assume: browse the screens you changed (all: true goes over the whole version and reports what is broken), look at pictures of a few important ones, and run check typecheck. If errors remain, keep fixing until it is clean. Work through a long job in steps.
+5. When there are several ways to go, name each one (Option A — <short name>, Option B — …), state the trade-offs and recommend 1; when the person needs to decide, ask clearly and STOP — don't do it yourself.
+
+Reply in the language the person wrote in (English when unclear), in short markdown (bullets, **bold**), straight to the point: what you changed (which files, how many), how you checked (what the pictures and the report showed), what the person needs to decide. Point at places on a frame with @mark(<scenario|->, <desktop|mobile>, x, y, w, h) only for the screen the person is looking at.`;
+    },
+    promptHeadDesign: ({ thread, version, before }) => `Thread ${thread} · version ${version} · the whole design${before > 0 ? ` · ${before} earlier ${plural(before, "message", "messages")} (read_thread to see them)` : ""}.`,
+    promptViewingDesign: ({ entry }) => `The person is looking at ${entry} (a screen of this version) — a hint of what they mean, not a limit on your work.`,
+    toolReplace: ({ version, max }) => `Find and replace across MANY files of version ${version} at once — for a change that reaches the whole design (a class, a value, a pattern). pattern: plain text, or a JavaScript regular expression when regex is true (use $1 … in replacement); ignore_case; paths: a glob over "boards/…" and "system/…" (default: everything), e.g. "boards/**/*.tsx". Only editable files (.tsx .ts .css .md .json) are looked at, at most ${max} files. It is a DRY RUN unless dry_run is false: it lists the matches per file with the lines before / after and writes nothing — look, then call again with dry_run false. All or nothing: when the write rules refuse any file, nothing is written. Tip: anchor patterns (\\b) — "p-3" also matches inside "gap-3".`,
+    toolBrowse: ({ maxFrames }) => `Look at the real screens in Chrome (Puppeteer), many at once. frames: up to ${maxFrames} of { entry, scenario, viewport, theme } — each comes back as a picture with its height and every problem the page reported. all: true goes over every scenario of every screen (viewport: desktop, mobile or both; entries narrows it with a glob on screen ids): no pictures, a report of what is broken — use it after a bulk change. eval: a JavaScript expression run INSIDE each page (e.g. "document.querySelectorAll('button').length", or a measurement of a size); its JSON result is reported per frame.`,
+    toolRun: ({ version, backend, isolated, max }) => `Run a shell command (node, python, sed … whatever the machine has) in a sandbox (${backend}) on a COPY of boards/ and system/ of version ${version} — for a change replace cannot say: a script that computes new values, renames files, generates boards. The command starts in a folder holding boards/ and system/; what it changes there is checked by the same write rules as edit / write and lands in the version when it ends (refused files and conflicts are listed). ${isolated ? "No network." : "WARNING: this sandbox is NOT isolated from the network."} There is no browser here — look at screens with browse. timeout_s: at most ${max}.`,
+    replaceBadPattern: ({ error }) => `The pattern does not work: ${error}`,
+    replaceNoFiles: ({ paths }) => `No editable file matches ${paths} — only .tsx .ts .css .md .json under boards/ and system/.`,
+    replaceNoMatch: ({ files }) => `No match in ${files} ${plural(files, "file", "files")}.`,
+    replaceTooMany: ({ max }) => `More than ${max} files match — narrow it down with paths.`,
+    replaceDry: ({ total, files, list, more }) => `Dry run — nothing was written. ${total} ${plural(total, "match", "matches")} in ${files} ${plural(files, "file", "files")}:\n${list}${more > 0 ? `\n… and ${more} more ${plural(more, "file", "files")}` : ""}\nTo apply, call again with dry_run false.`,
+    replaceWrote: ({ total, files, list }) => `wrote: ${list}\n${total} ${plural(total, "replacement", "replacements")} in ${files} ${plural(files, "file", "files")}. Now look at the result (browse, check typecheck).`,
+    replaceRefused: ({ list }) => `Nothing was written. The write rules refuse:\n${list}`,
+    browseNoFrames: "Give frames, or all: true.",
+    browseTooMany: ({ max }) => `At most ${max} frames at a time — use all: true for a report over everything.`,
+    browseLine: ({ entry, scenario, viewport, height, problems, value }) => `${entry} · ${scenario ?? "-"} · ${viewport} — ${height} px${problems.length ? ` · ERRORS: ${problems.join("; ")}` : ""}${value !== undefined ? ` · eval: ${value}` : ""}`,
+    browseSummary: ({ frames, broken }) => `${frames} ${plural(frames, "frame", "frames")} looked at · ${broken} broken`,
+    browseNoPictures: ({ max }) => `(pictures are left out beyond ${max} frames)`,
+    runExit: ({ code }) => `exit code ${code}`,
+    runTimedOut: ({ seconds }) => `timed out after ${seconds} s — the command was killed and NOTHING was applied`,
+    runLanded: ({ list }) => `landed: ${list}`,
+    runLandedNone: "landed: nothing",
+    runDeleted: ({ list }) => `deleted: ${list}`,
+    runRefused: ({ list }) => `refused:\n${list}`,
+    runConflicts: ({ list }) => `conflicts (the person changed these meanwhile — their version was kept): ${list}`,
+    runCut: "(output cut)",
+
     // ── checks.mjs ──
     tscFailed: ({ project, output }) => `✗ tsc errors (${project}):\n${output}`,
     tscClean: ({ studio, version }) => `✓ tsc clean (${studio ? "studio + " : ""}${version})`,
@@ -197,6 +238,47 @@ Trả lời bằng đúng ngôn ngữ người dùng đã viết (không rõ th�
     noSpecFile: ({ path }) => `Chưa có ${path}.`,
     specReport: ({ diagrams, badDiagrams, embeds, badEmbeds, rules, errors }) => `sơ đồ: ${diagrams} vẽ được${badDiagrams.length ? `, ${badDiagrams.length} LỖI: ${badDiagrams.join(" | ")}` : ""} · code nhúng: ${embeds}${badEmbeds.length ? `, ${badEmbeds.length} HỎNG: ${badEmbeds.join(" | ")}` : ""} · luật: ${rules}${errors.length ? ` · LỖI JS: ${errors.join(" | ")}` : ""}`,
     unknownTopic: ({ topics }) => `Chủ đề có: ${topics}.`,
+
+    // ── lượt toàn thiết kế: hội thoại về TOÀN BỘ thiết kế của một phiên bản (agent-tools-design.mjs, agent.mjs) ──
+    designSystemPrompt: ({ name, description, sourceRoots, sourceLabel, topics, sandbox }) => {
+      const about = description ? ` — ${description}` : "";
+      const src = sourceRoots ? ` (${sourceRoots} là mã nguồn của ${sourceLabel} — app thật, chỉ đọc)` : "";
+      return `Bạn là Claude, trợ lý thiết kế trong studio craft-table của dự án ${name}${about}. Đây là hội thoại về TOÀN BỘ thiết kế: việc của bạn là cả thiết kế của một phiên bản — mọi màn, design system, các đặc tả — chứ không phải một màn. Người dùng có thể nhờ một thay đổi chạm tới mọi thứ (khoảng cách chặt hơn, thang chữ khác, đổi màu, đổi tên ở mọi màn), nhờ rà soát, hoặc nhờ cấu trúc lại.
+
+Bạn chỉ làm việc qua các công cụ của studio, đã khoá vào phiên bản của luồng. Cách làm:
+1. Khám phá trước, đừng đoán: list (screens, scenarios, files, system) → read / search → view_frame hoặc browse để xem bây giờ trông thế nào${src}. Tin nhắn cho biết người dùng đang xem màn nào (nếu có) — đó là gợi ý họ muốn nói gì, không phải giới hạn.
+2. Trước khi làm một chủ đề, đọc luật của nó: ${topics}.
+3. Chọn công cụ rẻ nhất mà vẫn chính xác: design system (system/: token, component) khi một thay đổi ở đó chạm tới mọi màn; replace cho một mẫu trên nhiều file (chạy thử trước, rồi dry_run false); ${sandbox ? "run cho thay đổi cần mã thật (script tính giá trị mới, đổi tên file, sinh bản vẽ); " : ""}edit / write cho thay đổi lẻ. Chỉ đổi những gì việc cần — nhưng đi hết MỌI màn mà việc cần, đừng dừng sau vài màn đầu.
+4. Nhìn kết quả, đừng giả định: browse các màn đã sửa (all: true đi hết cả phiên bản và báo cái gì hỏng), xem ảnh vài màn quan trọng, và chạy check typecheck. Còn lỗi thì sửa tiếp đến khi sạch. Việc dài thì làm từng bước.
+5. Có nhiều hướng thì gọi tên từng hướng (Phương án A — <tên ngắn>, Phương án B — …), nêu đánh đổi và đề xuất 1; cần người dùng quyết thì hỏi rõ rồi DỪNG — đừng tự làm.
+
+Trả lời bằng ngôn ngữ người dùng viết (không rõ thì tiếng Anh), markdown ngắn (gạch đầu dòng, **đậm**), đi thẳng vào việc: đã đổi gì (file nào, bao nhiêu), đã kiểm tra thế nào (ảnh và báo cáo cho thấy gì), người dùng cần quyết gì. Chỉ trỏ vào khung bằng @khoanh(<kịch bản|->, <desktop|mobile>, x, y, w, h) trên màn người dùng đang xem.`;
+    },
+    promptHeadDesign: ({ thread, version, before }) => `Luồng ${thread} · phiên bản ${version} · toàn bộ thiết kế${before > 0 ? ` · ${before} tin trước (read_thread để xem)` : ""}.`,
+    promptViewingDesign: ({ entry }) => `Người dùng đang xem ${entry} (một màn của phiên bản này) — gợi ý họ muốn nói gì, không giới hạn việc của bạn.`,
+    toolReplace: ({ version, max }) => `Tìm và thay trên NHIỀU file của phiên bản ${version} cùng lúc — cho thay đổi chạm tới cả thiết kế (một class, một giá trị, một mẫu). pattern: chữ thường, hoặc biểu thức chính quy JavaScript khi regex là true (dùng $1 … trong replacement); ignore_case; paths: glob trên "boards/…" và "system/…" (mặc định: tất cả), ví dụ "boards/**/*.tsx". Chỉ nhìn file sửa được (.tsx .ts .css .md .json), tối đa ${max} file. Mặc định là CHẠY THỬ trừ khi dry_run là false: liệt kê chỗ khớp theo file với dòng trước / sau và không ghi gì — xem rồi gọi lại với dry_run false. Hoặc cả hai hoặc không: luật ghi từ chối file nào thì không ghi gì cả. Mẹo: neo mẫu (\\b) — "p-3" cũng khớp trong "gap-3".`,
+    toolBrowse: ({ maxFrames }) => `Xem các màn thật trong Chrome (Puppeteer), nhiều màn cùng lúc. frames: tối đa ${maxFrames} khung { entry, scenario, viewport, theme } — mỗi khung trả về ảnh cùng chiều cao và mọi vấn đề trang báo. all: true đi hết mọi kịch bản của mọi màn (viewport: desktop, mobile hoặc both; entries thu hẹp bằng glob trên id màn): không ảnh, chỉ báo cáo cái gì hỏng — dùng sau một thay đổi hàng loạt. eval: một biểu thức JavaScript chạy BÊN TRONG mỗi trang (ví dụ "document.querySelectorAll('button').length", hoặc đo một kích thước); kết quả JSON được báo theo từng khung.`,
+    toolRun: ({ version, backend, isolated, max }) => `Chạy một lệnh shell (node, python, sed … máy có gì dùng nấy) trong sandbox (${backend}) trên BẢN SAO của boards/ và system/ của phiên bản ${version} — cho thay đổi replace không diễn đạt được: script tính giá trị mới, đổi tên file, sinh bản vẽ. Lệnh bắt đầu trong thư mục có boards/ và system/; thứ nó đổi ở đó được kiểm bằng cùng luật ghi như edit / write và đổ vào phiên bản khi lệnh xong (file bị từ chối và xung đột được liệt kê). ${isolated ? "Không có mạng." : "CẢNH BÁO: sandbox này KHÔNG cách ly khỏi mạng."} Ở đây không có trình duyệt — xem màn bằng browse. timeout_s: tối đa ${max}.`,
+    replaceBadPattern: ({ error }) => `Mẫu không chạy được: ${error}`,
+    replaceNoFiles: ({ paths }) => `Không có file sửa được nào khớp ${paths} — chỉ .tsx .ts .css .md .json dưới boards/ và system/.`,
+    replaceNoMatch: ({ files }) => `Không chỗ nào khớp trong ${files} file.`,
+    replaceTooMany: ({ max }) => `Hơn ${max} file khớp — thu hẹp bằng paths.`,
+    replaceDry: ({ total, files, list, more }) => `Chạy thử — chưa ghi gì. ${total} chỗ khớp trong ${files} file:\n${list}${more > 0 ? `\n… và ${more} file nữa` : ""}\nMuốn áp dụng, gọi lại với dry_run false.`,
+    replaceWrote: ({ total, files, list }) => `wrote: ${list}\n${total} chỗ đã thay trong ${files} file. Giờ xem kết quả (browse, check typecheck).`,
+    replaceRefused: ({ list }) => `Chưa ghi gì. Luật ghi từ chối:\n${list}`,
+    browseNoFrames: "Cho frames, hoặc all: true.",
+    browseTooMany: ({ max }) => `Mỗi lần tối đa ${max} khung — dùng all: true để báo cáo trên tất cả.`,
+    browseLine: ({ entry, scenario, viewport, height, problems, value }) => `${entry} · ${scenario ?? "-"} · ${viewport} — ${height} px${problems.length ? ` · LỖI: ${problems.join("; ")}` : ""}${value !== undefined ? ` · eval: ${value}` : ""}`,
+    browseSummary: ({ frames, broken }) => `đã xem ${frames} khung · ${broken} hỏng`,
+    browseNoPictures: ({ max }) => `(bỏ ảnh khi quá ${max} khung)`,
+    runExit: ({ code }) => `mã thoát ${code}`,
+    runTimedOut: ({ seconds }) => `quá giờ sau ${seconds} giây — lệnh bị dừng và KHÔNG áp dụng gì`,
+    runLanded: ({ list }) => `landed: ${list}`,
+    runLandedNone: "landed: nothing",
+    runDeleted: ({ list }) => `deleted: ${list}`,
+    runRefused: ({ list }) => `bị từ chối:\n${list}`,
+    runConflicts: ({ list }) => `xung đột (người dùng vừa sửa những file này — giữ bản của họ): ${list}`,
+    runCut: "(đã cắt bớt kết quả)",
 
     // ── checks.mjs ──
     tscFailed: ({ project, output }) => `✗ tsc lỗi (${project}):\n${output}`,

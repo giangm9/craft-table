@@ -46,6 +46,10 @@ test("threads texts: a page with no language (node, no document) reads English",
 // Every fixed Vietnamese text, exactly as ThreadsPanel wrote it in earlier versions.
 const VI = {
   conversation: "Hội thoại",
+  designTitle: "Toàn thiết kế",
+  noDesignThreads: "Trao đổi về toàn bộ thiết kế của phiên bản này: một thay đổi chạm tới mọi màn, một đợt rà soát, một lần cấu trúc lại.",
+  designMessageClaude: "Nhờ đổi trên toàn bộ thiết kế…",
+  scriptsOff: "Script: tắt",
   newThread: "Luồng mới",
   noThreads: "Chưa có luồng nào",
   lastImage: "(ảnh)",
@@ -114,6 +118,8 @@ test("threads texts (vi): exactly the texts the panel showed in earlier versions
   assert.equal(vi.messageCount(5), "5 tin");
   assert.equal(vi.fromClaude("Đã sửa nút"), "Claude: Đã sửa nút");
   assert.equal(vi.onMember("phương án “Thử cụm”"), "trên phương án “Thử cụm”");
+  assert.equal(vi.lookingAt("Đơn hàng"), "đang xem Đơn hàng");
+  assert.equal(vi.scriptsOn("bwrap"), "Script: bwrap");
   assert.equal(vi.attachHint(6), "Đính kèm ảnh (tối đa 6) — hoặc dán / kéo thả ảnh vào đây");
   assert.equal(vi.stamp(AT, true), "09:05", "today: hours and minutes");
   assert.equal(vi.stamp(AT, false), "09:05 04/10", "another day: then day/month");
@@ -126,6 +132,9 @@ test("threads texts (en): counts in English plural, dates in the en-US locale", 
   assert.equal(en.messageCount(5), "5 messages");
   assert.equal(en.closedCount(3), "Closed (3)");
   assert.equal(en.onMember("the main screen"), "on the main screen");
+  assert.equal(en.lookingAt("Orders"), "looking at Orders");
+  assert.equal(en.scriptsOn("bwrap"), "Scripts: bwrap");
+  assert.equal(en.scriptsOff, "Scripts: off");
   assert.equal(en.attachHint(6).includes("6"), true);
   assert.match(en.stamp(AT, true), /^9:05\sAM$/u, "today: time only, 12-hour clock");
   assert.match(en.stamp(AT, false), /^Oct 4, 9:05\sAM$/u, "another day: month and day first");

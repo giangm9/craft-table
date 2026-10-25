@@ -332,3 +332,60 @@ test("buildPrompt: earlier marks removed / redrawn after Claude's last turn → 
   assert.match(en, /^Earlier marks changed since the last turn: #1 removed \(ignore it\), #2 redrawn → view_region\(2\)\.\n/);
   assert.match(en, /Mark #4: removed/);
 });
+
+// ── whole-design turns ──
+import { designSystemPrompt, DESIGN_TOOL_NAMES as DESIGN_NAMES, DESIGN_MAX_TURNS, DESIGN_TIMEOUT_MS } from "./agent.mjs";
+
+test("sdkOptions: a design turn gets many more steps and the design tools, and still nothing built-in", () => {
+  const o = sdkOptions({ model: "sonnet", mcpServer: { fake: 1 }, systemPrompt: "P", design: true });
+  assert.equal(o.maxTurns, DESIGN_MAX_TURNS);
+  assert.ok(DESIGN_MAX_TURNS >= 250);
+  assert.deepEqual(o.tools, []);
+  for (const n of DESIGN_NAMES) assert.ok(o.allowedTools.includes(`mcp__studio__${n}`), n);
+  assert.ok(DESIGN_TIMEOUT_MS >= 30 * 60_000);
+  const plain = sdkOptions({ model: "sonnet", mcpServer: { fake: 1 }, systemPrompt: "P" });
+  assert.equal(plain.maxTurns, 80);
+  assert.ok(!plain.allowedTools.includes("mcp__studio__replace"));
+});
+
+test("designSystemPrompt: the whole version is the job; run is mentioned only when there is a sandbox; English and Vietnamese both exist", () => {
+  const project = { name: "Acme", description: "tasks app", language: "en", source: null };
+  const withBox = designSystemPrompt({ project, topics: ["boards", "specs"], sandbox: true });
+  assert.match(withBox, /whole design|all the screens/i);
+  assert.match(withBox, /replace/);
+  assert.match(withBox, /browse/);
+  assert.match(withBox, /\brun\b/);
+  const noBox = designSystemPrompt({ project, topics: ["boards"], sandbox: false });
+  assert.ok(!/\bthe run tool\b|`run`/.test(noBox));
+  assert.match(noBox, /replace/);
+  const vi = designSystemPrompt({ project: { ...project, language: "vi" }, topics: ["boards"], sandbox: true });
+  assert.match(vi, /toàn bộ thiết kế|mọi màn/);
+});
+
+test("buildPrompt: a design thread names the whole design and the screen the person is looking at", () => {
+  const thread = { id: "t_9", entry: "*", version: "ban-2", title: "Tighter", messages: [{ id: "m1", role: "user", author: "ana", text: "make it denser", refs: [], images: [] }] };
+  const p = buildPrompt({ thread, meta: { title: "Tighter" }, pending: thread.messages, resume: false, viewing: "screens/a", lang: "en" });
+  assert.match(p, /Thread t_9 · version ban-2 · the whole design/);
+  assert.match(p, /looking at screens\/a/);
+  const none = buildPrompt({ thread, meta: { title: "Tighter" }, pending: thread.messages, resume: false, viewing: null, lang: "en" });
+  assert.ok(!/looking at/.test(none));
+  const vi = buildPrompt({ thread, meta: { title: "x" }, pending: thread.messages, resume: false, viewing: null, lang: "vi" });
+  assert.match(vi, /toàn bộ thiết kế/);
+});
+
+test("progressOf: replace, browse and run are named for the UI", () => {
+  const ev = (name, input) => ({ type: "assistant", message: { content: [{ type: "tool_use", name: `mcp__studio__${name}`, input }] } });
+  assert.deepEqual(progressOf(ev("replace", { pattern: "p-3" })), { key: "replacing", params: { pattern: "p-3" } });
+  assert.deepEqual(progressOf(ev("browse", { all: true })), { key: "browsing", params: { what: "all" } });
+  assert.deepEqual(progressOf(ev("browse", { frames: [{ entry: "screens/a" }, { entry: "screens/b" }] })), { key: "browsing", params: { what: "2" } });
+  assert.deepEqual(progressOf(ev("run", { command: "node x.js" })), { key: "running", params: { command: "node x.js" } });
+});
+
+test("runAgent: a design turn offers run only with a sandbox, and the design tools are always there", async () => {
+  const seen = [];
+  const q = ({ options }) => { seen.push(options.allowedTools); return (async function* () { yield { type: "result", subtype: "success", result: "ok", total_cost_usd: 0 }; })(); };
+  await runAgent({ root: ROOT, model: "sonnet", prompt: "P", ctx: { version: "ban-1", threadId: "t_1", entry: null }, shots: {}, design: true, sandbox: { backend: "process", run() {} }, queryImpl: q });
+  await runAgent({ root: ROOT, model: "sonnet", prompt: "P", ctx: { version: "ban-1", threadId: "t_1", entry: null }, shots: {}, design: true, sandbox: null, queryImpl: q });
+  assert.ok(seen[0].includes("mcp__studio__run") && seen[0].includes("mcp__studio__replace") && seen[0].includes("mcp__studio__browse"));
+  assert.ok(!seen[1].includes("mcp__studio__run") && seen[1].includes("mcp__studio__replace"));
+});

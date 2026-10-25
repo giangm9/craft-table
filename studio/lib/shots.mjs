@@ -78,7 +78,7 @@ export function createShots({ base, tool = "", externalOrigins = [], idleMs = 30
   const armIdle = () => { clearTimeout(timer); if (busy > 0) return; timer = setTimeout(() => { if (busy === 0) api.close(); }, idleMs); timer.unref?.(); };
 
   /** Open a page at the URL with the frame's width, run fn(page), always close the page. */
-  async function withPage(viewport, url, fn, version) {
+  async function withPage(viewport, url, fn, version, before = null) {
     busy++;
     let p = null;
     try {
@@ -89,6 +89,7 @@ export function createShots({ base, tool = "", externalOrigins = [], idleMs = 30
       await p.setViewport({ width: WIDTH[viewport] ?? 1280, height: 800 });
       const errors = [];
       p.on("pageerror", (e) => errors.push(String(e).slice(0, 200)));
+      before?.(p, errors); // listeners that must be in place before the page loads
       // The "built" signal is #root having content (the board loads dynamically after DOMContentLoaded) — not "load"
       // of every resource: a sluggish shared machine can hold "load" for a very long time after the board is drawn.
       await p.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
@@ -112,6 +113,33 @@ export function createShots({ base, tool = "", externalOrigins = [], idleMs = 30
         : await p.screenshot();
       return { png: Buffer.from(png), errors, height: h };
     }, version);
+
+  // The Vite hot-reload socket and blocked requests are the studio's own noise, not a problem of the board.
+  const NOISE = /WebSocket connection to|\[vite\] failed to connect|Failed to load resource|your current setup|\(browser\)|\(server\)|net::ERR_FAILED|blocked/;
+  /**
+   * Look at a frame the way a person would, and measure it: a picture (shot: false → none), the page height, every problem
+   * the page reported (uncaught errors, console errors, requests that failed), whether the board itself failed to draw, and the
+   * JSON result of `evalJs` — a JavaScript expression run INSIDE the page (e.g. a count or a size); it sees only that frame.
+   */
+  api.inspect = ({ version, entry, scenario, viewport = "desktop", theme = "light", part = "top", evalJs, shot = true }) =>
+    withPage(viewport, frameUrl(base, { version, entry, scenario, theme }), async (p, errors) => {
+      const height = await p.evaluate(() => document.documentElement.scrollHeight);
+      const boardError = await p.evaluate(() => !!document.querySelector("[data-board-error]"));
+      let value, evalError;
+      if (evalJs) {
+        try { value = await p.evaluate(`(async () => (${evalJs}))()`); } catch (e) { evalError = String(e?.message ?? e).slice(0, 300); }
+      }
+      let png = null;
+      if (shot) {
+        png = Buffer.from(part === "full"
+          ? await p.screenshot({ captureBeyondViewport: true, clip: { x: 0, y: 0, width: WIDTH[viewport] ?? 1280, height: Math.min(height, MAX_H) } })
+          : await p.screenshot());
+      }
+      return { png, errors: [...errors], height, boardError, value, evalError };
+    }, version, (p, errors) => {
+      p.on("console", (m) => { if (m.type() === "error" && !NOISE.test(m.text())) errors.push(`console: ${m.text().slice(0, 200)}`); });
+      p.on("response", (r) => { if (r.status() >= 400 && !r.url().endsWith("/favicon.ico")) errors.push(`http ${r.status()}: ${r.url().replace(origin, "").slice(0, 160)}`); });
+    });
 
   api.region = ({ version, entry, ref }) =>
     withPage(ref.viewport, frameUrl(base, { version, entry, scenario: ref.scenario }), async (p) => {
