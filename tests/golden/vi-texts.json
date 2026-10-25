@@ -912,10 +912,11 @@
       "one": "Mặc định (1)",
       "two": "Mặc định (2)"
     },
-    "effortOption": {
-      "params": "Effort: ‹a0›",
-      "one": "Effort: 1",
-      "two": "Effort: 2"
+    "runSettings": "Model và effort",
+    "effortLevel": {
+      "params": "‹a0›",
+      "one": 1,
+      "two": 2
     },
     "lookingAt": {
       "params": "đang xem ‹a0›",

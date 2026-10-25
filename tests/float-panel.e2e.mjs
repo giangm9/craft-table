@@ -5,7 +5,7 @@
 //   • drag the title bar → the window moves (and stays inside the window); drag the corner → it is resized
 //   • a reload keeps it floating where it was; a smaller browser window pulls it back inside
 //   • dock → the side panel is back, the floating window is gone, the draft is still there; the console stays clean
-// Screenshots: tests/shots/float-panel-1280.png, float-panel-wide-1280.png
+// Screenshots: tests/shots/float-panel-1280.png, float-panel-wide-1280.png (after the resize)
 import { DESKTOP, UI, gotoReady, newPage, ok, run, shot, sleep, studioUrl, until } from "./lib/e2e.mjs";
 
 const A = "screens/tasks/list";
@@ -61,22 +61,13 @@ await run("float-panel", async ({ browser }) => {
   await page.mouse.up();
   let grown = await rect(FLOAT);
   ok(grown.w === pinned.w + 100 && grown.h === pinned.h + 60, `dragging the corner resizes it (${pinned.w}×${pinned.h} → ${grown.w}×${grown.h})`);
-  // The bottom row: narrow → the model / effort pickers fill a second line; wide enough → everything on ONE line.
-  const rows = () => page.evaluate(() => {
-    const top = (el) => Math.round(el.getBoundingClientRect().top);
-    const send = [...document.querySelectorAll("[data-float-panel] [data-composer] button")].find((b) => b.textContent.trim() === "Send");
-    const pick = document.querySelector("[data-float-panel] [data-run-model]");
-    return { send: top(send), pick: top(pick) };
+  // The tool row of the message box is ONE line even in a narrow window: every control on the same line as Send.
+  const oneLine = () => page.evaluate(() => {
+    const tops = [...document.querySelectorAll("[data-float-panel] [data-composer-tools] > button, [data-float-panel] [data-run-chip]")].map((el) => Math.round(el.getBoundingClientRect().top));
+    return { n: tops.length, spread: Math.max(...tops) - Math.min(...tops) };
   });
-  const narrow = await rows();
-  ok(narrow.pick > narrow.send, `narrow: the pickers are on a second line under Send's (${narrow.pick} > ${narrow.send})`);
-  const grip2 = await rect(`${FLOAT} [data-float-resize]`);
-  await page.mouse.move(grip2.x + grip2.w / 2, grip2.y + grip2.h / 2);
-  await page.mouse.down();
-  await page.mouse.move(grip2.x + grip2.w / 2 + 200, grip2.y + grip2.h / 2, { steps: 6 });
-  await page.mouse.up();
-  const wide = await rows();
-  ok(Math.abs(wide.pick - wide.send) <= 6, `wide: Mark, @, Image, the pickers, expand and Send are on one line (${wide.pick} ≈ ${wide.send})`);
+  const narrowRow = await oneLine();
+  ok(narrowRow.n >= 5 && narrowRow.spread <= 1, `the tool row is one line in a ${pinned.w + 100} px window (${narrowRow.n} controls, ${narrowRow.spread} px apart)`);
   await shot(page, "float-panel-wide-1280");
   grown = await rect(FLOAT);
 

@@ -68,8 +68,10 @@ const en = {
   runHint: "Applies to the next message",
   /** First choice of a picker: the studio's own setting (`what` names it, empty for the effort). */
   runDefault: (what: string) => `Default (${what})`,
-  /** An effort choice as the picker shows it ("" = the model's own default). */
-  effortOption: (level: string) => (level ? `Effort: ${({ low: "Low", medium: "Medium", high: "High", xhigh: "Extra high", max: "Max" } as Record<string, string>)[level] ?? level}` : "Effort: default"),
+  /** The button that opens the model / effort menu (its tooltip and the menu's name). */
+  runSettings: "Model and effort",
+  /** An effort level by name ("" = the model's own default). */
+  effortLevel: (level: string) => (level ? ({ low: "Low", medium: "Medium", high: "High", xhigh: "Extra high", max: "Max" } as Record<string, string>)[level] ?? level : "Default"),
   /** On a message sent while looking at a screen: `title` is that screen. */
   lookingAt: (title: string) => `looking at ${title}`,
   scriptsOn: (backend: string) => `Scripts: ${backend}`,
@@ -156,7 +158,8 @@ const vi: typeof en = {
   runEffort: "Effort",
   runHint: "Áp dụng cho tin nhắn kế tiếp",
   runDefault: (what) => `Mặc định (${what})`,
-  effortOption: (level) => (level ? `Effort: ${({ low: "Thấp", medium: "Vừa", high: "Cao", xhigh: "Rất cao", max: "Tối đa" } as Record<string, string>)[level] ?? level}` : "Effort: mặc định"),
+  runSettings: "Model và effort",
+  effortLevel: (level) => (level ? ({ low: "Thấp", medium: "Vừa", high: "Cao", xhigh: "Rất cao", max: "Tối đa" } as Record<string, string>)[level] ?? level : "Mặc định"),
   lookingAt: (title) => `đang xem ${title}`,
   scriptsOn: (backend) => `Script: ${backend}`,
   scriptsOff: "Script: tắt",

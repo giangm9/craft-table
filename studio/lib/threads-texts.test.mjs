@@ -56,6 +56,7 @@ const VI = {
   runModel: "Model",
   runEffort: "Effort",
   runHint: "Áp dụng cho tin nhắn kế tiếp",
+  runSettings: "Model và effort",
   scriptsOff: "Script: tắt",
   newThread: "Luồng mới",
   noThreads: "Chưa có luồng nào",
@@ -127,8 +128,8 @@ test("threads texts (vi): exactly the texts the panel showed in earlier versions
   assert.equal(vi.onMember("phương án “Thử cụm”"), "trên phương án “Thử cụm”");
   assert.equal(vi.lookingAt("Đơn hàng"), "đang xem Đơn hàng");
   assert.equal(vi.runDefault("Sonnet 5.5"), "Mặc định (Sonnet 5.5)");
-  assert.deepEqual(["", "low", "medium", "high", "xhigh", "max"].map(vi.effortOption), ["Effort: mặc định", "Effort: Thấp", "Effort: Vừa", "Effort: Cao", "Effort: Rất cao", "Effort: Tối đa"]);
-  assert.equal(vi.effortOption("unknown"), "Effort: unknown");
+  assert.deepEqual(["", "low", "medium", "high", "xhigh", "max"].map(vi.effortLevel), ["Mặc định", "Thấp", "Vừa", "Cao", "Rất cao", "Tối đa"]);
+  assert.equal(vi.effortLevel("unknown"), "unknown");
   assert.equal(vi.scriptsOn("bwrap"), "Script: bwrap");
   assert.equal(vi.attachHint(6), "Đính kèm ảnh (tối đa 6) — hoặc dán / kéo thả ảnh vào đây");
   assert.equal(vi.stamp(AT, true), "09:05", "today: hours and minutes");
@@ -144,7 +145,8 @@ test("threads texts (en): counts in English plural, dates in the en-US locale", 
   assert.equal(en.onMember("the main screen"), "on the main screen");
   assert.equal(en.lookingAt("Orders"), "looking at Orders");
   assert.equal(en.runDefault("Sonnet 5.5"), "Default (Sonnet 5.5)");
-  assert.deepEqual(["", "low", "medium", "high", "xhigh", "max"].map(en.effortOption), ["Effort: default", "Effort: Low", "Effort: Medium", "Effort: High", "Effort: Extra high", "Effort: Max"]);
+  assert.deepEqual(["", "low", "medium", "high", "xhigh", "max"].map(en.effortLevel), ["Default", "Low", "Medium", "High", "Extra high", "Max"]);
+  assert.equal(en.runSettings, "Model and effort");
   assert.equal(en.scriptsOn("bwrap"), "Scripts: bwrap");
   assert.equal(en.scriptsOff, "Scripts: off");
   assert.equal(en.attachHint(6).includes("6"), true);

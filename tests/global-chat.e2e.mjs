@@ -54,7 +54,7 @@ await run("global-chat", async ({ browser, cleanup }) => {
   // ── Start a conversation, mention a screen with "@" ──
   await page.evaluate((s, t) => [...document.querySelectorAll(`${s} button`)].find((b) => b.textContent.includes(t))?.click(), PANEL, UI.newThread);
   await page.waitForSelector(TA, { timeout: 10_000 });
-  const marks = await page.evaluate((s, t) => [...document.querySelectorAll(`${s} [data-composer] button`)].filter((b) => b.textContent.includes(t)).length, PANEL, UI.mark);
+  const marks = await page.$$eval(`${PANEL} [data-composer] [data-mark-button]`, (els) => els.length);
   ok(marks === 1, `the Mark button is there (${marks})`);
   await page.type(TA, "make @");
   await page.waitForSelector("[data-mention-menu]", { timeout: 5_000 });

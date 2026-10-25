@@ -2,7 +2,7 @@
 // (Claude runs in the background and can edit the board). Marking an area on the canvas attaches a reference to the
 // message being written ([#n] in the text); clicking the reference brings that area to the middle of the canvas.
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowLeft, AtSign, CheckCheck, Hourglass, ImagePlus, LayoutPanelLeft, Loader2, Maximize2, MessageSquarePlus, Minimize2, Pencil, RotateCcw, Send, Sparkles, Square, SquareDashedMousePointer, Trash2, Undo2, X } from "lucide-react";
+import { ArrowLeft, AtSign, Check, CheckCheck, ChevronDown, Hourglass, ImagePlus, LayoutPanelLeft, Loader2, Maximize2, MessageSquarePlus, Minimize2, Pencil, RotateCcw, Send, Sparkles, Square, SquareDashedMousePointer, Trash2, Undo2, X } from "lucide-react";
 import { cn } from "../ui";
 import { allRefs, dropMark, waitingForUser, DESIGN_ENTRY, featureOf, isDesignThread, mentionsOf, plainMentions, splitMentions } from "../lib/thread-core.mjs";
 import { replyBlocks, replyPlain } from "../lib/reply-md.mjs";
@@ -70,7 +70,10 @@ const DRAFT_KEY = "craft-table:run-with";
 /** The last choice made for a NEW conversation (per browser). */
 const readDraftRun = (): RunWith => { try { return JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "{}") as RunWith; } catch { return {}; } };
 const writeDraftRun = (v: RunWith) => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(v)); } catch { /* storage may be off */ } };
-const PICK = "min-w-0 @[35rem]:flex-none @[35rem]:max-w-[10rem] rounded-lg border border-ink-200 bg-surface pl-1.5 pr-0.5 py-1.5 text-[11px] text-ink-700 disabled:opacity-60";
+/** Every control of the message box's tool row: one size, one type size; ghost until hovered. */
+const TOOL = "inline-flex h-7 min-w-7 shrink-0 items-center justify-center gap-1 rounded-md px-1.5 text-[12px] font-medium text-ink-500 hover:bg-ink-100 hover:text-ink-900 disabled:opacity-40 disabled:hover:bg-transparent";
+/** The small caps heading of a menu that opens from the tool row. */
+const MENU_HEAD = "px-2 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-wide text-ink-400";
 /** A screen's name in the "@" menu and in a mention: its title, plus the option's name for an option. */
 const screenName = (e: Entry) => (e.meta.option ? `${e.meta.title} · ${e.meta.option.name}` : e.meta.title) || e.id;
 // A mark with no scenario lies on the first scenario's row (refScenario): show that scenario's name.
@@ -185,6 +188,49 @@ function ReplyBody({ text, chip, mention }: { text: string; chip: (k: number) =>
 const MAX_IMAGES = 6;
 type Att = { key: string; url: string; id?: string; err?: string };
 
+/** Model and effort of the next turn: one small button in the tool row ("Sonnet 5.5 · High") that opens a menu above it. */
+function RunMenu({ pick, busy }: { pick: RunPick; busy: boolean }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
+    const esc = (e: globalThis.KeyboardEvent) => { if (e.key === "Escape") { e.stopPropagation(); setOpen(false); } };
+    addEventListener("pointerdown", away, true);
+    addEventListener("keydown", esc, true);
+    return () => { removeEventListener("pointerdown", away, true); removeEventListener("keydown", esc, true); };
+  }, [open]);
+  const { value, choices } = pick;
+  const model = value.model ? choices.models.find((m) => m.id === value.model)?.label ?? value.model : choices.defaultModel.label;
+  const label = value.effort ? `${model} · ${T.effortLevel(value.effort)}` : model;
+  const choose = (patch: RunWith) => { pick.onChange(patch); setOpen(false); };
+  const option = (key: string, checked: boolean, text: string, attr: Record<string, string>, onPick: () => void) => (
+    <button key={key} type="button" role="menuitemradio" aria-checked={checked} {...attr} onClick={onPick} className={cn("flex h-7 w-full items-center gap-2 rounded-md px-2 text-left text-[12px]", checked ? "font-medium text-accent-800" : "text-ink-700 hover:bg-ink-50")}>
+      <Check size={13} className={cn("shrink-0", !checked && "opacity-0")} />
+      <span className="truncate">{text}</span>
+    </button>
+  );
+  return (
+    <span ref={box} data-run-options className="relative min-w-0">
+      <button type="button" data-run-chip aria-haspopup="menu" aria-expanded={open} disabled={busy} title={`${T.runSettings} — ${T.runHint}`} onClick={() => setOpen((o) => !o)} className={cn(TOOL, "min-w-0 max-w-[11rem]", open && "bg-ink-100 text-ink-900")}>
+        <span className="truncate">{label}</span>
+        <ChevronDown size={12} className="shrink-0" />
+      </button>
+      {open && (
+        <div role="menu" aria-label={T.runSettings} data-run-menu className="absolute bottom-full right-0 mb-1.5 z-30 w-56 rounded-lg border border-ink-200 bg-surface p-1 shadow-lg">
+          <p className={MENU_HEAD}>{T.runModel}</p>
+          {option("m:", !value.model, T.runDefault(choices.defaultModel.label), { "data-run-model-option": "" }, () => choose({ model: "" }))}
+          {choices.models.map((m) => option(`m:${m.id}`, value.model === m.id, m.label, { "data-run-model-option": m.id }, () => choose({ model: m.id })))}
+          <div className="my-1 h-px bg-ink-100" />
+          <p className={MENU_HEAD}>{T.runEffort}</p>
+          {option("e:", !value.effort, T.effortLevel(""), { "data-run-effort-option": "" }, () => choose({ effort: "" }))}
+          {choices.efforts.map((l) => option(`e:${l}`, value.effort === l, T.effortLevel(l), { "data-run-effort-option": l }, () => choose({ effort: l })))}
+        </div>
+      )}
+    </span>
+  );
+}
+
 /**
  * The composer. Normally Enter sends and Shift+Enter starts a new line. The large composer (in the middle of the
  * screen, for multi-paragraph text; its state is in the URL `soan=1`): Enter starts a new line, Ctrl/⌘+Enter sends
@@ -285,7 +331,7 @@ function Composer(p: { runPick?: RunPick; screens: ScreenItem[]; noMarks?: boole
     <div
       data-composer={p.expanded ? "lon" : ""}
       className={cn(
-        "@container p-3 space-y-2 bg-surface",
+        "p-3 space-y-2 bg-surface",
         p.expanded ? "flex-1 min-h-0 flex flex-col" : "border-t border-ink-200",
         drag && "bg-accent-50 outline-2 outline-dashed outline-accent-400 -outline-offset-4",
       )}
@@ -322,102 +368,89 @@ function Composer(p: { runPick?: RunPick; screens: ScreenItem[]; noMarks?: boole
         </div>
       )}
       {atts.some((a) => a.err) && <p className="text-xs text-rose-700">{atts.find((a) => a.err)!.err}</p>}
-      <textarea
-        ref={taRef}
-        value={text}
-        onPaste={(e) => { const f = [...e.clipboardData.files].filter((x) => x.type.startsWith("image/")); if (f.length) { e.preventDefault(); addFiles(f); } }}
-        onChange={(e) => { setText(e.target.value); setCaret(e.target.selectionStart); setMenuOff(false); }}
-        onSelect={(e) => setCaret(e.currentTarget.selectionStart)}
-        onKeyDown={(e) => {
-          if (menuOpen && items.length) {
-            if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); setMenuIdx((i) => (i + (e.key === "ArrowDown" ? 1 : items.length - 1)) % items.length); return; }
-            if ((e.key === "Enter" || e.key === "Tab") && !e.nativeEvent.isComposing) { e.preventDefault(); chooseScreen(items[Math.min(menuIdx, items.length - 1)]); return; }
-          }
-          if (menuOpen && e.key === "Escape") { e.preventDefault(); e.nativeEvent.stopPropagation(); setMenuOff(true); return; }
-          const k = { key: e.key, shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey, isComposing: e.nativeEvent.isComposing, keyCode: e.keyCode };
-          if (enterAction(k, p.expanded) === "send") { e.preventDefault(); send(); }
-        }}
-        rows={3}
-        placeholder={p.placeholder}
-        className={cn("input resize-none", p.expanded && "flex-1 min-h-[40vh] text-[15px] leading-relaxed")}
-      />
-      {menuOpen && (
-        <div role="listbox" aria-label={T.mentionMenu} data-mention-menu className="max-h-44 overflow-y-auto rounded-lg border border-ink-200 bg-surface shadow-sm divide-y divide-ink-100">
-          {items.length === 0 ? <p className="px-3 py-2 text-xs text-ink-500">{T.mentionNone}</p> : items.map((s, i) => (
-            <button
-              key={s.id}
-              type="button"
-              role="option"
-              aria-selected={i === Math.min(menuIdx, items.length - 1)}
-              data-mention-id={s.id}
-              onMouseDown={(e) => { e.preventDefault(); chooseScreen(s); }}
-              className={cn("w-full text-left px-3 py-1.5 text-sm flex items-baseline gap-2", i === Math.min(menuIdx, items.length - 1) ? "bg-accent-50" : "hover:bg-ink-50")}
-            >
-              <span className="font-medium truncate">{s.title}</span>
-              <span className="text-[11px] text-ink-400 truncate">{s.id}</span>
-            </button>
-          ))}
-        </div>
-      )}
-      {/* The bottom row. Wide enough: Mark, @, Image, the two pickers, expand, Send on ONE line. Narrower: Mark, @, Image and expand + Send
-          stay on the first line, the pickers fill a second one. (Container query on the message box, not on the window.) */}
-      <div className="grid grid-cols-[1fr_auto] items-center gap-1.5 @[35rem]:grid-cols-[auto_1fr_auto]">
-       <div className="col-start-1 row-start-1 flex min-w-0 flex-wrap items-center gap-1.5">
-        {!p.noMarks && <button
-          type="button"
-          onClick={() => { if (p.expanded && !p.annotating) p.onExpanded(false); p.onToggleAnnotate(); }}
-          className={cn("inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-medium border", p.annotating ? "bg-accent-700 border-accent-700 text-white" : "bg-surface border-ink-200 text-ink-700 hover:bg-ink-50")}
-          title={T.markHint}
-        >
-          <SquareDashedMousePointer size={15} /> {p.annotating ? T.marking : T.mark}
-        </button>}
-        <button
-          type="button"
-          data-mention-button
-          onClick={openMentionMenu}
-          className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-medium border bg-surface border-ink-200 text-ink-700 hover:bg-ink-50"
-          title={T.mentionHint}
-          aria-label={T.mention}
-        >
-          <AtSign size={15} />
-        </button>
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          disabled={atts.length >= MAX_IMAGES}
-          className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-medium border bg-surface border-ink-200 text-ink-700 hover:bg-ink-50 disabled:opacity-50"
-          title={T.attachHint(MAX_IMAGES)}
-        >
-          <ImagePlus size={15} /> {T.image}
-        </button>
-        <input ref={fileRef} data-image-input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden onChange={(e) => { addFiles([...(e.target.files ?? [])]); e.target.value = ""; }} />
-       </div>
-        {p.runPick && (
-          <span data-run-options className="col-span-2 row-start-2 flex min-w-0 items-center gap-1.5 @[35rem]:col-span-1 @[35rem]:col-start-2 @[35rem]:row-start-1">
-            <select aria-label={T.runModel} title={`${T.runModel} — ${T.runHint}`} data-run-model value={p.runPick.value.model ?? ""} disabled={p.busy} onChange={(e) => p.runPick!.onChange({ model: e.target.value })} className={`${PICK} flex-[15]`}>
-              <option value="">{T.runDefault(p.runPick.choices.defaultModel.label)}</option>
-              {p.runPick.choices.models.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
-            </select>
-            <select aria-label={T.runEffort} title={`${T.runEffort} — ${T.runHint}`} data-run-effort value={p.runPick.value.effort ?? ""} disabled={p.busy} onChange={(e) => p.runPick!.onChange({ effort: e.target.value })} className={`${PICK} flex-[13]`}>
-              <option value="">{T.effortOption("")}</option>
-              {p.runPick.choices.efforts.map((l) => <option key={l} value={l}>{T.effortOption(l)}</option>)}
-            </select>
-          </span>
+      {/* ONE box: the text and its tools share one border. Every control of the tool row has the same size (28 px high, 12 px type),
+          Send is the only filled one; the "@" list and the model / effort menu open ABOVE the box, over the conversation. */}
+      <div
+        data-composer-box
+        className={cn(
+          "relative rounded-xl border border-ink-200 bg-surface transition-shadow focus-within:border-accent-500 focus-within:shadow-[0_0_0_2px_color-mix(in_srgb,var(--color-accent-500)_20%,transparent)]",
+          p.expanded && "flex-1 min-h-0 flex flex-col",
         )}
-       <div className="col-start-2 row-start-1 @[35rem]:col-start-3 ml-auto flex shrink-0 items-center gap-1.5">
-        <button
-          type="button"
-          onClick={() => p.onExpanded(!p.expanded)}
-          aria-label={p.expanded ? T.shrinkComposer : T.openBigComposer}
-          title={p.expanded ? T.shrinkComposerHint : T.openBigComposerHint}
-          className="self-stretch inline-flex items-center px-1.5 rounded-lg border border-ink-200 text-ink-600 hover:bg-ink-50 hover:text-ink-900"
-        >
-          {p.expanded ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-        </button>
-        <button type="button" onClick={send} disabled={!can} title={p.expanded ? T.sendHintBig : T.sendHint} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent-700 border border-accent-700 text-white rounded-lg text-sm font-medium hover:bg-accent-800 disabled:opacity-50">
-          {p.busy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} {T.send}
-        </button>
-       </div>
+      >
+        {menuOpen && (
+          <div role="listbox" aria-label={T.mentionMenu} data-mention-menu className="absolute bottom-full left-0 right-0 mb-1.5 z-30 max-h-56 overflow-y-auto rounded-lg border border-ink-200 bg-surface p-1 shadow-lg">
+            <p className={MENU_HEAD}>{T.mentionMenu}</p>
+            {items.length === 0 ? <p className="px-2 py-1.5 text-[12px] text-ink-500">{T.mentionNone}</p> : items.map((s, i) => (
+              <button
+                key={s.id}
+                type="button"
+                role="option"
+                aria-selected={i === Math.min(menuIdx, items.length - 1)}
+                data-mention-id={s.id}
+                onMouseDown={(e) => { e.preventDefault(); chooseScreen(s); }}
+                className={cn("flex w-full items-baseline gap-2 rounded-md px-2 py-1.5 text-left text-[12px]", i === Math.min(menuIdx, items.length - 1) ? "bg-accent-50 text-accent-900" : "text-ink-700 hover:bg-ink-50")}
+              >
+                <span className="font-medium truncate">{s.title}</span>
+                <span className="text-[11px] text-ink-400 truncate">{s.id}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <textarea
+          ref={taRef}
+          value={text}
+          onPaste={(e) => { const f = [...e.clipboardData.files].filter((x) => x.type.startsWith("image/")); if (f.length) { e.preventDefault(); addFiles(f); } }}
+          onChange={(e) => { setText(e.target.value); setCaret(e.target.selectionStart); setMenuOff(false); }}
+          onSelect={(e) => setCaret(e.currentTarget.selectionStart)}
+          onKeyDown={(e) => {
+            if (menuOpen && items.length) {
+              if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); setMenuIdx((i) => (i + (e.key === "ArrowDown" ? 1 : items.length - 1)) % items.length); return; }
+              if ((e.key === "Enter" || e.key === "Tab") && !e.nativeEvent.isComposing) { e.preventDefault(); chooseScreen(items[Math.min(menuIdx, items.length - 1)]); return; }
+            }
+            if (menuOpen && e.key === "Escape") { e.preventDefault(); e.nativeEvent.stopPropagation(); setMenuOff(true); return; }
+            const k = { key: e.key, shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey, isComposing: e.nativeEvent.isComposing, keyCode: e.keyCode };
+            if (enterAction(k, p.expanded) === "send") { e.preventDefault(); send(); }
+          }}
+          rows={3}
+          placeholder={p.placeholder}
+          className={cn("block w-full resize-none bg-transparent px-3 pt-2.5 pb-1 text-sm leading-relaxed text-ink-900 placeholder:text-ink-400 outline-none", p.expanded && "flex-1 min-h-[40vh] text-[15px]")}
+        />
+        <div data-composer-tools className="flex items-center gap-0.5 px-1.5 pb-1.5">
+          {!p.noMarks && (
+            <button
+              type="button"
+              data-mark-button
+              aria-pressed={p.annotating}
+              aria-label={p.annotating ? T.marking : T.mark}
+              title={T.markHint}
+              onClick={() => { if (p.expanded && !p.annotating) p.onExpanded(false); p.onToggleAnnotate(); }}
+              className={cn(TOOL, p.annotating && "bg-accent-50 text-accent-800 hover:bg-accent-100 hover:text-accent-900")}
+            >
+              <SquareDashedMousePointer size={15} />
+            </button>
+          )}
+          <button type="button" data-mention-button aria-label={T.mention} title={T.mentionHint} onClick={openMentionMenu} className={TOOL}>
+            <AtSign size={15} />
+          </button>
+          <button type="button" data-image-button aria-label={T.image} title={T.attachHint(MAX_IMAGES)} onClick={() => fileRef.current?.click()} disabled={atts.length >= MAX_IMAGES} className={TOOL}>
+            <ImagePlus size={15} />
+          </button>
+          <input ref={fileRef} data-image-input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden onChange={(e) => { addFiles([...(e.target.files ?? [])]); e.target.value = ""; }} />
+          <span className="flex-1" />
+          {p.runPick && <RunMenu pick={p.runPick} busy={p.busy} />}
+          <button
+            type="button"
+            onClick={() => p.onExpanded(!p.expanded)}
+            aria-label={p.expanded ? T.shrinkComposer : T.openBigComposer}
+            title={p.expanded ? T.shrinkComposerHint : T.openBigComposerHint}
+            className={TOOL}
+          >
+            {p.expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+          </button>
+          <button type="button" onClick={send} disabled={!can} title={p.expanded ? T.sendHintBig : T.sendHint} className="ml-0.5 inline-flex h-7 shrink-0 items-center gap-1 rounded-md bg-accent-700 px-2.5 text-[12px] font-medium text-white hover:bg-accent-800 disabled:opacity-40 disabled:hover:bg-accent-700">
+            {p.busy ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}{T.send}
+          </button>
+        </div>
       </div>
     </div>
   );
