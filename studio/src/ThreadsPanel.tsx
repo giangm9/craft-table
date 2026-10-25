@@ -70,7 +70,7 @@ const DRAFT_KEY = "craft-table:run-with";
 /** The last choice made for a NEW conversation (per browser). */
 const readDraftRun = (): RunWith => { try { return JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "{}") as RunWith; } catch { return {}; } };
 const writeDraftRun = (v: RunWith) => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(v)); } catch { /* storage may be off */ } };
-const PICK = "min-w-0 @[35rem]:flex-none @[35rem]:max-w-[10rem] rounded-lg border border-ink-200 bg-surface px-1.5 py-1.5 text-[12px] text-ink-700 disabled:opacity-60";
+const PICK = "min-w-0 @[35rem]:flex-none @[35rem]:max-w-[10rem] rounded-lg border border-ink-200 bg-surface pl-1.5 pr-0.5 py-1.5 text-[11px] text-ink-700 disabled:opacity-60";
 /** A screen's name in the "@" menu and in a mention: its title, plus the option's name for an option. */
 const screenName = (e: Entry) => (e.meta.option ? `${e.meta.title} · ${e.meta.option.name}` : e.meta.title) || e.id;
 // A mark with no scenario lies on the first scenario's row (refScenario): show that scenario's name.
@@ -394,11 +394,11 @@ function Composer(p: { runPick?: RunPick; screens: ScreenItem[]; noMarks?: boole
        </div>
         {p.runPick && (
           <span data-run-options className="col-span-2 row-start-2 flex min-w-0 items-center gap-1.5 @[35rem]:col-span-1 @[35rem]:col-start-2 @[35rem]:row-start-1">
-            <select aria-label={T.runModel} title={`${T.runModel} — ${T.runHint}`} data-run-model value={p.runPick.value.model ?? ""} disabled={p.busy} onChange={(e) => p.runPick!.onChange({ model: e.target.value })} className={`${PICK} flex-[3]`}>
+            <select aria-label={T.runModel} title={`${T.runModel} — ${T.runHint}`} data-run-model value={p.runPick.value.model ?? ""} disabled={p.busy} onChange={(e) => p.runPick!.onChange({ model: e.target.value })} className={`${PICK} flex-[15]`}>
               <option value="">{T.runDefault(p.runPick.choices.defaultModel.label)}</option>
               {p.runPick.choices.models.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
             </select>
-            <select aria-label={T.runEffort} title={`${T.runEffort} — ${T.runHint}`} data-run-effort value={p.runPick.value.effort ?? ""} disabled={p.busy} onChange={(e) => p.runPick!.onChange({ effort: e.target.value })} className={`${PICK} flex-[2]`}>
+            <select aria-label={T.runEffort} title={`${T.runEffort} — ${T.runHint}`} data-run-effort value={p.runPick.value.effort ?? ""} disabled={p.busy} onChange={(e) => p.runPick!.onChange({ effort: e.target.value })} className={`${PICK} flex-[13]`}>
               <option value="">{T.effortOption("")}</option>
               {p.runPick.choices.efforts.map((l) => <option key={l} value={l}>{T.effortOption(l)}</option>)}
             </select>

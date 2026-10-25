@@ -47,6 +47,18 @@ await run("run-options", async ({ browser, cleanup }) => {
   ok(models[0][0] === "" && models[0][1].startsWith(UI.runDefault) && models.length === project.agent.models.length + 1, `the model picker starts with "default" and lists the models (${models.map((m) => m[1]).join(" | ")})`);
   ok(efforts[0][0] === "" && efforts[0][1] === "Effort: default" && efforts.slice(1).map((e) => e[0]).join() === "low,medium,high,xhigh,max", `the effort picker starts with "default" and lists the five levels (${efforts.map((e) => e[1]).join(" | ")})`);
   ok(await page.$eval(MODEL, (el) => el.value) === "" && await page.$eval(EFFORT, (el) => el.value) === "", "nothing chosen = the studio's default");
+  // Nothing the pickers show may be cut off on the default 360 px panel (the Carbon studio's default model reads "Default (Sonnet 5.5)").
+  const fit = await page.evaluate(() => {
+    const ctx = document.createElement("canvas").getContext("2d");
+    const need = (sel, extra = []) => {
+      const el = document.querySelector(sel);
+      ctx.font = getComputedStyle(el).font;
+      const widest = Math.max(...[...el.options].map((o) => o.textContent.trim()).concat(extra).map((t) => ctx.measureText(t).width));
+      return { widest: Math.round(widest), room: Math.round(el.clientWidth - 30) }; // 30 px: padding + the arrow
+    };
+    return { model: need("[data-panel] [data-run-model]", ["Default (Sonnet 5.5)"]), effort: need("[data-panel] [data-run-effort]") };
+  });
+  ok(fit.model.widest <= fit.model.room && fit.effort.widest <= fit.effort.room, `the longest text of each picker fits its box (model ${fit.model.widest} ≤ ${fit.model.room}, effort ${fit.effort.widest} ≤ ${fit.effort.room})`);
   await page.select(MODEL, "claude-opus-5-5");
   await page.select(EFFORT, "high");
   await page.type(TA, `${MARK}: tighter`);
