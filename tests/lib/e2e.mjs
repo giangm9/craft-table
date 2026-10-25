@@ -61,6 +61,7 @@ const en = {
   history: "History", // the right panel's other tab — shell.ts history
   lookingAt: "looking at", // on a whole-design message sent while looking at another screen — threads.ts lookingAt
   waitingForYouHint: "Waiting for you", // title of the red badge on a screen row — shell.ts attentionHint
+  runDefault: "Default", // first choice of the model / effort pickers in the message box — threads.ts runDefault
   newThread: "New thread", // the button that starts a thread — threads.ts newThread
   mark: "Mark", // the composer's mark button — shell.ts / threads.ts mark
 };
@@ -104,6 +105,7 @@ const vi = {
   history: "Lịch sử",
   lookingAt: "đang xem",
   waitingForYouHint: "Đang chờ bạn",
+  runDefault: "Mặc định",
   newThread: "Luồng mới",
   mark: "Khoanh",
 };

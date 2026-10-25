@@ -98,7 +98,7 @@ export function newThread(input, { id, now, lang }) {
   if (!title) return fail(lang, "threadTitleMissing");
   return {
     ok: true,
-    thread: { id, entry: i.entry, version: i.version, title, createdBy: String(i.author ?? ""), createdAt: now, updatedAt: now, status: "open", messages: [], agent: { state: "idle" } },
+    thread: { id, entry: i.entry, version: i.version, title, createdBy: String(i.author ?? ""), createdAt: now, updatedAt: now, status: "open", messages: [], agent: { state: "idle" }, ...(i.runWith && Object.keys(i.runWith).length ? { runWith: i.runWith } : {}) },
   };
 }
 

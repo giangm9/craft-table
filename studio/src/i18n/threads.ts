@@ -62,6 +62,14 @@ const en = {
   mentionMenu: "Screens",
   mentionNone: "No screen matches",
   mentionGone: "This screen is no longer in this version",
+  // Model and effort of the next turn, picked above the message box.
+  runModel: "Model",
+  runEffort: "Effort",
+  runHint: "Applies to the next message",
+  /** First choice of a picker: the studio's own setting (`what` names it, empty for the effort). */
+  runDefault: (what: string) => `Default (${what})`,
+  /** An effort choice as the picker shows it ("" = the model's own default). */
+  effortOption: (level: string) => (level ? `Effort: ${({ low: "Low", medium: "Medium", high: "High", xhigh: "Extra high", max: "Max" } as Record<string, string>)[level] ?? level}` : "Effort: default"),
   /** On a message sent while looking at a screen: `title` is that screen. */
   lookingAt: (title: string) => `looking at ${title}`,
   scriptsOn: (backend: string) => `Scripts: ${backend}`,
@@ -144,6 +152,11 @@ const vi: typeof en = {
   mentionMenu: "Các màn",
   mentionNone: "Không có màn nào khớp",
   mentionGone: "Màn này không còn trong phiên bản này",
+  runModel: "Model",
+  runEffort: "Effort",
+  runHint: "Áp dụng cho tin nhắn kế tiếp",
+  runDefault: (what) => `Mặc định (${what})`,
+  effortOption: (level) => (level ? `Effort: ${({ low: "Thấp", medium: "Vừa", high: "Cao", xhigh: "Rất cao", max: "Tối đa" } as Record<string, string>)[level] ?? level}` : "Effort: mặc định"),
   lookingAt: (title) => `đang xem ${title}`,
   scriptsOn: (backend) => `Script: ${backend}`,
   scriptsOff: "Script: tắt",

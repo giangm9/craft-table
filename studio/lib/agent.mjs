@@ -104,10 +104,11 @@ export function designSystemPrompt({ project, topics, sandbox }) {
 }
 
 /** SDK options of the sandbox (pure — for tests). design: a whole-design turn (more steps, the design tools; `run` only when run !== false). */
-export function sdkOptions({ model, sessionId, mcpServer, systemPrompt: prompt, design = false, run = true }) {
+export function sdkOptions({ model, effort, sessionId, mcpServer, systemPrompt: prompt, design = false, run = true }) {
   const names = design ? [...TOOL_NAMES, ...DESIGN_TOOL_NAMES.filter((n) => n !== "run" || run)] : TOOL_NAMES;
   return {
     model,
+    ...(effort ? { effort } : {}),
     systemPrompt: prompt,
     tools: [],
     settingSources: [],
@@ -195,7 +196,7 @@ export function progressOf(ev) {
 /** Rules: craft-table's own in the project's language, then the project's rules/ (same name → the project's wins). */
 export const rulesDirsFor = (root, lang) => [defaultRules(lang), path.join(root, "rules")];
 
-export function runAgent({ root, project = { name: path.basename(root), description: "", language: "en", source: null }, model, sessionId, prompt, ctx, shots, onProgress, onSession, design = false, sandbox = null, timeoutMs = design ? DESIGN_TIMEOUT_MS : 15 * 60_000, queryImpl = query }) {
+export function runAgent({ root, project = { name: path.basename(root), description: "", language: "en", source: null }, model, effort, sessionId, prompt, ctx, shots, onProgress, onSession, design = false, sandbox = null, timeoutMs = design ? DESIGN_TIMEOUT_MS : 15 * 60_000, queryImpl = query }) {
   const lang = normalizeLang(project.language) ?? "en";
   const abortController = new AbortController();
   let why = null; // { key, params? } of why the turn was cut short (see STOPPED)
@@ -224,7 +225,7 @@ export function runAgent({ root, project = { name: path.basename(root), descript
     try {
       let result = null;
       const hooks = { Stop: [{ hooks: [makeStopHook(guard, { lang })] }] };
-      const q = queryImpl({ prompt, options: { ...sdkOptions({ model, sessionId, mcpServer, systemPrompt: instructions, design, run: !!sandbox }), hooks, abortController, cwd: ensureAgentHome(), env: cleanEnv(process.env) } });
+      const q = queryImpl({ prompt, options: { ...sdkOptions({ model, effort, sessionId, mcpServer, systemPrompt: instructions, design, run: !!sandbox }), hooks, abortController, cwd: ensureAgentHome(), env: cleanEnv(process.env) } });
       for await (const ev of q) {
         // Fail closed: the SDK reports a tool outside the studio's set (e.g. an SDK upgrade changed a default) → cancel the turn now.
         if (ev.type === "system" && ev.subtype === "init") {

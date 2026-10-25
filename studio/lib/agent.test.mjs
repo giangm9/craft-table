@@ -413,3 +413,8 @@ test("designSystemPrompt: tells Claude how a screen is mentioned and that its re
   const vi = designSystemPrompt({ project: { name: "Acme", description: "", language: "vi", source: null }, topics: ["boards"], sandbox: false });
   assert.match(vi, /@\[screen-id\]/);
 });
+
+test("sdkOptions: effort is passed to the SDK only when one was chosen", () => {
+  assert.equal(sdkOptions({ model: "sonnet", mcpServer: {}, systemPrompt: "P", effort: "xhigh" }).effort, "xhigh");
+  assert.ok(!("effort" in sdkOptions({ model: "sonnet", mcpServer: {}, systemPrompt: "P" })), "no effort chosen → the model's own default");
+});

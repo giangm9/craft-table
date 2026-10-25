@@ -3,7 +3,8 @@
 // · right panel: the Conversation with Claude (a mark = a reference point inside a message).
 import { StrictMode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Code2, FileText, GitBranch, History, Languages, LogOut, Menu, MessageSquare, Pencil, SquareDashedMousePointer } from "lucide-react";
+import { Code2, FileText, GitBranch, History, Languages, LogOut, Menu, MessageSquare, Pencil, PictureInPicture2, SquareDashedMousePointer } from "lucide-react";
+import { createPortal } from "react-dom";
 import "../ui/tokens.css";
 import "./studio.css";
 import { cn, Select } from "../ui";
@@ -13,6 +14,8 @@ import { Canvas, useCanvas } from "./Canvas";
 import { Frame, type Marker } from "./Frame";
 import { ThreadsPanel, type Redraw } from "./ThreadsPanel";
 import { PanelAside } from "./PanelAside";
+import { FloatingPanel, type FloatRect } from "./FloatingPanel";
+import { defaultFloatRect } from "../lib/panel-float.mjs";
 import { PANEL_DEFAULT } from "../lib/panel-width.mjs";
 import { HistoryPanel } from "./HistoryPanel";
 import { MetaEditor } from "./MetaEditor";
@@ -66,8 +69,8 @@ function PeerAvatars({ peers, label, onPick }: { peers: Peer[]; label: (p: Peer)
 
 /** Wide enough (≥ md)? Mount EXACTLY ONE spec panel (left panel or overlay sheet): hiding one with CSS still mounts
  *  it, and in Edit mode it would open a second co-editing connection (one person shown as "2 people editing"). */
-function useWide() {
-  const q = "(min-width: 768px)";
+function useWide() { return useMedia("(min-width: 768px)"); }
+function useMedia(q: string) {
   const [wide, setWide] = useState(() => matchMedia(q).matches);
   useEffect(() => {
     const m = matchMedia(q);
@@ -180,6 +183,12 @@ function App() {
   const [specWidth, setSpecWidth] = useStored("studio:specWidth", 420);
   const [codeHeight, setCodeHeight] = useStored("studio:codeHeight", 320);
   const [panelWidth, setPanelWidth] = useStored("studio:panelWidth", PANEL_DEFAULT);
+  // The conversation panel can pop out as a floating window. It is drawn ONCE, into `host`, an element that is moved between the
+  // side panel and the window — so what is typed and the open thread survive the move.
+  const [floating, setFloating] = useStored("studio:chatFloat", false);
+  const [floatRect, setFloatRect] = useStored<FloatRect | null>("studio:chatFloatRect", null);
+  const desktop = useMedia("(min-width: 1024px)");
+  const host = useMemo(() => { const d = document.createElement("div"); d.className = "flex-1 min-h-0 flex flex-col"; return d; }, []);
   const codeOpen = params.get("code") === "1";
   const specSheet = params.get("spec") === "1";
   const specNav = (k: SpecKind, pg: string | null) => setParams({ sp: k === "tech" ? "tech" : null, spp: pg });
@@ -280,6 +289,11 @@ function App() {
             <Icon size={14} className="shrink-0" /> <span className="truncate">{label}</span>{k === "threads" && needing > 0 ? <span data-attention-count className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[11px] font-semibold inline-flex items-center justify-center">{needing}</span> : k === "threads" && versionThreads.length ? <span className="text-xs text-ink-400 tabular-nums">{versionThreads.length}</span> : null}
           </button>
         ))}
+        {desktop && !floating && (
+          <button type="button" data-panel-float aria-label={T.floatPanel} title={T.floatPanel} onClick={() => setFloating(true)} className="ml-auto self-center mb-0.5 p-1.5 rounded-md text-ink-500 hover:bg-ink-100 hover:text-ink-900">
+            <PictureInPicture2 size={14} />
+          </button>
+        )}
       </div>
       {rightTab === "history" ? (
         <HistoryPanel version={version} entry={entry.id} threads={threads} selected={params.get("hist")} onSelect={(id) => setParams({ hist: id })} />
@@ -289,6 +303,7 @@ function App() {
         entries={entries}
         onOpenScreen={(id) => setParams({ e: id, t: keepT(id), rf: null, s: null, spp: null, hist: null, meta: null, vp: null, nav: null })}
         scripts={project?.agent ? project.agent.sandbox : undefined}
+        runChoices={project?.agent}
         version={version}
         threads={versionThreads}
         activeId={tParam}
@@ -602,7 +617,10 @@ function App() {
           ) : (
             <p className="flex-1 p-6 text-sm text-ink-500">{version ? T.noBoards(version) : ""}</p>
           )}
-          <PanelAside width={panelWidth} onWidth={setPanelWidth}>{panel}</PanelAside>
+          {panel && createPortal(panel, host)}
+          {floating && desktop
+            ? <FloatingPanel host={host} rect={floatRect ?? defaultFloatRect(innerWidth, innerHeight)} onRect={setFloatRect} onDock={() => setFloating(false)} />
+            : <PanelAside width={panelWidth} onWidth={setPanelWidth} host={host} />}
           {entry && specSheet && !wide && (
             <div className="md:hidden fixed inset-0 z-50 bg-surface flex flex-col">
               <SpecPanel

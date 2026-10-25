@@ -7,7 +7,7 @@ import { cn } from "../ui";
 import { allRefs, dropMark, waitingForUser, DESIGN_ENTRY, featureOf, isDesignThread, mentionsOf, plainMentions, splitMentions } from "../lib/thread-core.mjs";
 import { replyBlocks, replyPlain } from "../lib/reply-md.mjs";
 import { enterAction } from "../lib/composer-keys.mjs";
-import { api, refScenario, scenariosOf, uploadUrl, type Entry, type Ref, type Thread } from "./api";
+import { api, refScenario, scenariosOf, uploadUrl, type Entry, type Ref, type RunChoices, type RunWith, type Thread } from "./api";
 import { agentText } from "./i18n/agent-status";
 import { T, threadTitle } from "./i18n/threads";
 
@@ -43,6 +43,8 @@ type Props = {
   onOpenScreen: (id: string) => void;
   /** Where Claude may run scripts — the backend name, null = off, undefined = not known yet (nothing shown). */
   scripts?: string | null;
+  /** The models and effort levels the message box offers (undefined = not known yet: no pickers). */
+  runChoices?: RunChoices;
   /** The marks list of the open thread is shown (URL `kh=1`). */
   refsOpen: boolean;
   onRefsOpen: (on: boolean) => void;
@@ -56,6 +58,19 @@ const hm = (iso: string) => {
 const who = (a: string) => (a === "claude" ? "Claude" : a.split("@")[0]);
 const titleOf = (t: Thread) => threadTitle(t.title);
 type ScreenItem = { id: string; title: string };
+/** What the message box shows for model and effort: the value, what to offer, and what a change does. */
+type RunPick = { value: RunWith; choices: RunChoices; onChange: (patch: RunWith) => void };
+/** A patch on a choice: an empty string takes the field back to the default (the field is dropped). */
+const mergeRun = (base: RunWith, patch: RunWith): RunWith => {
+  const out: Record<string, string> = { ...base };
+  for (const [k, v] of Object.entries(patch)) { if (v) out[k] = v; else delete out[k]; }
+  return out;
+};
+const DRAFT_KEY = "craft-table:run-with";
+/** The last choice made for a NEW conversation (per browser). */
+const readDraftRun = (): RunWith => { try { return JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "{}") as RunWith; } catch { return {}; } };
+const writeDraftRun = (v: RunWith) => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(v)); } catch { /* storage may be off */ } };
+const PICK = "min-w-0 flex-1 @[35rem]:flex-none @[35rem]:max-w-[10rem] rounded-lg border border-ink-200 bg-surface px-1.5 py-1.5 text-[12px] text-ink-700 disabled:opacity-60";
 /** A screen's name in the "@" menu and in a mention: its title, plus the option's name for an option. */
 const screenName = (e: Entry) => (e.meta.option ? `${e.meta.title} · ${e.meta.option.name}` : e.meta.title) || e.id;
 // A mark with no scenario lies on the first scenario's row (refScenario): show that scenario's name.
@@ -175,7 +190,7 @@ type Att = { key: string; url: string; id?: string; err?: string };
  * screen, for multi-paragraph text; its state is in the URL `soan=1`): Enter starts a new line, Ctrl/⌘+Enter sends
  * (lib/composer-keys.mjs). Both modes are the same box (text, images and marks stay when switching).
  */
-function Composer(p: { screens: ScreenItem[]; noMarks?: boolean; placeholder: string; draftKey: string; pendingRefs: Ref[]; entry: Entry; annotating: boolean; busy: boolean; expanded: boolean; onExpanded: (on: boolean) => void; onToggleAnnotate: () => void; onRemovePending: (i: number) => void; onFocusRef: (k: string) => void; redrawing: number | null; onRedraw: (i: number) => void; onSend: (text: string, images: string[]) => Promise<boolean> }) {
+function Composer(p: { runPick?: RunPick; screens: ScreenItem[]; noMarks?: boolean; placeholder: string; draftKey: string; pendingRefs: Ref[]; entry: Entry; annotating: boolean; busy: boolean; expanded: boolean; onExpanded: (on: boolean) => void; onToggleAnnotate: () => void; onRemovePending: (i: number) => void; onFocusRef: (k: string) => void; redrawing: number | null; onRedraw: (i: number) => void; onSend: (text: string, images: string[]) => Promise<boolean> }) {
   const taRef = useRef<HTMLTextAreaElement>(null);
   // Opening / folding the large composer → caret at the end of the text, to keep typing right away.
   useEffect(() => {
@@ -270,7 +285,7 @@ function Composer(p: { screens: ScreenItem[]; noMarks?: boolean; placeholder: st
     <div
       data-composer={p.expanded ? "lon" : ""}
       className={cn(
-        "p-3 space-y-2 bg-surface",
+        "@container p-3 space-y-2 bg-surface",
         p.expanded ? "flex-1 min-h-0 flex flex-col" : "border-t border-ink-200",
         drag && "bg-accent-50 outline-2 outline-dashed outline-accent-400 -outline-offset-4",
       )}
@@ -344,11 +359,14 @@ function Composer(p: { screens: ScreenItem[]; noMarks?: boolean; placeholder: st
           ))}
         </div>
       )}
-      <div className="flex items-center gap-1.5">
+      {/* The bottom row. Wide enough: Mark, @, Image, the two pickers, expand, Send on ONE line. Narrower: Mark, @, Image and expand + Send
+          stay on the first line, the pickers fill a second one. (Container query on the message box, not on the window.) */}
+      <div className="grid grid-cols-[1fr_auto] items-center gap-1.5 @[35rem]:grid-cols-[auto_1fr_auto]">
+       <div className="col-start-1 row-start-1 flex min-w-0 flex-wrap items-center gap-1.5">
         {!p.noMarks && <button
           type="button"
           onClick={() => { if (p.expanded && !p.annotating) p.onExpanded(false); p.onToggleAnnotate(); }}
-          className={cn("inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium border", p.annotating ? "bg-accent-700 border-accent-700 text-white" : "bg-surface border-ink-200 text-ink-700 hover:bg-ink-50")}
+          className={cn("inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-medium border", p.annotating ? "bg-accent-700 border-accent-700 text-white" : "bg-surface border-ink-200 text-ink-700 hover:bg-ink-50")}
           title={T.markHint}
         >
           <SquareDashedMousePointer size={15} /> {p.annotating ? T.marking : T.mark}
@@ -357,7 +375,7 @@ function Composer(p: { screens: ScreenItem[]; noMarks?: boolean; placeholder: st
           type="button"
           data-mention-button
           onClick={openMentionMenu}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium border bg-surface border-ink-200 text-ink-700 hover:bg-ink-50"
+          className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-medium border bg-surface border-ink-200 text-ink-700 hover:bg-ink-50"
           title={T.mentionHint}
           aria-label={T.mention}
         >
@@ -367,24 +385,39 @@ function Composer(p: { screens: ScreenItem[]; noMarks?: boolean; placeholder: st
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={atts.length >= MAX_IMAGES}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium border bg-surface border-ink-200 text-ink-700 hover:bg-ink-50 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-medium border bg-surface border-ink-200 text-ink-700 hover:bg-ink-50 disabled:opacity-50"
           title={T.attachHint(MAX_IMAGES)}
         >
           <ImagePlus size={15} /> {T.image}
         </button>
         <input ref={fileRef} data-image-input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden onChange={(e) => { addFiles([...(e.target.files ?? [])]); e.target.value = ""; }} />
+       </div>
+        {p.runPick && (
+          <span data-run-options className="col-span-2 row-start-2 flex min-w-0 items-center gap-1.5 @[35rem]:col-span-1 @[35rem]:col-start-2 @[35rem]:row-start-1">
+            <select aria-label={T.runModel} title={`${T.runModel} — ${T.runHint}`} data-run-model value={p.runPick.value.model ?? ""} disabled={p.busy} onChange={(e) => p.runPick!.onChange({ model: e.target.value })} className={PICK}>
+              <option value="">{T.runDefault(p.runPick.choices.defaultModel.label)}</option>
+              {p.runPick.choices.models.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+            </select>
+            <select aria-label={T.runEffort} title={`${T.runEffort} — ${T.runHint}`} data-run-effort value={p.runPick.value.effort ?? ""} disabled={p.busy} onChange={(e) => p.runPick!.onChange({ effort: e.target.value })} className={PICK}>
+              <option value="">{T.effortOption("")}</option>
+              {p.runPick.choices.efforts.map((l) => <option key={l} value={l}>{T.effortOption(l)}</option>)}
+            </select>
+          </span>
+        )}
+       <div className="col-start-2 row-start-1 @[35rem]:col-start-3 ml-auto flex shrink-0 items-center gap-1.5">
         <button
           type="button"
           onClick={() => p.onExpanded(!p.expanded)}
           aria-label={p.expanded ? T.shrinkComposer : T.openBigComposer}
           title={p.expanded ? T.shrinkComposerHint : T.openBigComposerHint}
-          className="ml-auto self-stretch inline-flex items-center px-2 rounded-lg border border-ink-200 text-ink-600 hover:bg-ink-50 hover:text-ink-900"
+          className="self-stretch inline-flex items-center px-1.5 rounded-lg border border-ink-200 text-ink-600 hover:bg-ink-50 hover:text-ink-900"
         >
           {p.expanded ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
         </button>
         <button type="button" onClick={send} disabled={!can} title={p.expanded ? T.sendHintBig : T.sendHint} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent-700 border border-accent-700 text-white rounded-lg text-sm font-medium hover:bg-accent-800 disabled:opacity-50">
           {p.busy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} {T.send}
         </button>
+       </div>
       </div>
     </div>
   );
@@ -410,6 +443,10 @@ export function ThreadsPanel(p: Props) {
   const listEnd = useRef<HTMLDivElement>(null);
   const thread = p.activeId && p.activeId !== "new" ? p.threads.find((t) => t.id === p.activeId) : undefined;
   const refs = thread ? allRefs(thread) : [];
+  // Model and effort: a conversation keeps its own (saved at once, used from the next message); the next NEW one starts from the last choice made for a new one.
+  const [draftRun, setDraftRun] = useState<RunWith>(readDraftRun);
+  const draftPick: RunPick | undefined = p.runChoices && { value: draftRun, choices: p.runChoices, onChange: (patch) => { const next = mergeRun(draftRun, patch); setDraftRun(next); writeDraftRun(next); } };
+  const threadPick: RunPick | undefined = p.runChoices && thread && { value: thread.runWith ?? {}, choices: p.runChoices, onChange: (patch) => { run(() => api.patchThread(thread.id, { runWith: mergeRun(thread.runWith ?? {}, patch) })); } };
   const screens = useMemo<ScreenItem[]>(() => p.entries.map((e) => ({ id: e.id, title: screenName(e) })), [p.entries]);
   const byId = (id: string) => p.entries.find((e) => e.id === id);
   /** A screen's name for a label; within the open screen's group (main screen + its options) the short names. */
@@ -456,12 +493,12 @@ export function ThreadsPanel(p: Props) {
         <div className="flex-1" />
         {err && <p className="px-3 pb-2 text-xs text-rose-600">{err}</p>}
         <Composer
-          placeholder={T.messageClaudeGlobal} screens={screens}
+          placeholder={T.messageClaudeGlobal} screens={screens} runPick={draftPick}
           draftKey="new" entry={p.entry} pendingRefs={p.pendingRefs} annotating={p.annotating} busy={busy} expanded={p.composeBig} onExpanded={p.onComposeBig}
           onToggleAnnotate={p.onToggleAnnotate} onRemovePending={p.onRemovePending} onFocusRef={p.onFocusRef}
           redrawing={p.redraw?.kind === "pending" ? p.redraw.i : null} onRedraw={(i) => p.onRedraw({ kind: "pending", i })}
           onSend={(text, images) => run(async () => {
-            const t = await api.createThread({ entry: DESIGN_ENTRY, version: p.version, text, refs: stamp(p.pendingRefs, true), images, viewing: p.entry.id });
+            const t = await api.createThread({ entry: DESIGN_ENTRY, version: p.version, text, refs: stamp(p.pendingRefs, true), images, viewing: p.entry.id, runWith: draftRun });
             p.onClearPending();
             p.onOpen(t.id);
           })}
@@ -594,7 +631,7 @@ export function ThreadsPanel(p: Props) {
         {err && <p className="px-3 pb-2 text-xs text-rose-600">{err}</p>}
         <Composer
           placeholder={thread.status === "closed" ? T.replyToReopen : T.reply}
-          screens={screens} noMarks={!isDesignThread(thread) && featureOf(thread.entry) !== featureOf(p.entry.id)} draftKey={thread.id} entry={p.entry} pendingRefs={p.pendingRefs} annotating={p.annotating} busy={busy} expanded={p.composeBig} onExpanded={p.onComposeBig}
+          runPick={threadPick} screens={screens} noMarks={!isDesignThread(thread) && featureOf(thread.entry) !== featureOf(p.entry.id)} draftKey={thread.id} entry={p.entry} pendingRefs={p.pendingRefs} annotating={p.annotating} busy={busy} expanded={p.composeBig} onExpanded={p.onComposeBig}
           onToggleAnnotate={p.onToggleAnnotate} onRemovePending={p.onRemovePending} onFocusRef={p.onFocusRef}
           redrawing={p.redraw?.kind === "pending" ? p.redraw.i : null} onRedraw={(i) => p.onRedraw({ kind: "pending", i })}
           onSend={(text, images) => run(async () => { await api.send(thread.id, { text, refs: stamp(p.pendingRefs, isDesignThread(thread)), images, viewing: p.entry.id }); p.onClearPending(); })}

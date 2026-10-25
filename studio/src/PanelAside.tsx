@@ -1,12 +1,15 @@
 // The right panel (Conversation / History) on wide screens — drag its left edge to resize (lib/panel-width.mjs);
 // each person's width is remembered. The handle captures the pointer so the board's iframe cannot steal the drag,
 // as in the spec panel.
-import { useRef, useState, type KeyboardEvent, type PointerEvent as RPointerEvent, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent as RPointerEvent } from "react";
 import { cn } from "../ui";
 import { PANEL_DEFAULT, clampPanelWidth, dragPanelWidth } from "../lib/panel-width.mjs";
 import { T } from "./i18n/shell";
 
-export function PanelAside({ width, onWidth, children }: { width: number; onWidth: (w: number) => void; children: ReactNode }) {
+// host: the element holding the panel (main.tsx) — it is moved here, and into the floating window when the panel pops out.
+export function PanelAside({ width, onWidth, host }: { width: number; onWidth: (w: number) => void; host: HTMLElement }) {
+  const slot = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => { const s = slot.current; if (s && host.parentElement !== s) s.appendChild(host); }, [host]);
   const drag = useRef<{ x: number; w: number } | null>(null);
   const [live, setLive] = useState<number | null>(null);
   const shown = clampPanelWidth(live ?? width, innerWidth);
@@ -43,7 +46,7 @@ export function PanelAside({ width, onWidth, children }: { width: number; onWidt
         onKeyDown={key}
         className={cn("absolute top-0 -left-1 w-2 h-full cursor-col-resize z-10 hover:bg-accent-500/25 focus-visible:bg-accent-500/25 outline-none", live != null && "bg-accent-500/35")}
       />
-      {children}
+      <div ref={slot} className="flex-1 min-h-0 flex flex-col" />
     </aside>
   );
 }

@@ -17,6 +17,7 @@ import { entryIdFromPath } from "./lib/entries.mjs";
 import { readMeta } from "./lib/meta-io.mjs";
 import { apiError, createThreadsApi } from "./threads-api.mjs";
 import { createSandbox, detectBackend } from "./lib/sandbox.mjs";
+import { EFFORTS, modelChoices } from "./lib/run-options.mjs";
 import { openHistory } from "./lib/history.mjs";
 import { createRecorder } from "./lib/history-recorder.mjs";
 import { createCollab } from "./lib/collab.mjs";
@@ -218,7 +219,8 @@ const shots = createShots({ base: `http://127.0.0.1:${PORT}`, tool: TOOL_URL, ex
 const SANDBOX = detectBackend();
 const sandbox = SANDBOX.backend ? createSandbox({ backend: SANDBOX.backend, root: ROOT, lang: normalizeLang(PROJECT.config.language) ?? "en" }) : null;
 console.log(`  Claude's scripts: ${SANDBOX.backend ?? "off"} — ${SANDBOX.reason}`);
-const threads = createThreadsApi({ root: ROOT, project: PROJECT.config, hot, listEntries, live, pickVersion, readBody, send, shots, sandbox, model: process.env.STUDIO_AGENT_MODEL || "sonnet" });
+const MODELS = modelChoices(process.env); // what a conversation may run with (the message box offers these)
+const threads = createThreadsApi({ root: ROOT, project: PROJECT.config, hot, listEntries, live, pickVersion, readBody, send, shots, sandbox, model: MODELS.defaultModel.id, models: MODELS.models });
 
 // ── Versions API ─────────────────────────────────────────────────────────────
 //   GET    /__api/versions               the list + the live version
@@ -456,7 +458,7 @@ httpServer.on("request", async (req, res) => {
     if (url.pathname === "/__api/me") return send(res, 200, { email: who });
     if (url.pathname === "/__api/project") {
       const c = PROJECT.config;
-      return send(res, 200, { name: c.name, description: c.description, language: c.language, logo: c.logo, source: c.source ? { label: c.source.label, roots: c.source.roots, extensions: c.source.extensions } : null, agent: { sandbox: SANDBOX.backend, sandboxReason: SANDBOX.reason } });
+      return send(res, 200, { name: c.name, description: c.description, language: c.language, logo: c.logo, source: c.source ? { label: c.source.label, roots: c.source.roots, extensions: c.source.extensions } : null, agent: { sandbox: SANDBOX.backend, sandboxReason: SANDBOX.reason, models: MODELS.models, defaultModel: MODELS.defaultModel, efforts: EFFORTS } });
     }
     if (url.pathname.startsWith("/__api/threads") || url.pathname === "/__api/spec" || url.pathname === "/__src" || url.pathname === "/__api/src") return await threads.handle(req, res, url, who);
     if (url.pathname.startsWith("/__api/versions")) return await handleVersions(req, res, url, who);

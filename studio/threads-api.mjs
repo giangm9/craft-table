@@ -19,6 +19,7 @@ import { newThread, addMessage, editRef, setAgent, parseAgentReply, pendingUserM
 import { isValidEntryId } from "./lib/entries.mjs";
 import { buildPrompt, runAgent, SESSION_KIND, DESIGN_TIMEOUT_MS } from "./lib/agent.mjs";
 import { createQueue } from "./lib/agent-queue.mjs";
+import { cleanRunWith, effectiveRun, modelChoices } from "./lib/run-options.mjs";
 import { specName, safeSrcPath, sliceLines } from "./lib/spec-core.mjs";
 import { boardsDir } from "./lib/versions.mjs";
 import { errorText, normalizeLang, requestLang, StudioError, translate } from "./lib/i18n.mjs";
@@ -48,7 +49,8 @@ export function apiError(lang, err) {
 // runAgent/buildPrompt can be injected so tests run with a fake Claude. shots: the shared screenshot taker (lib/shots.mjs).
 /** project: the loaded craft-table.json (name, description, language, source) — for Claude's brief and the source page. */
 // sandbox: where a whole-design turn may run scripts (lib/sandbox.mjs createSandbox), or null — then those turns have no `run` tool.
-export function createThreadsApi({ root, project = null, hot, listEntries, live, pickVersion, readBody, send, model, shots, sandbox = null, runAgent: run = runAgent, buildPrompt: build = buildPrompt }) {
+// model: the default model; models: [{ id, label }] the models a thread may choose (lib/run-options.mjs).
+export function createThreadsApi({ root, project = null, hot, listEntries, live, pickVersion, readBody, send, model, models = modelChoices(process.env).models, shots, sandbox = null, runAgent: run = runAgent, buildPrompt: build = buildPrompt }) {
   const source = project?.source ?? null;
   /** Language of what a Claude turn stores in the conversation (and of the screen info it is given). */
   const projectLang = normalizeLang(project?.language) ?? "en";
@@ -121,12 +123,14 @@ export function createThreadsApi({ root, project = null, hot, listEntries, live,
     // A whole-design thread has no screen of its own: the one the sender was looking at, if they said, else none.
     const turnEntry = design ? pending[pending.length - 1].viewing ?? null : pending[pending.length - 1].viewing ?? t.entry;
 
+    // What this turn runs with: the thread's own choice (a model that is no longer offered falls back to the default).
+    const { model: runModel, effort } = effectiveRun(t, { models, defaultModel: { id: model } });
     const attempt = async (sessionId) => {
       // The prompt carries only the new messages + ids; Claude opens the rest itself with the sandbox tools (locked by ctx).
       const prompt = build({ thread: t, meta, pending, resume: !!sessionId, viewing: turnEntry, lang: projectLang });
       let lastSave = 0;
       const r = run({
-        root, ...(project ? { project } : {}), model, sessionId, prompt, shots,
+        root, ...(project ? { project } : {}), model: runModel, effort, sessionId, prompt, shots,
         ctx: { version: t.version, threadId: t.id, entry: turnEntry },
         ...(design ? { design: true, sandbox, timeoutMs: DESIGN_TIMEOUT_MS } : {}),
         onSession: (sid) => withThread(id, (x) => setAgent(x, { sessionId: sid, sessionKind: SESSION_KIND })),
@@ -145,7 +149,9 @@ export function createThreadsApi({ root, project = null, hot, listEntries, live,
     await withThread(id, (x) => setAgent(x, { state: "running", startedAt: nowIso(), progress: { key: "readingConversation" }, error: null }, nowIso()));
     // Resume only sessions this sandbox created; a session of the old way of running (`claude -p`, other tools) →
     // a new session, and Claude reads the old messages itself with read_thread.
-    const resumable = t.agent?.sessionKind === SESSION_KIND ? t.agent.sessionId : null;
+    // A session is resumed only for the same model (another model reads the conversation itself, with read_thread); a thread
+    // that never recorded its model keeps resuming.
+    const resumable = t.agent?.sessionKind === SESSION_KIND && (t.agent.lastModel == null || t.agent.lastModel === runModel) ? t.agent.sessionId : null;
     let r = await attempt(resumable);
     // The session cannot be resumed (expired / deleted) → open a new one.
     if (!r.ok && resumable && typeof r.error === "string" && /session|resume|conversation/i.test(r.error)) {
@@ -157,7 +163,7 @@ export function createThreadsApi({ root, project = null, hot, listEntries, live,
     runOf.delete(id);
 
     await withThread(id, (x) => {
-      let y = setAgent(x, { state: r.ok ? "idle" : "error", progress: null, error: r.ok ? null : r.error, lastCostUsd: r.costUsd, finishedAt: nowIso() }, nowIso());
+      let y = setAgent(x, { state: r.ok ? "idle" : "error", progress: null, error: r.ok ? null : r.error, lastCostUsd: r.costUsd, lastModel: runModel, lastEffort: effort ?? null, finishedAt: nowIso() }, nowIso());
       if (r.ok) {
         const { text, refs } = parseAgentReply(r.text, { marks: !design || !!turnEntry });
         // Claude marks on the frame of the screen this turn worked on (possibly an option).
@@ -246,7 +252,9 @@ export function createThreadsApi({ root, project = null, hot, listEntries, live,
       const title = (typeof b.title === "string" && b.title.trim()) || auto || translate(SERVER_TEXT, lang, "threadDefaultTitle");
       const version = b.version == null ? live() : pickVersion(b.version);
       if (!version) return fail(400, "apiVersionMissing");
-      const nt = newThread({ entry: b.entry, version, title, author }, { id: rid("t_"), now: nowIso() });
+      const rw = cleanRunWith(b.runWith, models);
+      if (!rw.ok) return fail(400, rw.code);
+      const nt = newThread({ entry: b.entry, version, title, author, runWith: rw.runWith }, { id: rid("t_"), now: nowIso() });
       if (!nt.ok) return refuse(nt);
       const withMsg = addMessage(nt.thread, { role: "user", author, text: firstText, refs: b.refs, images: b.images, viewing: b.viewing }, { id: rid("m_"), now: nowIso() });
       if (!withMsg.ok) return refuse(withMsg);
@@ -262,12 +270,20 @@ export function createThreadsApi({ root, project = null, hot, listEntries, live,
     if (!action && req.method === "GET") return send(res, 200, { thread: await loadThread(dir, id) });
     if (!action && req.method === "PATCH") {
       const b = await readBody(req);
-      const t = await withThread(id, (x) => ({
-        ...x,
-        title: typeof b.title === "string" && b.title.trim() ? b.title.trim().slice(0, 120) : x.title,
-        status: b.status === "open" || b.status === "closed" ? b.status : x.status,
-        updatedAt: nowIso(),
-      }));
+      // The model and effort the NEXT turn runs with (an empty object / empty strings = the studio's default).
+      const rw = b.runWith === undefined ? null : cleanRunWith(b.runWith, models);
+      if (rw && !rw.ok) return fail(400, rw.code);
+      const t = await withThread(id, (x) => {
+        const { runWith: _drop, ...rest } = x;
+        const keep = rw ? rw.runWith : x.runWith;
+        return {
+          ...rest,
+          ...(keep && Object.keys(keep).length ? { runWith: keep } : {}),
+          title: typeof b.title === "string" && b.title.trim() ? b.title.trim().slice(0, 120) : x.title,
+          status: b.status === "open" || b.status === "closed" ? b.status : x.status,
+          updatedAt: nowIso(),
+        };
+      });
       return send(res, 200, { thread: t });
     }
     if (!action && req.method === "DELETE") {

@@ -114,7 +114,7 @@ export function viteConfig({ projectDir, toolDir, httpServer, hosts = [], langua
     optimizeDeps: {
       force: borrowed.length > 0,
       include: [
-        "react", "react/jsx-runtime", "react/jsx-dev-runtime", "react-dom/client", "lucide-react",
+        "react", "react/jsx-runtime", "react/jsx-dev-runtime", "react-dom", "react-dom/client", "lucide-react",
         "yjs", "@hocuspocus/provider", "y-codemirror.next", "codemirror", "@codemirror/view", "@codemirror/state",
         "@codemirror/lang-markdown", "@codemirror/lang-javascript", "@codemirror/language", "@lezer/highlight",
         "diff", "mermaid", "marked", "highlight.js/lib/core", "highlight.js/lib/languages/typescript",

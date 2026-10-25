@@ -50,6 +50,8 @@
     "apiNoSuchImage": "không có ảnh này",
     "apiNeedJson": "cần Content-Type: application/json",
     "apiBadEntryKind": "entry/kind không hợp lệ",
+    "apiBadRunModel": "Model này không có trong danh sách",
+    "apiBadRunEffort": "Mức effort không hợp lệ (low, medium, high, xhigh, max)",
     "apiNoSpec": "chưa có đặc tả",
     "apiNoSuchThread": "không có luồng này",
     "apiClaudeOnly": "chỉ Claude (127.0.0.1)",
@@ -748,6 +750,10 @@
     },
     "conversation": "Hội thoại",
     "history": "Lịch sử",
+    "floatPanel": "Tách hội thoại thành cửa sổ nổi",
+    "dockPanel": "Gắn hội thoại lại vào khung bên phải",
+    "floatMoveHint": "Kéo để di chuyển",
+    "floatResizeHint": "Kéo để đổi cỡ",
     "noBoards": {
       "params": "Chưa có bản vẽ nào trong versions/‹a0›/boards/.",
       "one": "Chưa có bản vẽ nào trong versions/1/boards/.",
@@ -898,6 +904,19 @@
     "mentionMenu": "Các màn",
     "mentionNone": "Không có màn nào khớp",
     "mentionGone": "Màn này không còn trong phiên bản này",
+    "runModel": "Model",
+    "runEffort": "Effort",
+    "runHint": "Áp dụng cho tin nhắn kế tiếp",
+    "runDefault": {
+      "params": "Mặc định (‹a0›)",
+      "one": "Mặc định (1)",
+      "two": "Mặc định (2)"
+    },
+    "effortOption": {
+      "params": "Effort: ‹a0›",
+      "one": "Effort: 1",
+      "two": "Effort: 2"
+    },
     "lookingAt": {
       "params": "đang xem ‹a0›",
       "one": "đang xem 1",

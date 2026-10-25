@@ -130,6 +130,18 @@ goes to that screen and the conversation stays open. Claude is told which screen
 screens in its replies the same way. Every message also records the screen you were looking at (a hint of what you
 mean, not a limit). Marks still work: a mark is drawn on the open screen and remembers which one.
 
+**Model and effort.** The bottom row of the message box has two pickers: the Claude **model** and the **effort** of the next
+turn (low, medium, high, xhigh, max). A conversation keeps its own choice (it applies from the next message; "default" is
+the studio's own setting: `STUDIO_AGENT_MODEL`, and the model's own effort); a new conversation starts from the last
+choice made for a new one. The list of models is `STUDIO_AGENT_MODELS` (`id[:label],…`; built in: the current Sonnet, Opus
+and Haiku) — a model that is not in it is refused. When a conversation changes model, its next turn opens a new session
+(Claude reads the conversation itself), because a session is tied to the model that wrote it.
+
+**A floating window.** The button at the right end of the tab strip pops the conversation out as a window over the board
+(the board gets the room): drag its title bar to move it, its corner to resize it, the button in its title bar to put it
+back. Nothing is remounted, so what you were typing stays. Its place and size are remembered per browser; a smaller browser
+window pulls it back inside. (Wide screens only; on a phone the conversation is a sheet.)
+
 Conversations made on one screen before (by an earlier version of the studio) are in the same list, labelled with their
 screen, and work as they did: a turn on that screen and its options.
 
@@ -193,6 +205,7 @@ Register `<STUDIO_PUBLIC_URL>/__auth/callback` as the redirect URI. Sign-in turn
 
 Other settings: `STUDIO_PORT` (default 5180), `STUDIO_AGENT_MODEL` (Claude model alias, default `sonnet`),
 `STUDIO_ENV_FILE` (another file instead of the project's `.env`), `CRAFT_PROJECT` (the project folder),
+`STUDIO_AGENT_MODELS` (the models the message box offers, see [Conversations](#conversations)),
 `CRAFT_SANDBOX` / `CRAFT_SANDBOX_IMAGE` (where Claude may run scripts, see
 [Conversations](#conversations)).
 

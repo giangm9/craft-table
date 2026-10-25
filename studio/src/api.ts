@@ -45,9 +45,14 @@ export type AgentState = {
   lastCostUsd?: number | null;
   sessionId?: string | null;
 };
+/** What the next turn of a conversation runs with; a missing field = the studio's default. */
+export type RunWith = { model?: string; effort?: string };
+export type RunChoices = { models: { id: string; label: string }[]; defaultModel: { id: string; label: string }; efforts: string[] };
 export type Thread = {
   id: string;
+  /** The screen of a thread made on one screen; "*" for a conversation of the version. */
   entry: string;
+  runWith?: RunWith;
   version: string;
   title: string;
   createdBy: string;
@@ -93,7 +98,7 @@ export const uploadUrl = (id: string) => `/__api/uploads/${id}`;
 
 /** craft-table.json of the project being served (what the UI needs of it). */
 /** source: the project's app repo — label + which folders / file types may be opened (never its path on disk). */
-export type Project = { name: string; description: string; language: "en" | "vi"; logo: string | null; source: { label: string; roots: string[]; extensions: string[] } | null; agent?: { sandbox: "bwrap" | "docker" | "process" | null; sandboxReason: string } };
+export type Project = { name: string; description: string; language: "en" | "vi"; logo: string | null; source: { label: string; roots: string[]; extensions: string[] } | null; agent?: ({ sandbox: "bwrap" | "docker" | "process" | null; sandboxReason: string } & RunChoices) };
 
 export const api = {
   upload,
@@ -110,10 +115,10 @@ export const api = {
   renameOption: (b: { v: string; entry: string; name: string }) => call<{ renamed: string[] }>("POST", "/__api/options/rename", b),
   allThreads: () => call<{ threads: Thread[] }>("GET", "/__api/threads").then((r) => r.threads),
   threads: (entry: string) => call<{ threads: Thread[] }>("GET", `/__api/threads?entry=${encodeURIComponent(entry)}`).then((r) => r.threads),
-  createThread: (b: { entry: string; version: string; text: string; refs: Ref[]; images?: string[]; title?: string; viewing?: string }) => call<{ thread: Thread }>("POST", "/__api/threads", b).then((r) => r.thread),
+  createThread: (b: { entry: string; version: string; text: string; refs: Ref[]; images?: string[]; title?: string; viewing?: string; runWith?: RunWith }) => call<{ thread: Thread }>("POST", "/__api/threads", b).then((r) => r.thread),
   send: (id: string, b: { text: string; refs: Ref[]; images?: string[]; viewing?: string }) => call<{ thread: Thread }>("POST", `/__api/threads/${id}/messages`, b).then((r) => r.thread),
   editRef: (id: string, b: { messageId: string; index: number; action: "remove" | "restore" | "redraw"; ref?: Ref }) => call<{ thread: Thread }>("PATCH", `/__api/threads/${id}/refs`, b).then((r) => r.thread),
-  patchThread: (id: string, b: { title?: string; status?: Thread["status"] }) => call<{ thread: Thread }>("PATCH", `/__api/threads/${id}`, b).then((r) => r.thread),
+  patchThread: (id: string, b: { title?: string; status?: Thread["status"]; runWith?: RunWith }) => call<{ thread: Thread }>("PATCH", `/__api/threads/${id}`, b).then((r) => r.thread),
   deleteThread: (id: string) => call<{ ok: true }>("DELETE", `/__api/threads/${id}`, {}),
   stop: (id: string) => call<{ ok: true }>("POST", `/__api/threads/${id}/stop`, {}),
   retry: (id: string) => call<{ ok: true }>("POST", `/__api/threads/${id}/retry`, {}),
