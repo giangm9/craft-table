@@ -131,7 +131,7 @@ function StatusBadge({ t }: { t: Thread }) {
 function MessageText({ text, map, mention }: { text: string; map: (k: number) => ReactNode; mention: (id: string) => ReactNode }) {
   const parts = text.split(/(\[#\d+\]|@\[[a-z0-9][a-z0-9/_~-]*\])/g);
   return (
-    <p className="text-sm whitespace-pre-wrap break-words text-ink-900">
+    <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words text-ink-900">
       {parts.map((p, i) => {
         const m = /^\[#(\d+)\]$/.exec(p);
         if (m) return <Fragment key={i}>{map(Number(m[1]))}</Fragment>;
@@ -182,7 +182,7 @@ function ReplyBody({ text, chip, mention }: { text: string; chip: (k: number) =>
       default: return <p key={i}>{inl(b.c)}</p>;
     }
   });
-  return <div data-reply className="text-sm text-ink-900 break-words space-y-2">{blk(tree)}</div>;
+  return <div data-reply className="text-[13px] leading-relaxed text-ink-900 break-words space-y-1.5">{blk(tree)}</div>;
 }
 
 const MAX_IMAGES = 6;
@@ -510,11 +510,11 @@ export function ThreadsPanel(p: Props) {
   };
 
   const header = (title: ReactNode, actions?: ReactNode, back = true) => (
-    <div className="px-3 py-2.5 border-b border-ink-200 flex items-center gap-1.5">
-      {back && <button type="button" aria-label={T.backToThreads} onClick={() => p.onOpen(null)} className="p-1.5 rounded-lg hover:bg-ink-100"><ArrowLeft size={17} /></button>}
+    <div className="h-11 px-2 border-b border-ink-200 flex items-center gap-1">
+      {back && <button type="button" aria-label={T.backToThreads} onClick={() => p.onOpen(null)} className="grid h-7 w-7 place-items-center rounded-md text-ink-600 hover:bg-ink-100"><ArrowLeft size={15} /></button>}
       <div className="min-w-0 flex-1">{title}</div>
       {actions}
-      {p.onClose && <button type="button" aria-label={T.close} onClick={p.onClose} className="p-1.5 rounded-lg hover:bg-ink-100"><X size={17} /></button>}
+      {p.onClose && <button type="button" aria-label={T.close} onClick={p.onClose} className="grid h-7 w-7 place-items-center rounded-md text-ink-600 hover:bg-ink-100"><X size={15} /></button>}
     </div>
   );
 
@@ -522,7 +522,7 @@ export function ThreadsPanel(p: Props) {
   if (p.activeId === "new") {
     return (
       <div className="flex-1 min-h-0 flex flex-col">
-        {header(<p className="font-semibold">{T.newThread}</p>)}
+        {header(<p className="pl-1 text-[13px] font-semibold">{T.newThread}</p>)}
         <div className="flex-1" />
         {err && <p className="px-3 pb-2 text-xs text-rose-600">{err}</p>}
         <Composer
@@ -546,7 +546,7 @@ export function ThreadsPanel(p: Props) {
     return (
       <div className="flex-1 min-h-0 flex flex-col">
         {header(
-          <button type="button" onClick={() => { const v = prompt(T.renamePrompt, thread.title); if (v?.trim()) run(() => api.patchThread(thread.id, { title: v })); }} className="block w-full text-left font-semibold truncate hover:underline" title={T.rename}>
+          <button type="button" onClick={() => { const v = prompt(T.renamePrompt, thread.title); if (v?.trim()) run(() => api.patchThread(thread.id, { title: v })); }} className="block w-full text-left text-[13px] font-semibold truncate hover:underline" title={T.rename}>
             {titleOf(thread)}
           </button>,
           <>
@@ -592,8 +592,8 @@ export function ThreadsPanel(p: Props) {
               const claude = m.role === "claude";
               const refOf = (k: number) => refs.find((r) => r.messageId === m.id && r.index === k - 1);
               return (
-                <div key={m.id} className={cn("px-4 py-3", claude && "bg-sky-50/40")}>
-                  <p className="flex items-center gap-1.5 text-xs text-ink-500 mb-1">
+                <div key={m.id} className={cn("px-3 py-2.5", claude && "bg-sky-50/40")}>
+                  <p className="flex items-center gap-1.5 text-[11px] text-ink-500 mb-0.5">
                     {claude && <Sparkles size={13} className="text-sky-600" />}
                     <span className={cn("font-medium", claude ? "text-sky-800" : "text-ink-700")}>{who(m.author)}</span> · {hm(m.at)}
                     {!claude && (isDesignThread(thread)
@@ -651,12 +651,12 @@ export function ThreadsPanel(p: Props) {
             <div className="mx-4 my-3 p-3 rounded-xl border border-rose-200 bg-rose-50 text-sm text-rose-800 space-y-2">
               <p className="font-medium">{T.turnFailed}</p>
               {agentText(thread.agent.error) && <p className="text-xs whitespace-pre-wrap break-words">{agentText(thread.agent.error)}</p>}
-              <button type="button" onClick={() => run(() => api.retry(thread.id))} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-rose-300 text-rose-800 rounded-lg text-sm font-medium hover:bg-rose-100"><RotateCcw size={14} />{T.runAgain}</button>
+              <button type="button" onClick={() => run(() => api.retry(thread.id))} className="inline-flex h-7 items-center gap-1.5 px-2.5 bg-surface border border-rose-300 text-rose-800 rounded-md text-[12px] font-medium hover:bg-rose-100"><RotateCcw size={14} />{T.runAgain}</button>
             </div>
           )}
           {lastUserUnanswered && (
             <div className="mx-4 my-3">
-              <button type="button" onClick={() => run(() => api.retry(thread.id))} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-ink-200 text-ink-700 rounded-lg text-sm font-medium hover:bg-ink-50"><Sparkles size={14} />{T.askClaude}</button>
+              <button type="button" onClick={() => run(() => api.retry(thread.id))} className="inline-flex h-7 items-center gap-1.5 px-2.5 bg-surface border border-ink-200 text-ink-700 rounded-md text-[12px] font-medium hover:bg-ink-50"><Sparkles size={14} />{T.askClaude}</button>
             </div>
           )}
           <div ref={listEnd} />
@@ -679,27 +679,27 @@ export function ThreadsPanel(p: Props) {
   const row = (t: Thread) => {
     const last = t.messages[t.messages.length - 1];
     return (
-      <button key={t.id} type="button" onClick={() => p.onOpen(t.id)} className="w-full text-left px-4 py-3 hover:bg-ink-50 block">
+      <button key={t.id} type="button" onClick={() => p.onOpen(t.id)} className="w-full text-left px-3 py-2 hover:bg-ink-50 block">
         <div className="flex items-start gap-2">
-          <p className="font-medium text-sm text-ink-900 line-clamp-2 flex-1" title={titleOf(t)}>{titleOf(t)}</p>
+          <p className="font-medium text-[13px] leading-snug text-ink-900 line-clamp-2 flex-1" title={titleOf(t)}>{titleOf(t)}</p>
           <StatusBadge t={t} />
         </div>
-        {last && <p className="mt-0.5 text-xs text-ink-500 truncate">{last.role === "claude" ? T.fromClaude(plainMentions(replyPlain(last.text))) : plainMentions(last.text) || ((last.images?.length ?? 0) > 0 ? T.lastImage : T.lastMark)}</p>}
+        {last && <p className="mt-0.5 text-[11.5px] text-ink-500 truncate">{last.role === "claude" ? T.fromClaude(plainMentions(replyPlain(last.text))) : plainMentions(last.text) || ((last.images?.length ?? 0) > 0 ? T.lastImage : T.lastMark)}</p>}
         <p className="mt-0.5 text-[11px] text-ink-400">{T.messageCount(t.messages.length)} · {hm(t.updatedAt)}{!isDesignThread(t) && t.entry !== p.entry.id && <span data-thread-on> · {onLabel(t.entry)}</span>}</p>
       </button>
     );
   };
   return (
     <div className="flex-1 min-h-0 flex flex-col">
-      {header(<p className="font-semibold">{T.conversation}</p>, (
-        <button type="button" onClick={() => p.onOpen("new")} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-accent-700 border border-accent-700 text-white rounded-lg text-sm font-medium hover:bg-accent-800">
-          <MessageSquarePlus size={15} /> {T.newThread}
+      {header(<p className="pl-1 text-[13px] font-semibold">{T.conversation}</p>, (
+        <button type="button" onClick={() => p.onOpen("new")} className="inline-flex h-7 items-center gap-1.5 px-2.5 bg-accent-700 text-white rounded-md text-[12px] font-medium hover:bg-accent-800">
+          <MessageSquarePlus size={14} /> {T.newThread}
         </button>
       ), false)}
       {p.scripts !== undefined && <p data-scripts className="px-4 py-1 text-[11px] text-ink-400 border-b border-ink-100">{p.scripts ? T.scriptsOn(p.scripts) : T.scriptsOff}</p>}
       <div className="flex-1 overflow-y-auto">
         {p.threads.length === 0 ? (
-          <div className="p-6 text-center text-sm text-ink-500">
+          <div className="p-5 text-center text-[13px] leading-relaxed text-ink-500">
             {T.noThreadsGlobal}
           </div>
         ) : (

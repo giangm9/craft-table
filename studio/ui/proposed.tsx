@@ -11,10 +11,10 @@ export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 export type ButtonSize = "sm" | "md";
 
 const BTN_BASE =
-  "inline-flex items-center justify-center gap-1.5 border text-sm font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent-500/40 disabled:opacity-50 disabled:cursor-not-allowed";
+  "inline-flex items-center justify-center gap-1.5 border font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent-500/40 disabled:opacity-50 disabled:cursor-not-allowed";
 const BTN_SIZE: Record<ButtonSize, string> = {
-  sm: "px-3 py-1.5 rounded-lg",
-  md: "px-4 py-2 rounded-xl",
+  sm: "h-7 px-2.5 rounded-md text-[12px]",
+  md: "h-8 px-3 rounded-md text-[13px]",
 };
 const BTN_VARIANT: Record<ButtonVariant, string> = {
   primary: "bg-accent-700 border-accent-700 text-white hover:bg-accent-800 hover:border-accent-800",
@@ -46,7 +46,7 @@ export function IconButton({
       aria-label={label}
       title={label}
       {...props}
-      className={cn("inline-flex items-center justify-center p-1.5 rounded-lg text-ink-500 hover:bg-ink-100 hover:text-ink-900 outline-none focus-visible:ring-2 focus-visible:ring-accent-500/40", className)}
+      className={cn("inline-grid h-7 w-7 place-items-center rounded-md text-ink-500 hover:bg-ink-100 hover:text-ink-900 outline-none focus-visible:ring-2 focus-visible:ring-accent-500/40", className)}
     >
       {children}
     </button>

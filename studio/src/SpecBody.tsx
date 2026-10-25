@@ -118,7 +118,7 @@ export function SpecBody({ markdown, className = "px-6 py-5" }: { markdown: stri
   return (
     <article
       ref={ref}
-      className={`spec-md ${className} text-[15px] text-ink-800`}
+      className={`spec-md ${className} text-[14px] text-ink-800`}
       onClick={(e) => {
         const a = (e.target as HTMLElement).closest<HTMLAnchorElement>("a.src-ref");
         if (!a || e.ctrlKey || e.metaKey || e.shiftKey) return;

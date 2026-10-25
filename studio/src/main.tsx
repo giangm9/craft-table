@@ -184,7 +184,7 @@ function App() {
   const peersAt = useCallback((id: string) => uniqWho(peers.filter((p) => p.where.v === version && p.where.entry === id)), [peers, version]);
   const wide = useWide();
   const [specCollapsed, setSpecCollapsed] = useStored("studio:specCollapsed", false);
-  const [specWidth, setSpecWidth] = useStored("studio:specWidth", 420);
+  const [specWidth, setSpecWidth] = useStored("studio:specWidth", 380);
   const [codeHeight, setCodeHeight] = useStored("studio:codeHeight", 320);
   const [panelWidth, setPanelWidth] = useStored("studio:panelWidth", PANEL_DEFAULT);
   // The conversation panel can pop out as a floating window. It is drawn ONCE, into `host`, an element that is moved between the
@@ -339,30 +339,30 @@ function App() {
     <div className="h-screen overflow-hidden flex bg-ink-50 text-ink-900">
       {navOpen && <div className="fixed inset-0 bg-ink-900/40 z-30 md:hidden" onClick={() => setParams({ nav: null })} />}
       <aside className={cn(
-        "fixed inset-y-0 left-0 w-64 bg-surface border-r border-ink-200 z-40 flex flex-col transition-transform md:static md:translate-x-0",
+        "fixed inset-y-0 left-0 w-56 bg-surface border-r border-ink-200 z-40 flex flex-col transition-transform md:static md:translate-x-0",
         navOpen ? "translate-x-0" : "-translate-x-full",
       )}>
-        <div className="p-4 border-b border-ink-200 flex items-center gap-2">
+        <div className="h-[52px] px-3 border-b border-ink-200 flex items-center gap-2">
           {project?.logo
-            ? <img src={project.logo} alt="" className="w-7 h-7 rounded-md" />
-            : <span aria-hidden className="w-7 h-7 rounded-md bg-accent-700 text-white text-sm font-semibold inline-flex items-center justify-center">{(project?.name ?? "·").slice(0, 1).toUpperCase()}</span>}
+            ? <img src={project.logo} alt="" className="w-6 h-6 rounded-md" />
+            : <span aria-hidden className="w-6 h-6 rounded-md bg-accent-700 text-white text-[12px] font-semibold inline-flex items-center justify-center">{(project?.name ?? "·").slice(0, 1).toUpperCase()}</span>}
           <div className="leading-tight min-w-0">
-            <p className="font-brand text-lg text-ink-900 truncate">{project?.name ?? ""}</p>
-            <p className="text-[11px] text-ink-500">{T.studioTagline}</p>
+            <p className="font-brand text-[15px] text-ink-900 truncate">{project?.name ?? ""}</p>
+            <p className="text-[10.5px] text-ink-500">{T.studioTagline}</p>
           </div>
         </div>
         <Sidebar entries={entries} activeId={entry?.id} openCount={attention} openTitles={attentionTitles} peersAt={peersAt} onPick={(id) => setParams({ e: id, t: keepT(id), rf: null, nav: null, vp: null, s: null, spp: null, spec: null, hist: null, meta: null, opt: null })} />
         {/* Foot: the viewer's language, then who is signed in. The same aside is the phone's board-list drawer. */}
-        <div data-sidebar-foot className="p-3 border-t border-ink-200 space-y-2 text-xs text-ink-500">
+        <div data-sidebar-foot className="px-2 py-2 border-t border-ink-200 space-y-1.5 text-[11px] text-ink-500">
           <div className="flex items-center gap-2">
-            <Languages size={15} aria-hidden className="shrink-0 text-ink-400" />
+            <Languages size={14} aria-hidden className="shrink-0 text-ink-400" />
             <LangSwitch className="flex-1 min-w-0" />
-            <button type="button" data-open-settings aria-label={T.settings} title={T.settings} onClick={() => setParams({ settings: "1", nav: null })} className="shrink-0 grid h-8 w-8 place-items-center rounded-md text-ink-500 hover:bg-ink-100 hover:text-ink-900">
-              <Settings size={15} />
+            <button type="button" data-open-settings aria-label={T.settings} title={T.settings} onClick={() => setParams({ settings: "1", nav: null })} className="shrink-0 grid h-7 w-7 place-items-center rounded-md text-ink-500 hover:bg-ink-100 hover:text-ink-900">
+              <Settings size={14} />
             </button>
           </div>
           <div className="flex items-center gap-2">
-            <span className="truncate flex-1">{me}</span>
+            <span className="truncate flex-1 pl-0.5">{me}</span>
             {me && me !== LOCAL_USER && (
               <a href="/__auth/logout" className="p-1.5 rounded-lg hover:bg-ink-100" aria-label={T.signOut} title={T.signOut}><LogOut size={15} /></a>
             )}
@@ -371,12 +371,12 @@ function App() {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
-        <header className="px-3 md:px-4 py-2.5 border-b border-ink-200 bg-surface flex items-center gap-2 flex-wrap">
-          <button type="button" className="md:hidden p-2 rounded-lg hover:bg-ink-50" aria-label={T.boardList} onClick={() => setParams({ nav: "1" })}>
-            <Menu size={20} />
+        <header className="min-h-[52px] px-3 py-1.5 border-b border-ink-200 bg-surface flex items-center gap-x-3 gap-y-1.5 flex-wrap">
+          <button type="button" className="md:hidden p-1.5 rounded-md hover:bg-ink-50" aria-label={T.boardList} onClick={() => setParams({ nav: "1" })}>
+            <Menu size={18} />
           </button>
           <div className="min-w-[200px] flex-1">
-            <p className="font-semibold truncate flex items-center gap-1.5">
+            <p className="text-[14px] font-semibold leading-5 truncate flex items-center gap-1">
               <span className="truncate">{entry?.meta.title ?? "…"}</span>
               {entry?.meta.option && (
                 <span className="hidden md:inline-flex shrink-0 items-center gap-1 px-1.5 py-px rounded-md border border-amber-200 bg-amber-50 text-amber-800 text-xs font-medium max-w-[200px]">
@@ -385,21 +385,21 @@ function App() {
               )}
               {entry && meWho && version && (
                 <button type="button" onClick={() => setParams({ code: codeOpen ? null : "1" })} className={cn("hidden md:inline-flex shrink-0 p-1 rounded-md hover:bg-ink-100 hover:text-ink-800", codeOpen ? "text-accent-700 bg-accent-50" : "text-ink-400")} title={codeOpen ? T.closeCode : T.openCode} aria-label={T.boardCode} aria-pressed={codeOpen}>
-                  <Code2 size={14} />
+                  <Code2 size={13} />
                 </button>
               )}
               {entry && meWho && !entry.meta.option && version && (
                 <button type="button" onClick={() => setParams({ opt: "new" })} className="shrink-0 p-1 rounded-md text-ink-400 hover:bg-ink-100 hover:text-ink-800" title={T.createOptionHint} aria-label={T.createOption}>
-                  <GitBranch size={14} />
+                  <GitBranch size={13} />
                 </button>
               )}
               {entry && meWho && (
                 <button type="button" onClick={() => setParams({ meta: params.get("meta") === "1" ? null : "1" })} className="shrink-0 p-1 rounded-md text-ink-400 hover:bg-ink-100 hover:text-ink-800" title={T.editScreenInfoHint} aria-label={T.editScreenInfo}>
-                  <Pencil size={14} />
+                  <Pencil size={13} />
                 </button>
               )}
             </p>
-            <p className="text-xs text-ink-500 truncate">
+            <p className="text-[11.5px] leading-4 text-ink-500 truncate">
               {scenarios.length > 1 && <span className="font-medium text-ink-600">{T.scenarioCount(scenarios.length)} · </span>}
               {entry?.meta.desc}
             </p>
@@ -415,7 +415,7 @@ function App() {
               onPick={(p) => setParams({ v: p.where.v === live ? null : p.where.v, e: p.where.entry ?? null, cmp: null, t: null, rf: null, s: null, spp: null, hist: null, meta: null })}
             />
           )}
-          <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
+          <div className="flex items-center gap-1.5 w-full md:w-auto flex-wrap">
             {versions.length > 0 && (
               <Select
                 className="flex-1 min-w-[160px] md:flex-none max-w-[240px]"
@@ -468,12 +468,12 @@ function App() {
                 type="button"
                 onClick={() => (innerWidth < 768 ? setParams({ spec: "1" }) : setSpecCollapsed(!specCollapsed))}
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border",
+                  "inline-flex h-7 items-center gap-1.5 px-2.5 rounded-md text-[12px] font-medium border",
                   !specCollapsed ? "md:bg-accent-50 md:border-accent-200 md:text-accent-800 bg-surface border-ink-200 text-ink-700" : "bg-surface border-ink-200 text-ink-700 hover:bg-ink-50",
                 )}
                 title={specCollapsed ? T.openSpec : T.collapseSpec}
               >
-                <FileText size={15} /> <span className="hidden sm:inline">{T.spec}</span>
+                <FileText size={14} /> <span className="hidden sm:inline">{T.spec}</span>
               </button>
             )}
             <Select
@@ -488,7 +488,7 @@ function App() {
               className={cn(
                 // Fixed width: "Mark" ↔ "Marking" does not resize the button → the header does not wrap differently and
                 // the canvas is not pushed.
-                "inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border md:min-w-[150px]",
+                "inline-flex h-7 items-center justify-center gap-1.5 px-2.5 rounded-md text-[12px] font-medium border md:min-w-[120px]",
                 annotating ? "bg-accent-700 border-accent-700 text-white hover:bg-accent-800" : "bg-surface border-ink-200 text-ink-700 hover:bg-ink-50",
               )}
               title={T.markHint}
@@ -500,7 +500,7 @@ function App() {
             <button
               type="button"
               onClick={() => setParams({ panel: "1" })}
-              className="lg:hidden inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-ink-200 text-ink-700 rounded-lg text-sm font-medium hover:bg-ink-50"
+              className="lg:hidden inline-flex h-7 items-center gap-1.5 px-2.5 bg-surface border border-ink-200 text-ink-700 rounded-md text-[12px] font-medium hover:bg-ink-50"
               aria-label={T.conversation}
             >
               <MessageSquare size={15} /> {versionThreads.length}

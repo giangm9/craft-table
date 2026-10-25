@@ -122,7 +122,7 @@ export function SpecPanel({
       style={sheet ? undefined : { width: live ?? width }}
       className={cn("shrink-0 bg-surface flex flex-col min-h-0 relative", sheet ? "w-full h-full" : "hidden md:flex border-r border-ink-200")}
     >
-      <div className="px-4 pt-3 border-b border-ink-200">
+      <div className="px-3 pt-2 border-b border-ink-200">
         <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider font-semibold text-ink-400">
           <FileText size={14} /> {T.spec}
           <a href={`/spec?${version ? `v=${encodeURIComponent(version)}&` : ""}e=${encodeURIComponent(entry)}&k=${kind}${page ? `&p=${encodeURIComponent(page)}` : ""}`} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 normal-case tracking-normal font-medium text-accent-700 hover:underline">
@@ -143,13 +143,13 @@ export function SpecPanel({
             <button type="button" aria-label={T.collapseSpec} title={T.collapse} onClick={() => onCollapsed(true)} className="p-1 rounded-md text-ink-500 hover:bg-ink-100 hover:text-ink-900"><ChevronsLeft size={16} /></button>
           )}
         </div>
-        <div className="mt-1.5 flex gap-1">
+        <div className="mt-1 flex gap-0.5">
           {([["behavior", T.behavior, BookOpen], ["tech", T.tech, Code2]] as const).map(([k, label, Icon]) => (
             <button
               key={k}
               type="button"
               onClick={() => onNav(k, null)}
-              className={cn("inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px", kind === k ? "border-accent-700 text-accent-800" : "border-transparent text-ink-500 hover:text-ink-800")}
+              className={cn("inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium border-b-2 -mb-px", kind === k ? "border-accent-700 text-accent-800" : "border-transparent text-ink-500 hover:text-ink-800")}
             >
               <Icon size={15} /> {docs && !docs[k] ? T.tabMissing(label) : label}
             </button>

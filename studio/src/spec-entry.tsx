@@ -80,7 +80,7 @@ function SpecPage() {
           <h1 className="text-xl font-semibold text-ink-900 mt-0.5">{title}</h1>
           <div className="mt-2 flex gap-1">
             {([["behavior", T.behavior, BookOpen], ["tech", T.tech, Code2]] as const).map(([k, label, Icon]) => (
-              <button key={k} type="button" onClick={() => go(k, null)} className={cn("inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px", kind === k ? "border-accent-700 text-accent-800" : "border-transparent text-ink-500 hover:text-ink-800")}>
+              <button key={k} type="button" onClick={() => go(k, null)} className={cn("inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium border-b-2 -mb-px", kind === k ? "border-accent-700 text-accent-800" : "border-transparent text-ink-500 hover:text-ink-800")}>
                 <Icon size={15} /> {label}
               </button>
             ))}

@@ -36,7 +36,7 @@ export function Row({
     <div
       {...props}
       className={cn(
-        "px-4 py-3 flex items-center gap-3",
+        "px-3 py-2 flex items-center gap-2.5",
         interactive && "hover:bg-ink-50 transition-colors cursor-pointer",
         className,
       )}
@@ -73,7 +73,7 @@ export function Select<T extends string>({
         value={value}
         onChange={(e) => onChange(e.target.value as T)}
         disabled={disabled}
-        className="appearance-none w-full pl-3 pr-8 py-1.5 text-sm bg-surface border border-ink-200 rounded-lg outline-none focus:border-accent-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+        className="appearance-none w-full h-7 pl-2.5 pr-7 text-[12px] bg-surface border border-ink-200 rounded-md outline-none focus:border-accent-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -81,7 +81,7 @@ export function Select<T extends string>({
           </option>
         ))}
       </select>
-      <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none" />
+      <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none" />
     </div>
   );
 }

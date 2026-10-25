@@ -239,11 +239,11 @@ export function Canvas({ fitKey, annotating, children }: { fitKey: string; annot
         {panning && (
           <div className="fixed inset-0 z-[60] cursor-grabbing" onPointerMove={onShieldMove} onPointerUp={endPan} onPointerCancel={endPan} onPointerLeave={endPan} />
         )}
-        <div className="absolute left-3 bottom-3 z-20 flex items-center gap-1 bg-surface border border-ink-200 rounded-xl p-1" onPointerDown={(e) => e.stopPropagation()}>
-          <button type="button" aria-label={T.zoomOut} title={T.zoomOutHint} onClick={() => zoomBy(1 / 1.25)} className="p-1.5 rounded-lg text-ink-600 hover:bg-ink-100"><Minus size={15} /></button>
-          <button type="button" title={T.zoomReset} onClick={() => zoomBy(1 / cam.z)} className="w-12 text-xs tabular-nums text-ink-700 rounded-lg py-1 hover:bg-ink-100">{Math.round(cam.z * 100)}%</button>
-          <button type="button" aria-label={T.zoomIn} title={T.zoomInHint} onClick={() => zoomBy(1.25)} className="p-1.5 rounded-lg text-ink-600 hover:bg-ink-100"><Plus size={15} /></button>
-          <button type="button" aria-label={T.fit} title={T.fit} onClick={fit} className="p-1.5 rounded-lg text-ink-600 hover:bg-ink-100"><Maximize size={15} /></button>
+        <div className="absolute left-3 bottom-3 z-20 flex items-center gap-0.5 bg-surface border border-ink-200 rounded-lg p-0.5 shadow-sm" onPointerDown={(e) => e.stopPropagation()}>
+          <button type="button" aria-label={T.zoomOut} title={T.zoomOutHint} onClick={() => zoomBy(1 / 1.25)} className="grid h-7 w-7 place-items-center rounded-md text-ink-600 hover:bg-ink-100"><Minus size={14} /></button>
+          <button type="button" title={T.zoomReset} onClick={() => zoomBy(1 / cam.z)} className="h-7 w-11 text-[12px] tabular-nums text-ink-700 rounded-md hover:bg-ink-100">{Math.round(cam.z * 100)}%</button>
+          <button type="button" aria-label={T.zoomIn} title={T.zoomInHint} onClick={() => zoomBy(1.25)} className="grid h-7 w-7 place-items-center rounded-md text-ink-600 hover:bg-ink-100"><Plus size={14} /></button>
+          <button type="button" aria-label={T.fit} title={T.fit} onClick={fit} className="grid h-7 w-7 place-items-center rounded-md text-ink-600 hover:bg-ink-100"><Maximize size={14} /></button>
         </div>
       </div>
     </Ctx.Provider>

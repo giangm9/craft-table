@@ -84,12 +84,12 @@ export function SpecDoc({ markdown, page, onPage, all = false, tocClassName }: {
     <div className="@container">
     <div className="@4xl:flex">
       {/* Narrow: the table of contents is a select above the page. */}
-      <div className="@4xl:hidden px-4 pt-4">
+      <div className="@4xl:hidden px-3 pt-3">
         <select
           value={cur.id}
           data-toc-select
           onChange={(e) => onPage(e.target.value)}
-          className="w-full px-3 py-2 text-sm bg-surface border border-ink-200 rounded-lg"
+          className="w-full h-8 px-2.5 text-[13px] bg-surface border border-ink-200 rounded-md"
           aria-label={T.toc}
         >
           {pages.map((p) => <option key={p.id} value={p.id}>{p.group && p.depth ? `${p.group} › ` : ""}{p.title}</option>)}
@@ -102,15 +102,15 @@ export function SpecDoc({ markdown, page, onPage, all = false, tocClassName }: {
       <section data-spec-page={cur.id} className="flex-1 min-w-0">
         <PageHead p={cur} />
         <SpecBody key={cur.id} markdown={cur.markdown} className="px-6 pt-2 pb-4" />
-        <div className="flex items-center gap-2 px-6 pb-5 pt-1 text-sm">
+        <div className="flex items-center gap-2 px-6 pb-5 pt-1 text-[12px]">
           {prev && (
-            <button type="button" onClick={() => onPage(prev.id)} className="inline-flex items-center gap-1 min-w-0 px-3 py-2 rounded-lg border border-ink-200 text-ink-700 hover:bg-ink-50">
-              <ChevronLeft size={16} className="shrink-0" /> <span className="truncate">{prev.title}</span>
+            <button type="button" onClick={() => onPage(prev.id)} className="inline-flex h-7 items-center gap-1 min-w-0 px-2.5 rounded-md border border-ink-200 text-ink-700 hover:bg-ink-50">
+              <ChevronLeft size={14} className="shrink-0" /> <span className="truncate">{prev.title}</span>
             </button>
           )}
           {next && (
-            <button type="button" onClick={() => onPage(next.id)} className="ml-auto inline-flex items-center gap-1 min-w-0 px-3 py-2 rounded-lg border border-ink-200 text-ink-700 hover:bg-ink-50">
-              <span className="truncate">{next.title}</span> <ChevronRight size={16} className="shrink-0" />
+            <button type="button" onClick={() => onPage(next.id)} className="ml-auto inline-flex h-7 items-center gap-1 min-w-0 px-2.5 rounded-md border border-ink-200 text-ink-700 hover:bg-ink-50">
+              <span className="truncate">{next.title}</span> <ChevronRight size={14} className="shrink-0" />
             </button>
           )}
         </div>

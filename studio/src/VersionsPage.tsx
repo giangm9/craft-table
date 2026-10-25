@@ -99,7 +99,7 @@ export function VersionsPage() {
                     onChange={(s) => run(() => api.patchVersion(v.id, { status: s }))}
                     options={VERSION_STATUSES.map((s) => ({ value: s, label: versionStatusLabel(s) }))}
                   />
-                  <a href={`/${v.live ? "" : `?v=${encodeURIComponent(v.id)}`}`} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border bg-surface border-ink-200 text-ink-700 hover:bg-ink-50">
+                  <a href={`/${v.live ? "" : `?v=${encodeURIComponent(v.id)}`}`} className="inline-flex h-7 items-center gap-1.5 px-2.5 rounded-md text-[12px] font-medium border bg-surface border-ink-200 text-ink-700 hover:bg-ink-50">
                     <ExternalLink size={14} /> {T.open}
                   </a>
                   <Button onClick={() => open({ kind: "edit", v })} aria-label={T.editVersion(v.title)}><Pencil size={14} /></Button>

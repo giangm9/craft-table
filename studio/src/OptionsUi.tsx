@@ -47,9 +47,9 @@ export function CreateOptionDialog({ version, entry, entries, onClose, onCreated
       {siblings.length > 0 && (
         <Field label={T.optionScreens}>
           <div className="border border-ink-200 rounded-lg divide-y divide-ink-100 max-h-56 overflow-y-auto">
-            <label className="flex items-center gap-2 px-3 py-2 text-sm text-ink-500"><input type="checkbox" checked disabled /> {T.thisScreen(entry.meta.title)}</label>
+            <label className="flex items-center gap-2 px-2.5 py-1.5 text-[13px] text-ink-500"><input type="checkbox" checked disabled /> {T.thisScreen(entry.meta.title)}</label>
             {siblings.map((s) => (
-              <label key={s.id} className="flex items-center gap-2 px-3 py-2 text-sm text-ink-800 hover:bg-ink-50 cursor-pointer">
+              <label key={s.id} className="flex items-center gap-2 px-2.5 py-1.5 text-[13px] text-ink-800 hover:bg-ink-50 cursor-pointer">
                 <input type="checkbox" checked={extra.includes(s.id)} onChange={(e) => setExtra((x) => (e.target.checked ? [...x, s.id] : x.filter((y) => y !== s.id)))} />
                 {s.meta.title}
               </label>

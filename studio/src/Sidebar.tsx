@@ -94,21 +94,21 @@ export function Sidebar({ entries, activeId, openCount, openTitles, peersAt, onP
     <div className="flex-1 min-h-0 flex flex-col">
       <div className="px-2 pt-2">
         <div className="relative">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none" />
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Escape") setQ(""); }}
             placeholder={T.searchBoards}
             aria-label={T.searchBoards}
-            className="w-full pl-8 pr-7 py-1.5 text-sm bg-surface border border-ink-200 rounded-lg outline-none focus:border-accent-500"
+            className="w-full h-7 pl-7 pr-7 text-[12px] bg-surface border border-ink-200 rounded-md outline-none focus:border-accent-500"
           />
           {searching && (
             <button type="button" aria-label={T.clearSearch} onClick={() => setQ("")} className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-ink-400 hover:text-ink-700"><X size={14} /></button>
           )}
         </div>
       </div>
-      <nav className="flex-1 overflow-y-auto p-2 space-y-1">
+      <nav className="flex-1 overflow-y-auto px-2 py-1.5 space-y-0.5">
         {tree.size === 0 && <p className="px-3 py-4 text-sm text-ink-500">{T.noMatch(q)}</p>}
         {[...tree].map(([section, groups]) => {
           const sk = `s:${section}`;
@@ -116,7 +116,7 @@ export function Sidebar({ entries, activeId, openCount, openTitles, peersAt, onP
           const sNotes = sum([...groups.values()].flat());
           return (
             <div key={section}>
-              <button type="button" onClick={() => toggle(sk)} className="w-full flex items-center gap-1 px-2 pt-2 pb-1 text-[10px] uppercase tracking-wider font-semibold text-ink-400 hover:text-ink-700">
+              <button type="button" onClick={() => toggle(sk)} className="w-full flex items-center gap-1 px-1.5 pt-2 pb-0.5 text-[10px] uppercase tracking-wider font-semibold text-ink-400 hover:text-ink-700">
                 <ChevronRight size={12} className={cn("transition-transform", sOpen && "rotate-90")} />
                 <span className="flex-1 text-left">{section === NO_SECTION ? T.otherSection : section}</span>
                 {!sOpen && <Dots who={peopleIn([...groups.values()].flat())} attr={{ "data-presence-group": section }} />}
@@ -129,11 +129,11 @@ export function Sidebar({ entries, activeId, openCount, openTitles, peersAt, onP
                 return (
                   <div key={group} className="mb-0.5">
                     {group && (
-                      <button type="button" onClick={() => toggle(gk)} className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm text-ink-700 hover:bg-ink-50">
-                        <ChevronRight size={14} className={cn("text-ink-400 transition-transform shrink-0", gOpen && "rotate-90")} />
+                      <button type="button" onClick={() => toggle(gk)} className="w-full flex items-center gap-1.5 h-7 px-1.5 rounded-md text-[13px] text-ink-700 hover:bg-ink-50">
+                        <ChevronRight size={13} className={cn("text-ink-400 transition-transform shrink-0", gOpen && "rotate-90")} />
                         <span className="flex-1 text-left font-medium truncate">{group}</span>
                         {!gOpen && <Dots who={peopleIn(list)} attr={{ "data-presence-group": `${section}/${group}` }} />}
-                        {!gOpen && gNotes > 0 ? <Badge n={gNotes} /> : <span className="text-xs text-ink-400 tabular-nums">{list.length}</span>}
+                        {!gOpen && gNotes > 0 ? <Badge n={gNotes} /> : <span className="text-[11px] text-ink-400 tabular-nums">{list.length}</span>}
                       </button>
                     )}
                     {gOpen && (
@@ -151,7 +151,7 @@ export function Sidebar({ entries, activeId, openCount, openTitles, peersAt, onP
                               onClick={(ev) => { ev.preventDefault(); onPick(e.id); }}
                               data-option-of={opt?.of}
                               className={cn(
-                                "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm transition-colors",
+                                "flex items-center gap-2 h-7 px-2 rounded-md text-[13px] transition-colors",
                                 opt && "ml-4",
                                 isActive ? "bg-accent-700 text-white" : "text-ink-700 hover:bg-ink-50",
                               )}
@@ -194,7 +194,7 @@ export function Sidebar({ entries, activeId, openCount, openTitles, peersAt, onP
 function Badge({ n, inverted, title }: { n: number; inverted?: boolean; title?: string }) {
   return (
     <span data-attention title={title} className={cn(
-      "shrink-0 min-w-[20px] h-5 px-1.5 rounded-full text-[11px] font-semibold inline-flex items-center justify-center normal-case tracking-normal",
+      "shrink-0 min-w-[18px] h-[18px] px-1 rounded-full text-[10.5px] font-semibold inline-flex items-center justify-center normal-case tracking-normal",
       inverted ? "bg-surface text-accent-800" : "bg-rose-600 text-white",
     )}>{n}</span>
   );
