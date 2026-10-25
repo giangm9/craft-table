@@ -210,7 +210,7 @@ export function createAgentTools({ root, source = null, ctx, shots, checks, thre
       async handler({ entry = ctx.entry, scenario, viewport = "desktop", part = "top" }) {
         if (!validEntry(entry)) return fail(T("noScreenIn", { entry, version: ctx.version }));
         const r = await shots.frame({ version: ctx.version, entry, scenario, viewport, part });
-        return { content: [image(r.png), { type: "text", text: T("frameCaption", { entry, scenario, viewport, height: r.height, errors: r.errors }) }] };
+        return { content: [image(r.png), { type: "text", text: T("frameCaption", { entry, scenario, viewport, width: r.width, height: r.height, errors: r.errors }) }] };
       },
     },
     {

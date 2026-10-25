@@ -4,6 +4,8 @@ import { api, type Project } from "./api";
 
 let cache: Promise<Project> | null = null;
 export const loadProject = () => (cache ??= api.project());
+/** Read craft-table.json again (the Settings changed it here or on another page). */
+export const reloadProject = () => { cache = null; return loadProject(); };
 
 export function useProject() {
   const [p, setP] = useState<Project | null>(null);

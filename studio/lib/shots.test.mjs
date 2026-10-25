@@ -200,3 +200,18 @@ test("inspect: a picture, the height, the problems the page reported, and the re
   const obj = await shots.inspect({ version: "ban-1", entry: "screens/a", evalJs: "({ w: innerWidth, n: [1,2] })", shot: false });
   assert.deepEqual(obj.value, { w: 1280, n: [1, 2] });
 });
+
+test("a desktop frame is shot at the project's desktop size (what the person sees is what Claude sees)", async (t) => {
+  const srv = await server();
+  let size = { w: 1000, h: 600 };
+  const shots = createShots({ base: srv.base, idleMs: 60_000, desktop: () => size });
+  t.after(async () => { await shots.close(); await srv.close(); });
+  const a = await shots.frame({ version: "ban-1", entry: "screens/a", viewport: "desktop" });
+  assert.deepEqual(pngSize(a.png), { w: 1000, h: 600 });
+  size = { w: 1200, h: 700 };
+  const b = await shots.inspect({ version: "ban-1", entry: "screens/a", viewport: "desktop", evalJs: "[innerWidth, innerHeight]" });
+  assert.deepEqual(pngSize(b.png), { w: 1200, h: 700 });
+  assert.deepEqual(b.value, [1200, 700]);
+  const m = await shots.frame({ version: "ban-1", entry: "screens/a", viewport: "mobile" });
+  assert.equal(pngSize(m.png).w, 390, "mobile is unchanged");
+});

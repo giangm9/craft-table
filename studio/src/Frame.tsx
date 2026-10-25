@@ -3,12 +3,15 @@
 // coordinates; Claude crops the screenshot at exactly those numbers (chat.mjs crop).
 // The frame shows the MARKERS of the open conversation thread (+ the ones being composed); a newly marked area goes
 // to the composer (onRef), there is no floating comment box on the canvas any more.
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type CSSProperties } from "react";
 import { ExternalLink, Monitor, Smartphone } from "lucide-react";
 import { cn } from "../ui";
 import { textsInRect } from "../lib/geometry.mjs";
 import { type Entry, type Rect, type Theme, type Viewport } from "./api";
-import { deviceOf, frameSize, fullHeight } from "../lib/devices.mjs";
+import { DESKTOP, deviceOf, frameSize, fullHeight } from "../lib/devices.mjs";
+
+/** The project's desktop frame size (craft-table.json "desktop", the Settings) — main.tsx provides it. */
+export const DesktopSize = createContext<{ w: number; h: number }>(DESKTOP);
 import { deviceName } from "./i18n/values";
 import { T } from "./i18n/shell";
 import { useCanvas } from "./Canvas";
@@ -66,7 +69,8 @@ const TONE = {
 
 export function Frame(p: Props) {
   const { zoom, focus, registerFrame } = useCanvas();
-  const { w: width, h: fixedH } = frameSize(p.viewport, p.device);
+  const desktop = useContext(DesktopSize);
+  const { w: width, h: fixedH } = frameSize(p.viewport, p.device, desktop);
   const dev = p.viewport === "mobile" ? deviceOf(p.device) : null;
   const minH = p.entry.meta.minHeight ?? 0;
   const iframeRef = useRef<HTMLIFrameElement>(null);

@@ -28,7 +28,8 @@ import { MAX_UPLOAD, UPLOAD_MIME, saveUpload, tooLarge, uploadFile } from "./lib
 import { listVersions, readIndex, readVersion, createVersion, updateVersion, setLive, boardsDir, versionDir, isValidVersionId, boardChanged, BOARD_FILE_SUFFIXES } from "./lib/versions.mjs";
 import { signSession, readSession, signValue, readValue, safeRedirect, isLocalRequest, fromOtherSite, parseCookies, publicUrlFrom, cookieHeader } from "./lib/session.mjs";
 import { createOidc, OidcError } from "./lib/oidc.mjs";
-import { loadProject, toolBase } from "./lib/project.mjs";
+import { loadProject, writeDesktop, toolBase } from "./lib/project.mjs";
+import { DESKTOP, cleanDesktop } from "./lib/devices.mjs";
 import { viteConfig, withToolBase } from "./lib/vite-config.mjs";
 import { normalizeLang, requestLang, StudioError, translate, withLang } from "./lib/i18n.mjs";
 import SERVER_TEXT from "./lib/i18n/server.mjs";
@@ -214,7 +215,7 @@ vite.watcher.on("all", (_ev, file) => {
   if (file.endsWith(".tsx") && file.includes(`${path.sep}boards${path.sep}`)) hot.send({ type: "custom", event: "studio:entries" });
 });
 // The screenshot taker shared by the studio's Claude (view_frame / view_region / locate / check spec).
-const shots = createShots({ base: `http://127.0.0.1:${PORT}`, tool: TOOL_URL, externalOrigins: PROJECT.config.externalOrigins });
+const shots = createShots({ base: `http://127.0.0.1:${PORT}`, tool: TOOL_URL, externalOrigins: PROJECT.config.externalOrigins, desktop: () => PROJECT.config.desktop });
 // Where a whole-design conversation may run scripts (lib/sandbox.mjs; CRAFT_SANDBOX): nowhere unless the machine has an isolated sandbox or the owner asked for one.
 const SANDBOX = detectBackend();
 const sandbox = SANDBOX.backend ? createSandbox({ backend: SANDBOX.backend, root: ROOT, lang: normalizeLang(PROJECT.config.language) ?? "en" }) : null;
@@ -458,7 +459,19 @@ httpServer.on("request", async (req, res) => {
     if (url.pathname === "/__api/me") return send(res, 200, { email: who });
     if (url.pathname === "/__api/project") {
       const c = PROJECT.config;
-      return send(res, 200, { name: c.name, description: c.description, language: c.language, logo: c.logo, source: c.source ? { label: c.source.label, roots: c.source.roots, extensions: c.source.extensions } : null, agent: { sandbox: SANDBOX.backend, sandboxReason: SANDBOX.reason, models: MODELS.models, defaultModel: MODELS.defaultModel, efforts: EFFORTS } });
+      return send(res, 200, { name: c.name, description: c.description, language: c.language, logo: c.logo, source: c.source ? { label: c.source.label, roots: c.source.roots, extensions: c.source.extensions } : null, agent: { sandbox: SANDBOX.backend, sandboxReason: SANDBOX.reason, models: MODELS.models, defaultModel: MODELS.defaultModel, efforts: EFFORTS }, desktop: { width: c.desktop.w, height: c.desktop.h } });
+    }
+    // The desktop frame size of the project (the Settings): { width, height } or { reset: true } → craft-table.json, then every open page re-reads it.
+    if (url.pathname === "/__api/project/desktop") {
+      if (req.method !== "PUT") return fail(req, res, 405, "apiMethodNotAllowed");
+      if (!String(req.headers["content-type"] || "").startsWith("application/json")) return fail(req, res, 415, "apiNeedJson");
+      const b = await readBody(req);
+      const size = b?.reset === true ? null : cleanDesktop(b);
+      if (b?.reset !== true && !size) return fail(req, res, 400, "apiBadDesktop");
+      writeDesktop(ROOT, size);
+      PROJECT.config.desktop = size ?? DESKTOP;
+      hot.send({ type: "custom", event: "studio:project" });
+      return send(res, 200, { desktop: { width: PROJECT.config.desktop.w, height: PROJECT.config.desktop.h } });
     }
     if (url.pathname.startsWith("/__api/threads") || url.pathname === "/__api/spec" || url.pathname === "/__src" || url.pathname === "/__api/src") return await threads.handle(req, res, url, who);
     if (url.pathname.startsWith("/__api/versions")) return await handleVersions(req, res, url, who);

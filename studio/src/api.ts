@@ -98,7 +98,7 @@ export const uploadUrl = (id: string) => `/__api/uploads/${id}`;
 
 /** craft-table.json of the project being served (what the UI needs of it). */
 /** source: the project's app repo — label + which folders / file types may be opened (never its path on disk). */
-export type Project = { name: string; description: string; language: "en" | "vi"; logo: string | null; source: { label: string; roots: string[]; extensions: string[] } | null; agent?: ({ sandbox: "bwrap" | "docker" | "process" | null; sandboxReason: string } & RunChoices) };
+export type Project = { name: string; description: string; language: "en" | "vi"; logo: string | null; source: { label: string; roots: string[]; extensions: string[] } | null; agent?: ({ sandbox: "bwrap" | "docker" | "process" | null; sandboxReason: string } & RunChoices); desktop?: { width: number; height: number } };
 
 export const api = {
   upload,
@@ -118,6 +118,8 @@ export const api = {
   createThread: (b: { entry: string; version: string; text: string; refs: Ref[]; images?: string[]; title?: string; viewing?: string; runWith?: RunWith }) => call<{ thread: Thread }>("POST", "/__api/threads", b).then((r) => r.thread),
   send: (id: string, b: { text: string; refs: Ref[]; images?: string[]; viewing?: string }) => call<{ thread: Thread }>("POST", `/__api/threads/${id}/messages`, b).then((r) => r.thread),
   editRef: (id: string, b: { messageId: string; index: number; action: "remove" | "restore" | "redraw"; ref?: Ref }) => call<{ thread: Thread }>("PATCH", `/__api/threads/${id}/refs`, b).then((r) => r.thread),
+  /** The desktop frame size of the project (the Settings). */
+  setDesktop: (b: { width: number; height: number } | { reset: true }) => call<{ desktop: { width: number; height: number } }>("PUT", "/__api/project/desktop", b).then((r) => r.desktop),
   patchThread: (id: string, b: { title?: string; status?: Thread["status"]; runWith?: RunWith }) => call<{ thread: Thread }>("PATCH", `/__api/threads/${id}`, b).then((r) => r.thread),
   deleteThread: (id: string) => call<{ ok: true }>("DELETE", `/__api/threads/${id}`, {}),
   stop: (id: string) => call<{ ok: true }>("POST", `/__api/threads/${id}/stop`, {}),

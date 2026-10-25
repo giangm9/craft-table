@@ -3,7 +3,7 @@
 // · right panel: the Conversation with Claude (a mark = a reference point inside a message).
 import { StrictMode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Code2, FileText, GitBranch, History, Languages, LogOut, Menu, MessageSquare, Pencil, PictureInPicture2, SquareDashedMousePointer } from "lucide-react";
+import { Code2, FileText, GitBranch, History, Languages, LogOut, Menu, MessageSquare, Pencil, PictureInPicture2, Settings, SquareDashedMousePointer } from "lucide-react";
 import { createPortal } from "react-dom";
 import "../ui/tokens.css";
 import "./studio.css";
@@ -11,7 +11,7 @@ import { cn, Select } from "../ui";
 import { api, type Project, refScenario, scenariosOf, viewportsOf, type Entry, type Ref, type Theme, type Thread, type Version, type Viewport } from "./api";
 import { useUrlParams } from "./useUrlParams";
 import { Canvas, useCanvas } from "./Canvas";
-import { Frame, type Marker } from "./Frame";
+import { DesktopSize, Frame, type Marker } from "./Frame";
 import { ThreadsPanel, type Redraw } from "./ThreadsPanel";
 import { PanelAside } from "./PanelAside";
 import { FloatingPanel, type FloatRect } from "./FloatingPanel";
@@ -28,7 +28,9 @@ import { LOCAL_USER, T } from "./i18n/shell";
 import { LangSwitch } from "./i18n/LangSwitch";
 import { SpecPanel, type SpecKind } from "./SpecPanel";
 import { Sidebar } from "./Sidebar";
-import { loadProject } from "./project";
+import { loadProject, reloadProject } from "./project";
+import { SettingsDialog } from "./SettingsDialog";
+import { DESKTOP } from "../lib/devices.mjs";
 import { allRefs, attentionOn, featureOf, isDesignThread, needsAttention } from "../lib/thread-core.mjs";
 import { threadTitle } from "./i18n/threads";
 import { afterRemovePending, placeDrawn } from "../lib/ref-redraw.mjs";
@@ -148,6 +150,8 @@ function App() {
     loadThreads();
     // The server announces file changes over the HMR channel (no page reload); a poll covers a channel dropped by a tunnel.
     import.meta.hot?.on("studio:threads", loadThreads);
+    // The Settings changed craft-table.json (here or on another page) → read the project again.
+    import.meta.hot?.on("studio:project", () => { reloadProject().then(setProject).catch(() => {}); });
     import.meta.hot?.on("studio:versions", loadVersions);
     const t = setInterval(loadThreads, 15_000);
     addEventListener("focus", loadThreads);
@@ -188,6 +192,8 @@ function App() {
   const [floating, setFloating] = useStored("studio:chatFloat", false);
   const [floatRect, setFloatRect] = useStored<FloatRect | null>("studio:chatFloatRect", null);
   const desktop = useMedia("(min-width: 1024px)");
+  // The project's desktop frame size (craft-table.json "desktop"; the Settings change it).
+  const desk = project?.desktop ? { w: project.desktop.width, h: project.desktop.height } : DESKTOP;
   const host = useMemo(() => { const d = document.createElement("div"); d.className = "flex-1 min-h-0 flex flex-col"; return d; }, []);
   const codeOpen = params.get("code") === "1";
   const specSheet = params.get("spec") === "1";
@@ -351,6 +357,9 @@ function App() {
           <div className="flex items-center gap-2">
             <Languages size={15} aria-hidden className="shrink-0 text-ink-400" />
             <LangSwitch className="flex-1 min-w-0" />
+            <button type="button" data-open-settings aria-label={T.settings} title={T.settings} onClick={() => setParams({ settings: "1", nav: null })} className="shrink-0 grid h-8 w-8 place-items-center rounded-md text-ink-500 hover:bg-ink-100 hover:text-ink-900">
+              <Settings size={15} />
+            </button>
           </div>
           <div className="flex items-center gap-2">
             <span className="truncate flex-1">{me}</span>
@@ -540,7 +549,8 @@ function App() {
           )}
           {entry ? (
             <div className="flex-1 min-w-0 min-h-0 flex flex-col">
-            <Canvas fitKey={`${version}:${entry.id}:${vpMode}:${compare ?? ""}:${device}`} annotating={annotating}>
+            <DesktopSize.Provider value={desk}>
+            <Canvas fitKey={`${version}:${entry.id}:${vpMode}:${compare ?? ""}:${device}:${desk.w}x${desk.h}`} annotating={annotating}>
               <div className="flex flex-col gap-24">
                 {scenarios.map((sc, i) => (
                   <ScenarioRow key={sc.id ?? "_"} index={i} title={sc.title} desc={sc.desc} focusMe={!!sc.id && sc.id === focusScenario}>
@@ -601,6 +611,7 @@ function App() {
                 ))}
               </div>
             </Canvas>
+            </DesktopSize.Provider>
             {codeOpen && wide && meWho && version && (
               <CodeEditor
                 key={`${version}:${entry.id}`}
@@ -644,6 +655,9 @@ function App() {
           )}
           {entry && meWho && version && params.get("meta") === "1" && (
             <MetaEditor version={version} entry={entry.id} me={meWho} onClose={() => setParams({ meta: null })} />
+          )}
+          {params.get("settings") === "1" && (
+            <SettingsDialog desktop={desk} onClose={() => setParams({ settings: null })} onSaved={(d) => setProject((p) => (p ? { ...p, desktop: { width: d.w, height: d.h } } : p))} />
           )}
           {panelOpen && (
             <div className="lg:hidden fixed inset-0 z-50 flex items-end sm:items-stretch sm:justify-end bg-ink-900/40" onClick={() => setParams({ panel: null })}>

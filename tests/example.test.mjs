@@ -57,6 +57,7 @@ test("craft-table.json: Acme Tasks, English, no source repo, plain-language lint
     source: null,
     lint: { plainLanguage: false },
     externalOrigins: [],
+    desktop: { w: 1280, h: 800 }, // no "desktop" in the example → the default frame size
   });
 });
 

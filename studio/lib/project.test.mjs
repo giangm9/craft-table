@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { loadProject, toolBase } from "./project.mjs";
+import { loadProject, toolBase, writeDesktop } from "./project.mjs";
 
 // Every folder a test makes goes in one folder per run, removed after each test and at the end.
 const ROOT = fs.mkdtempSync(path.join(os.tmpdir(), "ct-proj-"));
@@ -20,7 +20,7 @@ test("loadProject: reads craft-table.json from CRAFT_PROJECT, else the working d
   const d = dir({ name: "Acme" });
   const p = loadProject({ cwd: "/nowhere", env: { CRAFT_PROJECT: d } });
   assert.equal(p.dir, d);
-  assert.deepEqual(p.config, { name: "Acme", description: "", language: "en", logo: null, source: null, lint: { plainLanguage: false }, externalOrigins: [] });
+  assert.deepEqual(p.config, { name: "Acme", description: "", language: "en", logo: null, source: null, lint: { plainLanguage: false }, externalOrigins: [], desktop: { w: 1280, h: 800 } });
   assert.equal(loadProject({ cwd: d, env: {} }).dir, d);
 });
 
@@ -65,4 +65,20 @@ test("toolBase: URL prefix for the tool's own files — inside the project → p
 
 test("temp folders: no test leaves one behind", () => {
   assert.deepEqual(fs.readdirSync(ROOT), []);
+});
+
+test("loadProject: \"desktop\" sets the size of every desktop frame; a wrong one is an error that says what is allowed", () => {
+  assert.deepEqual(loadProject({ cwd: dir({ name: "A", desktop: { width: 1920, height: 1080 } }), env: {} }).config.desktop, { w: 1920, h: 1080 });
+  assert.throws(() => loadProject({ cwd: dir({ name: "A", desktop: { width: 100, height: 1080 } }), env: {} }), /desktop.*width.*height/s);
+});
+
+test("writeDesktop: sets or removes the size in craft-table.json, keeps every other key, and the file reads back", () => {
+  const d = dir({ name: "Acme", language: "vi", lint: { plainLanguage: true } });
+  writeDesktop(d, { w: 1920, h: 1080 });
+  const raw = JSON.parse(fs.readFileSync(path.join(d, "craft-table.json"), "utf8"));
+  assert.deepEqual(raw, { name: "Acme", language: "vi", lint: { plainLanguage: true }, desktop: { width: 1920, height: 1080 } });
+  assert.deepEqual(loadProject({ cwd: d, env: {} }).config.desktop, { w: 1920, h: 1080 });
+  writeDesktop(d, null);
+  assert.equal("desktop" in JSON.parse(fs.readFileSync(path.join(d, "craft-table.json"), "utf8")), false, "null → back to the default (the key goes)");
+  assert.ok(fs.readFileSync(path.join(d, "craft-table.json"), "utf8").endsWith("\n"));
 });

@@ -129,8 +129,9 @@ export function viteConfig({ projectDir, toolDir, httpServer, hosts = [], langua
       allowedHosts: [...hosts, "localhost", "127.0.0.1"],
       fs: { allow: [projectDir, toolDir] },
       // A change to a file outside the module graph makes Vite reload the WHOLE page for everyone. Conversation
-      // data, specs (.md), images, version info and per-version tsconfig are announced through our own fs.watch.
-      watch: { ignored: ["**/threads/**", "**/*.md", "**/.chat-shots/**", "**/tests/**", "**/refs/**", "**/audit/**", "**/data/**", "**/versions/index.json", "**/versions/*/version.json", "**/versions/*/tsconfig.json", "**/*.meta.json"] },
+      // data, specs (.md), images, version info and per-version tsconfig are announced through our own fs.watch; craft-table.json
+      // too (the Settings write it and send studio:project — a page reload would throw away what people are typing).
+      watch: { ignored: ["**/craft-table.json", "**/threads/**", "**/*.md", "**/.chat-shots/**", "**/tests/**", "**/refs/**", "**/audit/**", "**/data/**", "**/versions/index.json", "**/versions/*/version.json", "**/versions/*/tsconfig.json", "**/*.meta.json"] },
     },
   };
 }

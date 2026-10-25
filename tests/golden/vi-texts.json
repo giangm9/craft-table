@@ -51,6 +51,7 @@
     "apiNeedJson": "cần Content-Type: application/json",
     "apiBadEntryKind": "entry/kind không hợp lệ",
     "apiBadRunModel": "Model này không có trong danh sách",
+    "apiBadDesktop": "Cỡ desktop phải rộng 800–3840 và cao 500–2400 pixel",
     "apiBadRunEffort": "Mức effort không hợp lệ (low, medium, high, xhigh, max)",
     "apiNoSpec": "chưa có đặc tả",
     "apiNoSuchThread": "không có luồng này",
@@ -467,7 +468,7 @@
       "two": "… còn undefined tin — đọc tiếp với from=undefined"
     },
     "frameCaption": {
-      "params": "Khung ‹a0.entry› · ‹a0.scenario› · ‹a0.viewport› · trang cao ‹a0.height›px\nLỖI JS: ‹a0.errors›",
+      "params": "Khung ‹a0.entry› · ‹a0.scenario› · ‹a0.viewport› rộng ‹a0.width›px · trang cao ‹a0.height›px\nLỖI JS: ‹a0.errors›",
       "one": "Khung undefined · undefined",
       "two": "Khung undefined · undefined"
     },
@@ -754,6 +755,20 @@
     "dockPanel": "Gắn hội thoại lại vào khung bên phải",
     "floatMoveHint": "Kéo để di chuyển",
     "floatResizeHint": "Kéo để đổi cỡ",
+    "settings": "Cài đặt",
+    "closeSettings": "Đóng cài đặt",
+    "desktopSize": "Cỡ khung desktop",
+    "desktopHint": "Áp dụng cho mọi khung desktop của dự án, với mọi người — và cho những gì Claude nhìn thấy.",
+    "desktopCustom": "Tuỳ chọn",
+    "desktopWidth": "Rộng",
+    "desktopHeight": "Cao",
+    "desktopInvalid": {
+      "params": "Rộng ‹a0.minW›–‹a0.maxW›, cao ‹a0.minH›–‹a0.maxH› pixel.",
+      "one": "Rộng undefined–undefined, cao undefined–undefined pixel.",
+      "two": "Rộng undefined–undefined, cao undefined–undefined pixel."
+    },
+    "save": "Lưu",
+    "cancel": "Huỷ",
     "noBoards": {
       "params": "Chưa có bản vẽ nào trong versions/‹a0›/boards/.",
       "one": "Chưa có bản vẽ nào trong versions/1/boards/.",

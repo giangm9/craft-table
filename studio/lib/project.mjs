@@ -3,6 +3,7 @@
 // package) lives elsewhere — usually node_modules/craft-table inside the project.
 import fs from "node:fs";
 import path from "node:path";
+import { DESKTOP, DESKTOP_LIMITS, cleanDesktop } from "./devices.mjs";
 
 export const CONFIG_FILE = "craft-table.json";
 const LANGUAGES = new Set(["en", "vi"]);
@@ -45,6 +46,12 @@ export function loadProject({ cwd = process.cwd(), env = process.env } = {}) {
   if (!LANGUAGES.has(language)) fail(dir, `"language" must be one of ${[...LANGUAGES].join(", ")}`);
   const logo = raw.logo ?? null;
   if (logo !== null && !(typeof logo === "string" && /^\/[A-Za-z0-9._\/-]+$/.test(logo) && !logo.split("/").includes(".."))) fail(dir, "\"logo\" must be a path served from the project's public/ folder, like \"/logo.png\"");
+  let desktop = DESKTOP;
+  if (raw.desktop != null) {
+    desktop = cleanDesktop(raw.desktop);
+    const L = DESKTOP_LIMITS;
+    if (!desktop) fail(dir, `"desktop" must be { "width": ${L.minW}–${L.maxW}, "height": ${L.minH}–${L.maxH} } in whole pixels`);
+  }
   return {
     dir,
     config: {
@@ -55,8 +62,22 @@ export function loadProject({ cwd = process.cwd(), env = process.env } = {}) {
       source: cleanSource(dir, raw.source),
       lint: { plainLanguage: raw.lint?.plainLanguage === true },
       externalOrigins: cleanOrigins(dir, raw.externalOrigins),
+      desktop,
     },
   };
+}
+
+/**
+ * Set the desktop frame size in craft-table.json ({ w, h }), or remove it (null → the default). Every other key is kept as it
+ * is; the file is written through a temp file (2-space JSON, newline at the end).
+ */
+export function writeDesktop(dir, size) {
+  const file = path.join(dir, CONFIG_FILE);
+  const raw = JSON.parse(fs.readFileSync(file, "utf8"));
+  if (size) raw.desktop = { width: size.w, height: size.h }; else delete raw.desktop;
+  const tmp = `${file}.${process.pid}.tmp`;
+  fs.writeFileSync(tmp, `${JSON.stringify(raw, null, 2)}\n`);
+  fs.renameSync(tmp, file);
 }
 
 /** URL prefix the browser uses for the tool's own files (HTML entries, studio UI). */

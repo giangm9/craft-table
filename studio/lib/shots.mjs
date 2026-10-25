@@ -47,7 +47,8 @@ async function launchChrome() {
 
 const LAUNCH_TRIES = 3;
 
-export function createShots({ base, tool = "", externalOrigins = [], idleMs = 300_000, launch = launchChrome, retryDelayMs = 1000 }) {
+// desktop: () => { w, h } — the project's desktop frame size, read at every shot (the Settings can change it while the studio runs).
+export function createShots({ base, tool = "", externalOrigins = [], idleMs = 300_000, launch = launchChrome, retryDelayMs = 1000, desktop = () => ({ w: 1280, h: 800 }) }) {
   let browser = null, launching = null, timer = null, busy = 0;
   const api = { _launches: 0, _open: false };
   const origin = new URL(base).origin;
@@ -86,7 +87,8 @@ export function createShots({ base, tool = "", externalOrigins = [], idleMs = 30
       p = await b.newPage();
       await p.setRequestInterception(true);
       p.on("request", (r) => (allowedRequest(r.url(), r.method(), { origin, version, tool, externalOrigins }) ? r.continue() : r.abort("blockedbyclient")).catch(() => {}));
-      await p.setViewport({ width: WIDTH[viewport] ?? 1280, height: 800 });
+      const d = viewport === "desktop" ? desktop() : { w: WIDTH[viewport] ?? 390, h: 800 };
+      await p.setViewport({ width: d.w, height: d.h });
       const errors = [];
       p.on("pageerror", (e) => errors.push(String(e).slice(0, 200)));
       before?.(p, errors); // listeners that must be in place before the page loads
@@ -109,9 +111,9 @@ export function createShots({ base, tool = "", externalOrigins = [], idleMs = 30
     withPage(viewport, frameUrl(base, { version, entry, scenario }), async (p, errors) => {
       const h = await p.evaluate(() => document.documentElement.scrollHeight);
       const png = part === "full"
-        ? await p.screenshot({ captureBeyondViewport: true, clip: { x: 0, y: 0, width: WIDTH[viewport] ?? 1280, height: Math.min(h, MAX_H) } })
+        ? await p.screenshot({ captureBeyondViewport: true, clip: { x: 0, y: 0, width: viewport === "desktop" ? desktop().w : WIDTH[viewport] ?? 390, height: Math.min(h, MAX_H) } })
         : await p.screenshot();
-      return { png: Buffer.from(png), errors, height: h };
+      return { png: Buffer.from(png), errors, height: h, width: viewport === "desktop" ? desktop().w : WIDTH[viewport] ?? 390 };
     }, version);
 
   // The Vite hot-reload socket and blocked requests are the studio's own noise, not a problem of the board.
@@ -132,7 +134,7 @@ export function createShots({ base, tool = "", externalOrigins = [], idleMs = 30
       let png = null;
       if (shot) {
         png = Buffer.from(part === "full"
-          ? await p.screenshot({ captureBeyondViewport: true, clip: { x: 0, y: 0, width: WIDTH[viewport] ?? 1280, height: Math.min(height, MAX_H) } })
+          ? await p.screenshot({ captureBeyondViewport: true, clip: { x: 0, y: 0, width: viewport === "desktop" ? desktop().w : WIDTH[viewport] ?? 390, height: Math.min(height, MAX_H) } })
           : await p.screenshot());
       }
       return { png, errors: [...errors], height, boardError, value, evalError };

@@ -28,15 +28,33 @@ export function deviceOf(id0) {
 }
 
 // DESKTOP frames are fixed too (a screen using "as tall as the screen" would make a frame that grows with its content
-// without end) — 1280×800, the same size as the frame shots Claude looks at (shots.mjs). "Whole
-// page" (picked in the device select) → both are as tall as their content.
+// without end). Their size is a PROJECT setting (craft-table.json "desktop": { width, height }, the studio's Settings);
+// 1280×800 when the project says nothing. The frame shots Claude looks at use the same size (shots.mjs). "Whole page"
+// (picked in the device select) → both are as tall as their content.
 export const DESKTOP = { w: 1280, h: 800 };
+/** The sizes the Settings offer (any other size within the limits can be typed in). */
+export const DESKTOP_PRESETS = [
+  { w: 1280, h: 800 },
+  { w: 1366, h: 768 },
+  { w: 1440, h: 900 },
+  { w: 1536, h: 864 },
+  { w: 1920, h: 1080, name: "Full HD" },
+  { w: 2560, h: 1440, name: "QHD" },
+];
+export const DESKTOP_LIMITS = { minW: 800, maxW: 3840, minH: 500, maxH: 2400 };
+/** { width, height } (numbers, or digits typed in a form) → { w, h } within DESKTOP_LIMITS, else null. */
+export function cleanDesktop(input) {
+  const n = (v) => (typeof v === "number" ? v : typeof v === "string" && /^\d+$/.test(v.trim()) ? Number(v) : NaN);
+  const w = n(input?.width), h = n(input?.height);
+  const L = DESKTOP_LIMITS;
+  return Number.isInteger(w) && Number.isInteger(h) && w >= L.minW && w <= L.maxW && h >= L.minH && h <= L.maxH ? { w, h } : null;
+}
 /** Height cap for "Whole page" — stops the ever-growing measure loop of screens using 100vh/min-h-screen. */
 export const FULL_MAX_H = 6000;
 
-/** Frame size on the board: h = null → as tall as the content (measured in the frame, clamped by fullHeight). */
-export function frameSize(viewport, deviceId) {
-  if (viewport === "desktop") return { w: DESKTOP.w, h: urlValue("dev", deviceId) === FULL.id ? null : DESKTOP.h };
+/** Frame size on the board: h = null → as tall as the content (measured in the frame, clamped by fullHeight). desktop: the project's size. */
+export function frameSize(viewport, deviceId, desktop = DESKTOP) {
+  if (viewport === "desktop") return { w: desktop.w, h: urlValue("dev", deviceId) === FULL.id ? null : desktop.h };
   const d = deviceOf(deviceId);
   return { w: d.w, h: d.h };
 }

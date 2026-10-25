@@ -39,3 +39,25 @@ test("fullHeight: 'Whole page' grows with the content but has a cap — a screen
   assert.equal(fullHeight(99999, 0), FULL_MAX_H);
   assert.equal(fullHeight(Number.NaN, 0), 120);
 });
+
+// ── the desktop frame size is a project setting ──
+import { DESKTOP, DESKTOP_PRESETS, cleanDesktop } from "./devices.mjs";
+
+test("DESKTOP_PRESETS: the common screens, Full HD among them; the old default is the first", () => {
+  assert.deepEqual(DESKTOP_PRESETS.map((p) => `${p.w}x${p.h}`), ["1280x800", "1366x768", "1440x900", "1536x864", "1920x1080", "2560x1440"]);
+  assert.deepEqual(DESKTOP, { w: 1280, h: 800 });
+});
+
+test("cleanDesktop: whole pixels within sensible limits, else null", () => {
+  assert.deepEqual(cleanDesktop({ width: 1920, height: 1080 }), { w: 1920, h: 1080 });
+  assert.deepEqual(cleanDesktop({ width: "1600", height: "900" }), { w: 1600, h: 900 }, "numbers typed in a form");
+  for (const bad of [null, {}, { width: 500, height: 800 }, { width: 1920, height: 300 }, { width: 5000, height: 1080 }, { width: 1920.5, height: 1080 }, { width: "x", height: 1 }]) assert.equal(cleanDesktop(bad), null, JSON.stringify(bad));
+});
+
+test("frameSize: the desktop frame follows the project's size; mobile does not care", () => {
+  const hd = { w: 1920, h: 1080 };
+  assert.deepEqual(frameSize("desktop", undefined, hd), { w: 1920, h: 1080 });
+  assert.deepEqual(frameSize("desktop", FULL_DEVICE, hd), { w: 1920, h: null }, "whole page keeps the width");
+  assert.deepEqual(frameSize("mobile", "iphone-14", hd), { w: 390, h: 844 });
+  assert.deepEqual(frameSize("desktop"), { w: 1280, h: 800 }, "no size given → the old default");
+});
