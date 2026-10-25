@@ -41,6 +41,32 @@ export const featureOf = (id) => String(id ?? "").split("~")[0];
  */
 export const DESIGN_ENTRY = "*";
 export const isDesignThread = (t) => t?.entry === DESIGN_ENTRY;
+
+// A screen is named inside a message as @[screen-id] (the composer's "@" menu writes it; the UI shows it as a link to the
+// screen; Claude reads the ids from the prompt and may write the same in its replies).
+const MENTION = /@\[([a-z0-9][a-z0-9/_~-]*)\]/g;
+/**
+ * A text → pieces in order: text, or a mention of a screen; an @[…] that is not a valid screen id stays text.
+ * @param {unknown} text
+ * @returns {({ type: "text", value: string } | { type: "mention", id: string })[]}
+ */
+export function splitMentions(text) {
+  const s = String(text ?? "");
+  const out = [];
+  let last = 0;
+  for (const m of s.matchAll(MENTION)) {
+    if (!isValidEntryId(m[1])) continue;
+    if (m.index > last) out.push({ type: "text", value: s.slice(last, m.index) });
+    out.push({ type: "mention", id: m[1] });
+    last = m.index + m[0].length;
+  }
+  if (last < s.length) out.push({ type: "text", value: s.slice(last) });
+  return out;
+}
+/** A text with every mention written as the screen's short name (last part of its id, "~" → " ") — for a title. */
+export const plainMentions = (text) => splitMentions(text).map((p) => (p.type === "mention" ? p.id.split("/").pop().replace(/~/g, " ") : p.value)).join("");
+/** The screens a text mentions, each once, in order of appearance. */
+export const mentionsOf = (text) => [...new Set(splitMentions(text).filter((p) => p.type === "mention").map((p) => p.id))];
 /** Threads of the whole cluster holding `entry`, in one version. */
 export const threadsOfFeature = (threads, entry, version) => threads.filter((t) => t.version === version && featureOf(t.entry) === featureOf(entry));
 const inFeature = (id, base) => isValidEntryId(id) && featureOf(id) === featureOf(base);

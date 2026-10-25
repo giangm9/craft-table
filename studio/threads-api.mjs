@@ -15,7 +15,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { newThread, addMessage, editRef, setAgent, parseAgentReply, pendingUserMessages, loadThread, saveThread, deleteThread, listThreads, featureOf, isDesignThread } from "./lib/threads.mjs";
+import { newThread, addMessage, editRef, setAgent, parseAgentReply, pendingUserMessages, loadThread, saveThread, deleteThread, listThreads, featureOf, isDesignThread, plainMentions } from "./lib/threads.mjs";
 import { isValidEntryId } from "./lib/entries.mjs";
 import { buildPrompt, runAgent, SESSION_KIND, DESIGN_TIMEOUT_MS } from "./lib/agent.mjs";
 import { createQueue } from "./lib/agent-queue.mjs";
@@ -241,7 +241,7 @@ export function createThreadsApi({ root, project = null, hot, listEntries, live,
       const b = await readBody(req);
       const firstText = typeof b.text === "string" ? b.text.trim() : "";
       // Title made from the first line, without the [#n] markers (they only mean something next to a mark).
-      const auto = firstText.split("\n")[0].replace(/\[#\d+\]/g, "").replace(/\s+/g, " ").trim().slice(0, 60);
+      const auto = plainMentions(firstText.split("\n")[0]).replace(/\[#\d+\]/g, "").replace(/\s+/g, " ").trim().slice(0, 60);
       // Nothing to name it after → the default title, stored in its creator's language.
       const title = (typeof b.title === "string" && b.title.trim()) || auto || translate(SERVER_TEXT, lang, "threadDefaultTitle");
       const version = b.version == null ? live() : pickVersion(b.version);

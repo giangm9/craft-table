@@ -59,8 +59,6 @@ const en = {
   boardList: "Boards", // aria-label of the phone's button that opens the board list drawer — shell.ts boardList
   conversation: "Conversation", // the right panel's tab — shell.ts conversation
   history: "History", // the right panel's other tab — shell.ts history
-  design: "Whole design", // the right panel's tab for a conversation about the whole version — shell.ts design
-  noDesignThreads: "Talk about the whole design of this version", // empty state of that tab — threads.ts noDesignThreads
   lookingAt: "looking at", // on a whole-design message sent while looking at another screen — threads.ts lookingAt
   newThread: "New thread", // the button that starts a thread — threads.ts newThread
   mark: "Mark", // the composer's mark button — shell.ts / threads.ts mark
@@ -103,8 +101,6 @@ const vi = {
   boardList: "Danh mục",
   conversation: "Hội thoại",
   history: "Lịch sử",
-  design: "Toàn thiết kế",
-  noDesignThreads: "Trao đổi về toàn bộ thiết kế của phiên bản này",
   lookingAt: "đang xem",
   newThread: "Luồng mới",
   mark: "Khoanh",

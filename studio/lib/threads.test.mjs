@@ -404,3 +404,30 @@ test("parseAgentReply: with marks off (a design reply with no screen to mark) th
   assert.deepEqual(r, { text: "See here", refs: [] });
   assert.equal(parseAgentReply("See @mark(-, desktop, 1, 2, 3, 4)").refs.length, 1);
 });
+
+// ── mentioning a screen inside a message: @[screen-id] ──
+test("mentionsOf: the screens a text mentions as @[id] — valid screen ids only, each once, in order", async () => {
+  const { mentionsOf } = await import("./thread-core.mjs");
+  assert.deepEqual(mentionsOf("make @[screens/a] like @[screens/b~opt-1] and again @[screens/a]"), ["screens/a", "screens/b~opt-1"]);
+  assert.deepEqual(mentionsOf("not these: @[../x] @[bad id] @[] @screens/a [screens/b]"), []);
+  assert.deepEqual(mentionsOf(""), []);
+  assert.deepEqual(mentionsOf(null), []);
+});
+
+test("splitMentions: a text → text pieces and mention pieces, nothing lost", async () => {
+  const { splitMentions } = await import("./thread-core.mjs");
+  assert.deepEqual(splitMentions("see @[screens/a], then @[screens/b]!"), [
+    { type: "text", value: "see " }, { type: "mention", id: "screens/a" }, { type: "text", value: ", then " }, { type: "mention", id: "screens/b" }, { type: "text", value: "!" },
+  ]);
+  assert.deepEqual(splitMentions("no mention"), [{ type: "text", value: "no mention" }]);
+  assert.deepEqual(splitMentions("@[screens/a]"), [{ type: "mention", id: "screens/a" }]);
+  assert.deepEqual(splitMentions("@[../x] stays text"), [{ type: "text", value: "@[../x] stays text" }]);
+  assert.equal(splitMentions("a @[screens/a] b @[bad id] c").map((p) => p.value ?? `<${p.id}>`).join(""), "a <screens/a> b @[bad id] c");
+});
+
+test("plainMentions: a mention in a text that becomes a title is written as the screen's short name, never as a raw @[…]", async () => {
+  const { plainMentions } = await import("./thread-core.mjs");
+  assert.equal(plainMentions("make @[screens/tasks/list] tighter, like @[screens/tasks/detail~opt-1]"), "make list tighter, like detail opt-1");
+  assert.equal(plainMentions("no mention here"), "no mention here");
+  assert.equal(plainMentions("@[../x] stays"), "@[../x] stays");
+});

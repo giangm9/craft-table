@@ -2,8 +2,9 @@
 //   • C, then a drag that starts on the background and ends inside the first mobile frame: the region is cut at
 //     the frame's edge and becomes the pending annotation +1 — "[#1]" in the composer, no comment box on the
 //     canvas, and the drag did not move the canvas
-//   • Send → a new thread whose first message holds annotation #1 on that frame (scenario, x = 0, size = the drag
-//     divided by the zoom); its chip brings the region to the middle of the canvas
+//   • Send → a new conversation (it belongs to the version: entry "*") whose first message holds annotation #1 on that
+//     frame (the screen it was drawn on, scenario, x = 0, size = the drag divided by the zoom); its chip brings the
+//     region to the middle of the canvas
 //   • Claude's answer (posted through the local-only /claude route, no real Claude) shows up without reloading the
 //     page, with Claude's own marker on the frame; the thread list says the thread waits for you
 // The thread is sent from the page with the studio's noAgent switch on, and deleted at the end.
@@ -47,7 +48,7 @@ await run("annotate-send", async ({ browser, cleanup }) => {
   // ── Send ──
   // The page makes the thread: its clean-up is queued before the send, so it runs even if the test stops right after.
   cleanup("thread", async () => {
-    for (const t of (await api("GET", `/__api/threads?entry=${encodeURIComponent(ENTRY)}`)).threads) {
+    for (const t of (await api("GET", `/__api/threads?entry=${encodeURIComponent("*")}`)).threads) {
       if (t.messages[0]?.text.includes(TEXT)) await api("DELETE", `/__api/threads/${t.id}`);
     }
   });
@@ -55,12 +56,12 @@ await run("annotate-send", async ({ browser, cleanup }) => {
   await page.evaluate((label) => [...document.querySelectorAll("[data-panel] [data-composer] button")].find((b) => b.textContent.trim() === label)?.click(), UI.send);
   await page.waitForFunction((t) => document.querySelector("[data-panel]")?.innerText.includes(t), { timeout: 15_000 }, TEXT);
   await sleep(500);
-  const mine = (await api("GET", `/__api/threads?entry=${encodeURIComponent(ENTRY)}`)).threads.find((t) => t.messages[0]?.text.includes(TEXT));
-  ok(!!mine, "Send → a new thread on the screen");
+  const mine = (await api("GET", `/__api/threads?entry=${encodeURIComponent("*")}`)).threads.find((t) => t.messages[0]?.text.includes(TEXT));
+  ok(!!mine, "Send → a new conversation of the version (entry \"*\")");
   ok(mine.agent.state === "idle", `noAgent kept Claude out of it (agent ${mine.agent.state})`);
   const r = mine.messages[0].refs[0];
   const ew = DW / zoom, eh = DH / zoom;
-  ok(r && r.scenario === first.id && r.viewport === "mobile" && r.rect.x === 0, `annotation #1 is on the first scenario's mobile frame, cut at its left edge (${r ? `${r.scenario} · ${r.viewport} · ${JSON.stringify(r.rect)}` : "none"})`);
+  ok(r && r.entry === ENTRY && r.scenario === first.id && r.viewport === "mobile" && r.rect.x === 0, `annotation #1 names its screen, is on the first scenario's mobile frame, cut at its left edge (${r ? `${r.scenario} · ${r.viewport} · ${JSON.stringify(r.rect)}` : "none"})`);
   ok(Math.abs(r.rect.w - ew) <= ew * 0.08 && Math.abs(r.rect.h - eh) <= eh * 0.08, `its size is the drag divided by the zoom ${zoom}: ${r.rect.w}×${r.rect.h} ≈ ${Math.round(ew)}×${Math.round(eh)}`);
 
   // The chip #1 brings the region to the middle of the canvas.
@@ -77,7 +78,7 @@ await run("annotate-send", async ({ browser, cleanup }) => {
 
   // ── Claude answers ──
   const ANSWER = "Here are three bigger buttons [#1]. Shall I keep A or B?";
-  const answered = await api("POST", `/__api/threads/${mine.id}/claude`, { text: ANSWER, refs: [{ scenario: first.id, viewport: "mobile", rect: { x: 40, y: 120, w: 200, h: 60 }, texts: [] }] });
+  const answered = await api("POST", `/__api/threads/${mine.id}/claude`, { text: ANSWER, refs: [{ entry: ENTRY, scenario: first.id, viewport: "mobile", rect: { x: 40, y: 120, w: 200, h: 60 }, texts: [] }] });
   const claudeKey = `${answered.thread.messages.at(-1).id}:0`;
   await page.waitForFunction((t) => document.querySelector("[data-panel]")?.innerText.includes(t), { timeout: 15_000 }, "Shall I keep A or B?");
   ok(await page.evaluate(() => window.__noReload === true), "Claude's answer shows up without reloading the page");

@@ -389,3 +389,27 @@ test("runAgent: a design turn offers run only with a sandbox, and the design too
   assert.ok(seen[0].includes("mcp__studio__run") && seen[0].includes("mcp__studio__replace") && seen[0].includes("mcp__studio__browse"));
   assert.ok(!seen[1].includes("mcp__studio__run") && seen[1].includes("mcp__studio__replace"));
 });
+
+// ── mentions: the person names screens with @[id] ──
+test("buildPrompt: the screens mentioned in the new messages are listed, so Claude looks at them before it changes anything", () => {
+  const thread = { id: "t_9", entry: "*", version: "ban-2", title: "T", messages: [
+    { id: "m1", role: "user", author: "ana", text: "make @[screens/a] denser, like @[screens/b~opt-1]", refs: [], images: [] },
+    { id: "m2", role: "user", author: "ana", text: "and @[screens/a] again, not @[../x]", refs: [], images: [] },
+  ] };
+  const p = buildPrompt({ thread, meta: { title: "T" }, pending: thread.messages, resume: false, viewing: null, lang: "en" });
+  assert.match(p, /Screens mentioned in the new messages: screens\/a, screens\/b~opt-1 — look at them before you change anything\./);
+  const vi = buildPrompt({ thread, meta: { title: "T" }, pending: thread.messages, resume: true, viewing: null, lang: "vi" });
+  assert.match(vi, /Các màn được nhắc trong tin mới: screens\/a, screens\/b~opt-1 — hãy xem chúng trước khi sửa\./);
+  const none = { ...thread, messages: [{ id: "m1", role: "user", author: "ana", text: "hello", refs: [], images: [] }] };
+  assert.ok(!/mentioned/.test(buildPrompt({ thread: none, meta: { title: "T" }, pending: none.messages, resume: false, viewing: null, lang: "en" })));
+  // A thread of one screen gets the same line.
+  const legacy = { ...thread, entry: "screens/a" };
+  assert.match(buildPrompt({ thread: legacy, meta: { title: "T" }, pending: legacy.messages, resume: false, lang: "en" }), /Screens mentioned in the new messages/);
+});
+
+test("designSystemPrompt: tells Claude how a screen is mentioned and that its reply may mention screens the same way", () => {
+  const en = designSystemPrompt({ project: { name: "Acme", description: "", language: "en", source: null }, topics: ["boards"], sandbox: false });
+  assert.match(en, /@\[screen-id\]/);
+  const vi = designSystemPrompt({ project: { name: "Acme", description: "", language: "vi", source: null }, topics: ["boards"], sandbox: false });
+  assert.match(vi, /@\[screen-id\]/);
+});

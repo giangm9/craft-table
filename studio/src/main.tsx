@@ -3,7 +3,7 @@
 // · right panel: the Conversation with Claude (a mark = a reference point inside a message).
 import { StrictMode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Code2, FileText, GitBranch, History, Languages, Layers, LogOut, Menu, MessageSquare, Pencil, SquareDashedMousePointer } from "lucide-react";
+import { Code2, FileText, GitBranch, History, Languages, LogOut, Menu, MessageSquare, Pencil, SquareDashedMousePointer } from "lucide-react";
 import "../ui/tokens.css";
 import "./studio.css";
 import { cn, Select } from "../ui";
@@ -26,7 +26,7 @@ import { LangSwitch } from "./i18n/LangSwitch";
 import { SpecPanel, type SpecKind } from "./SpecPanel";
 import { Sidebar } from "./Sidebar";
 import { loadProject } from "./project";
-import { allRefs, featureOf, isDesignThread, threadsOfFeature, waitingForUser } from "../lib/thread-core.mjs";
+import { allRefs, featureOf, isDesignThread, waitingForUser } from "../lib/thread-core.mjs";
 import { afterRemovePending, placeDrawn } from "../lib/ref-redraw.mjs";
 
 type VpMode = "both" | Viewport;
@@ -187,9 +187,8 @@ function App() {
   const navOpen = params.get("nav") === "1";
 
   // The main screen + its options = one group sharing threads (lib/thread-core.mjs).
-  const entryThreads = useMemo<Thread[]>(() => (entry && version ? threadsOfFeature(threads, entry.id, version) : []), [threads, entry, version]);
-  // Whole-design threads belong to the version: the same list on every screen.
-  const designThreads = useMemo<Thread[]>(() => (version ? threads.filter((t) => isDesignThread(t) && t.version === version) : []), [threads, version]);
+  // Conversations belong to the version: the same list on every screen (a thread made on one screen before is in it too).
+  const versionThreads = useMemo<Thread[]>(() => (version ? threads.filter((t) => t.version === version) : []), [threads, version]);
   /** Short name of a screen of the group (label of a thread / message that belongs to another screen than this one). */
   const memberLabel = (id: string) => {
     const e = entries.find((x) => x.id === id);
@@ -197,11 +196,16 @@ function App() {
     return e.meta.option ? T.optionNamed(e.meta.option.name) : T.mainScreen;
   };
   /** Moving within the group keeps the open thread; moving to another group closes it. */
-  const keepT = (id: string | null | undefined) => (id && entry && featureOf(id) === featureOf(entry.id) ? tParam : null);
+  // A global conversation stays open when the screen changes; a thread of one screen only within its group.
+  const keepT = (id: string | null | undefined) => {
+    const open = tParam && tParam !== "new" ? versionThreads.find((t) => t.id === tParam) : undefined;
+    if (tParam === "new" || (open && isDesignThread(open))) return tParam;
+    return id && entry && featureOf(id) === featureOf(entry.id) ? tParam : null;
+  };
   // Claude is running a turn on this screen (one turn per screen at a time) → a strip on the spec panel.
-  // A whole-design turn is editing every screen of its version.
-  const claudeBusy = entryThreads.some((t) => t.agent.state === "running") || designThreads.some((t) => t.agent.state === "running");
-  const activeThread = tParam && tParam !== "new" ? entryThreads.find((t) => t.id === tParam) : undefined;
+  // A global turn is editing every screen of its version; a turn of one screen, that screen (and its options).
+  const claudeBusy = !!entry && versionThreads.some((t) => t.agent.state === "running" && (isDesignThread(t) || featureOf(t.entry) === featureOf(entry.id)));
+  const activeThread = tParam && tParam !== "new" ? versionThreads.find((t) => t.id === tParam) : undefined;
   // Count in the board list: threads waiting for a person's answer (Claude spoke last) or in error.
   const attention = useCallback((id: string) => threads.filter((t) => t.entry === id && t.version === version && (waitingForUser(t) || t.agent.state === "error")).length, [threads, version]);
 
@@ -253,59 +257,36 @@ function App() {
     setParams({ rf: key, panel: innerWidth < 1024 ? null : params.get("panel"), ...(on && on !== entry?.id ? { e: on } : {}) }, "replace");
   };
 
-  const rightTab = params.get("rp") === "history" ? "history" : params.get("rp") === "design" ? "design" : "threads";
+  const rightTab = params.get("rp") === "history" ? "history" : "threads";
   // What sits under the tab bar (Conversation / History) must be flex-1 min-h-0, NOT h-full: h-full + the tab bar is
   // 44px taller than the panel on a long thread → the whole page scrolls and the composer drops below the edge
   // (tests/panel-height.e2e.mjs).
   const panel = entry && (
     <div className="h-full flex flex-col min-h-0">
       <div role="tablist" className="flex gap-0.5 px-1 pt-1.5 border-b border-ink-200 shrink-0">
-        {([["threads", T.conversation, MessageSquare], ["design", T.design, Layers], ["history", T.history, History]] as const).map(([k, label, Icon]) => (
+        {([["threads", T.conversation, MessageSquare], ["history", T.history, History]] as const).map(([k, label, Icon]) => (
           <button
             key={k}
             type="button"
             role="tab"
             aria-selected={rightTab === k}
-            onClick={() => setParams({ rp: k === "threads" ? null : k, hist: null })}
+            onClick={() => setParams({ rp: k === "history" ? "history" : null, hist: null })}
             className={cn("inline-flex min-w-0 items-center gap-1 px-1.5 py-2 text-[13px] font-medium whitespace-nowrap border-b-2 -mb-px", rightTab === k ? "border-accent-700 text-accent-800" : "border-transparent text-ink-500 hover:text-ink-800")}
           >
-            <Icon size={14} className="shrink-0" /> <span className="truncate">{label}</span>{k === "threads" && entryThreads.length ? <span className="text-xs text-ink-400 tabular-nums">{entryThreads.length}</span> : k === "design" && designThreads.length ? <span className="text-xs text-ink-400 tabular-nums">{designThreads.length}</span> : null}
+            <Icon size={14} className="shrink-0" /> <span className="truncate">{label}</span>{k === "threads" && versionThreads.length ? <span className="text-xs text-ink-400 tabular-nums">{versionThreads.length}</span> : null}
           </button>
         ))}
       </div>
       {rightTab === "history" ? (
         <HistoryPanel version={version} entry={entry.id} threads={threads} selected={params.get("hist")} onSelect={(id) => setParams({ hist: id })} />
-      ) : rightTab === "design" ? (
-      <ThreadsPanel
-        design
-        entry={entry}
-        version={version}
-        threads={designThreads}
-        activeId={params.get("dt")}
-        pendingRefs={[]}
-        annotating={false}
-        onOpen={(id) => setParams({ dt: id, rf: null }, "replace")}
-        onToggleAnnotate={() => {}}
-        onRemovePending={() => {}}
-        onClearPending={() => {}}
-        onFocusRef={focusRef}
-        onChanged={loadThreads}
-        onClose={panelOpen ? () => setParams({ panel: null }) : undefined}
-        composeBig={params.get("soan") === "1"}
-        onComposeBig={(on) => setParams({ soan: on ? "1" : null })}
-        memberLabel={memberLabel}
-        screenTitle={(id) => entries.find((x) => x.id === id)?.meta.title ?? id}
-        scripts={project?.agent ? project.agent.sandbox : undefined}
-        redraw={null}
-        onRedraw={() => {}}
-        refsOpen={params.get("kh") === "1"}
-        onRefsOpen={(on) => setParams({ kh: on ? "1" : null }, "replace")}
-      />
       ) : (
       <ThreadsPanel
         entry={entry}
+        entries={entries}
+        onOpenScreen={(id) => setParams({ e: id, t: keepT(id), rf: null, s: null, spp: null, hist: null, meta: null, vp: null, nav: null })}
+        scripts={project?.agent ? project.agent.sandbox : undefined}
         version={version}
-        threads={entryThreads}
+        threads={versionThreads}
         activeId={tParam}
         pendingRefs={pendingRefs}
         annotating={annotating}
@@ -494,7 +475,7 @@ function App() {
               className="lg:hidden inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-ink-200 text-ink-700 rounded-lg text-sm font-medium hover:bg-ink-50"
               aria-label={T.conversation}
             >
-              <MessageSquare size={15} /> {entryThreads.length}
+              <MessageSquare size={15} /> {versionThreads.length}
             </button>
           </div>
         </header>

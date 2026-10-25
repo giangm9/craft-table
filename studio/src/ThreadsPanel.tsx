@@ -2,9 +2,9 @@
 // (Claude runs in the background and can edit the board). Marking an area on the canvas attaches a reference to the
 // message being written ([#n] in the text); clicking the reference brings that area to the middle of the canvas.
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowLeft, CheckCheck, Hourglass, ImagePlus, Loader2, Maximize2, MessageSquarePlus, Minimize2, Pencil, RotateCcw, Send, Sparkles, Square, SquareDashedMousePointer, Trash2, Undo2, X } from "lucide-react";
+import { ArrowLeft, AtSign, CheckCheck, Hourglass, ImagePlus, LayoutPanelLeft, Loader2, Maximize2, MessageSquarePlus, Minimize2, Pencil, RotateCcw, Send, Sparkles, Square, SquareDashedMousePointer, Trash2, Undo2, X } from "lucide-react";
 import { cn } from "../ui";
-import { allRefs, dropMark, waitingForUser, DESIGN_ENTRY } from "../lib/thread-core.mjs";
+import { allRefs, dropMark, waitingForUser, DESIGN_ENTRY, featureOf, isDesignThread, mentionsOf, splitMentions } from "../lib/thread-core.mjs";
 import { replyBlocks, replyPlain } from "../lib/reply-md.mjs";
 import { enterAction } from "../lib/composer-keys.mjs";
 import { api, refScenario, scenariosOf, uploadUrl, type Entry, type Ref, type Thread } from "./api";
@@ -37,11 +37,11 @@ type Props = {
   /** "Redraw" on a mark → the next mark drawn on the canvas replaces it (keeping its number). */
   redraw: Redraw | null;
   onRedraw: (r: Redraw) => void;
-  /** The "Whole design" tab: the threads belong to the version, not to `entry` (the screen being looked at, sent as `viewing`). No marks are drawn here. */
-  design?: boolean;
-  /** Title of a screen by id (the "looking at …" label of a design message). */
-  screenTitle?: (id: string) => string;
-  /** The design tab: where Claude may run scripts — the backend name, null = off, undefined = not known yet (nothing shown). */
+  /** Every screen (and option) of the version: the "@" menu offers them, a mention shows its screen's title, a mark's label names its scenario. */
+  entries: Entry[];
+  /** A mention was clicked: go to that screen — the open conversation stays open. */
+  onOpenScreen: (id: string) => void;
+  /** Where Claude may run scripts — the backend name, null = off, undefined = not known yet (nothing shown). */
   scripts?: string | null;
   /** The marks list of the open thread is shown (URL `kh=1`). */
   refsOpen: boolean;
@@ -55,6 +55,9 @@ const hm = (iso: string) => {
 };
 const who = (a: string) => (a === "claude" ? "Claude" : a.split("@")[0]);
 const titleOf = (t: Thread) => threadTitle(t.title);
+type ScreenItem = { id: string; title: string };
+/** A screen's name in the "@" menu and in a mention: its title, plus the option's name for an option. */
+const screenName = (e: Entry) => (e.meta.option ? `${e.meta.title} · ${e.meta.option.name}` : e.meta.title) || e.id;
 // A mark with no scenario lies on the first scenario's row (refScenario): show that scenario's name.
 const scLabel = (entry: Entry, r: Ref) => { const id = refScenario(r, entry); return scenariosOf(entry).find((s) => s.id === id)?.title ?? id ?? ""; };
 
@@ -107,13 +110,15 @@ function StatusBadge({ t }: { t: Thread }) {
 }
 
 /** Message text with [#k] (k = the mark's position in the message) → a chip with the thread-wide number. */
-function MessageText({ text, map }: { text: string; map: (k: number) => ReactNode }) {
-  const parts = text.split(/(\[#\d+\])/g);
+function MessageText({ text, map, mention }: { text: string; map: (k: number) => ReactNode; mention: (id: string) => ReactNode }) {
+  const parts = text.split(/(\[#\d+\]|@\[[a-z0-9][a-z0-9/_~-]*\])/g);
   return (
     <p className="text-sm whitespace-pre-wrap break-words text-ink-900">
       {parts.map((p, i) => {
         const m = /^\[#(\d+)\]$/.exec(p);
-        return <Fragment key={i}>{m ? map(Number(m[1])) : p}</Fragment>;
+        if (m) return <Fragment key={i}>{map(Number(m[1]))}</Fragment>;
+        const id = p.startsWith("@[") ? mentionsOf(p)[0] : undefined; // an @[…] that is no valid screen id stays text
+        return <Fragment key={i}>{id ? mention(id) : p}</Fragment>;
       })}
     </p>
   );
@@ -126,7 +131,7 @@ type MdNode = any; // tree of lib/reply-md.mjs (blocks: p h ul ol quote pre hr t
  * Claude's reply: markdown built straight into React elements (NO injected HTML — see lib/reply-md.mjs), with [#k]
  * as mark chips, as in a person's message.
  */
-function ReplyBody({ text, chip }: { text: string; chip: (k: number) => ReactNode }) {
+function ReplyBody({ text, chip, mention }: { text: string; chip: (k: number) => ReactNode; mention: (id: string) => ReactNode }) {
   const tree = useMemo(() => replyBlocks(text) as MdNode[], [text]);
   const inl = (ns: MdNode[]): ReactNode => ns.map((n, i) => {
     switch (n.t) {
@@ -137,7 +142,7 @@ function ReplyBody({ text, chip }: { text: string; chip: (k: number) => ReactNod
       case "code": return <code key={i} className="px-1 py-px rounded bg-ink-100 text-[12.5px] font-mono break-all">{n.v}</code>;
       case "a": return <a key={i} href={n.href} target="_blank" rel="noreferrer noopener" className="text-accent-700 underline">{inl(n.c)}</a>;
       case "br": return <br key={i} />;
-      default: return <Fragment key={i}>{n.v}</Fragment>;
+      default: return <Fragment key={i}>{splitMentions(n.v).map((q, j) => (q.type === "mention" ? <Fragment key={j}>{mention(q.id)}</Fragment> : q.value))}</Fragment>;
     }
   });
   const blk = (bs: MdNode[]): ReactNode => bs.map((b, i) => {
@@ -170,7 +175,7 @@ type Att = { key: string; url: string; id?: string; err?: string };
  * screen, for multi-paragraph text; its state is in the URL `soan=1`): Enter starts a new line, Ctrl/⌘+Enter sends
  * (lib/composer-keys.mjs). Both modes are the same box (text, images and marks stay when switching).
  */
-function Composer(p: { noMarks?: boolean; placeholder: string; draftKey: string; pendingRefs: Ref[]; entry: Entry; annotating: boolean; busy: boolean; expanded: boolean; onExpanded: (on: boolean) => void; onToggleAnnotate: () => void; onRemovePending: (i: number) => void; onFocusRef: (k: string) => void; redrawing: number | null; onRedraw: (i: number) => void; onSend: (text: string, images: string[]) => Promise<boolean> }) {
+function Composer(p: { screens: ScreenItem[]; noMarks?: boolean; placeholder: string; draftKey: string; pendingRefs: Ref[]; entry: Entry; annotating: boolean; busy: boolean; expanded: boolean; onExpanded: (on: boolean) => void; onToggleAnnotate: () => void; onRemovePending: (i: number) => void; onFocusRef: (k: string) => void; redrawing: number | null; onRedraw: (i: number) => void; onSend: (text: string, images: string[]) => Promise<boolean> }) {
   const taRef = useRef<HTMLTextAreaElement>(null);
   // Opening / folding the large composer → caret at the end of the text, to keep typing right away.
   useEffect(() => {
@@ -218,6 +223,32 @@ function Composer(p: { noMarks?: boolean; placeholder: string; draftKey: string;
       return out;
     });
   }, [p.pendingRefs.length, p.draftKey]);
+  // "@" mentions a screen: the word being typed after an "@" filters the screens; Enter / Tab / a click writes @[screen-id].
+  const [caret, setCaret] = useState(0);
+  const [menuIdx, setMenuIdx] = useState(0);
+  const [menuOff, setMenuOff] = useState(false); // Esc closes the menu until the text changes again
+  const mq = useMemo(() => {
+    const m = /(^|[\s(])@([^\s@[\]]*)$/.exec(text.slice(0, caret));
+    return m ? { start: caret - m[2].length - 1, query: m[2].toLowerCase() } : null;
+  }, [text, caret]);
+  const menuOpen = !!mq && !menuOff;
+  const items = useMemo(() => (mq ? p.screens.filter((s) => !mq.query || s.title.toLowerCase().includes(mq.query) || s.id.toLowerCase().includes(mq.query)).slice(0, 30) : []), [mq, p.screens]);
+  useEffect(() => { setMenuIdx(0); }, [mq?.query]);
+  const putCaret = (pos: number) => { setCaret(pos); requestAnimationFrame(() => { const ta = taRef.current; ta?.focus(); ta?.setSelectionRange(pos, pos); }); };
+  const chooseScreen = (s: ScreenItem) => {
+    if (!mq) return;
+    const ins = `@[${s.id}] `;
+    setText(`${text.slice(0, mq.start)}${ins}${text.slice(caret)}`);
+    putCaret(mq.start + ins.length);
+  };
+  const openMentionMenu = () => {
+    const pos = taRef.current?.selectionStart ?? text.length;
+    const before = text.slice(0, pos);
+    const gap = before && !/\s$/.test(before) ? " " : "";
+    setText(`${before}${gap}@${text.slice(pos)}`);
+    setMenuOff(false);
+    putCaret(before.length + gap.length + 1);
+  };
   const can = (text.trim() || p.pendingRefs.length || ready.length) && !p.busy && !uploading;
   const send = async () => {
     if (!can) return;
@@ -270,8 +301,14 @@ function Composer(p: { noMarks?: boolean; placeholder: string; draftKey: string;
         ref={taRef}
         value={text}
         onPaste={(e) => { const f = [...e.clipboardData.files].filter((x) => x.type.startsWith("image/")); if (f.length) { e.preventDefault(); addFiles(f); } }}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => { setText(e.target.value); setCaret(e.target.selectionStart); setMenuOff(false); }}
+        onSelect={(e) => setCaret(e.currentTarget.selectionStart)}
         onKeyDown={(e) => {
+          if (menuOpen && items.length) {
+            if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); setMenuIdx((i) => (i + (e.key === "ArrowDown" ? 1 : items.length - 1)) % items.length); return; }
+            if ((e.key === "Enter" || e.key === "Tab") && !e.nativeEvent.isComposing) { e.preventDefault(); chooseScreen(items[Math.min(menuIdx, items.length - 1)]); return; }
+          }
+          if (menuOpen && e.key === "Escape") { e.preventDefault(); e.nativeEvent.stopPropagation(); setMenuOff(true); return; }
           const k = { key: e.key, shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey, isComposing: e.nativeEvent.isComposing, keyCode: e.keyCode };
           if (enterAction(k, p.expanded) === "send") { e.preventDefault(); send(); }
         }}
@@ -279,6 +316,24 @@ function Composer(p: { noMarks?: boolean; placeholder: string; draftKey: string;
         placeholder={p.placeholder}
         className={cn("input resize-none", p.expanded && "flex-1 min-h-[40vh] text-[15px] leading-relaxed")}
       />
+      {menuOpen && (
+        <div role="listbox" aria-label={T.mentionMenu} data-mention-menu className="max-h-44 overflow-y-auto rounded-lg border border-ink-200 bg-surface shadow-sm divide-y divide-ink-100">
+          {items.length === 0 ? <p className="px-3 py-2 text-xs text-ink-500">{T.mentionNone}</p> : items.map((s, i) => (
+            <button
+              key={s.id}
+              type="button"
+              role="option"
+              aria-selected={i === Math.min(menuIdx, items.length - 1)}
+              data-mention-id={s.id}
+              onMouseDown={(e) => { e.preventDefault(); chooseScreen(s); }}
+              className={cn("w-full text-left px-3 py-1.5 text-sm flex items-baseline gap-2", i === Math.min(menuIdx, items.length - 1) ? "bg-accent-50" : "hover:bg-ink-50")}
+            >
+              <span className="font-medium truncate">{s.title}</span>
+              <span className="text-[11px] text-ink-400 truncate">{s.id}</span>
+            </button>
+          ))}
+        </div>
+      )}
       <div className="flex items-center gap-1.5">
         {!p.noMarks && <button
           type="button"
@@ -288,6 +343,16 @@ function Composer(p: { noMarks?: boolean; placeholder: string; draftKey: string;
         >
           <SquareDashedMousePointer size={15} /> {p.annotating ? T.marking : T.mark}
         </button>}
+        <button
+          type="button"
+          data-mention-button
+          onClick={openMentionMenu}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium border bg-surface border-ink-200 text-ink-700 hover:bg-ink-50"
+          title={T.mentionHint}
+          aria-label={T.mention}
+        >
+          <AtSign size={15} />
+        </button>
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
@@ -335,6 +400,27 @@ export function ThreadsPanel(p: Props) {
   const listEnd = useRef<HTMLDivElement>(null);
   const thread = p.activeId && p.activeId !== "new" ? p.threads.find((t) => t.id === p.activeId) : undefined;
   const refs = thread ? allRefs(thread) : [];
+  const screens = useMemo<ScreenItem[]>(() => p.entries.map((e) => ({ id: e.id, title: screenName(e) })), [p.entries]);
+  const byId = (id: string) => p.entries.find((e) => e.id === id);
+  /** A screen's name for a label; within the open screen's group (main screen + its options) the short names. */
+  const onLabel = (id: string) => (featureOf(id) === featureOf(p.entry.id) ? p.memberLabel(id) : byId(id) ? screenName(byId(id)!) : id);
+  /** A mention in a message: the screen's title as a link to it (a screen no longer in this version shows its id, struck through). */
+  const mention = (id: string) => {
+    const e = byId(id);
+    return (
+      <button
+        type="button"
+        data-mention={id}
+        onClick={() => p.onOpenScreen(id)}
+        title={e ? id : T.mentionGone}
+        className={cn("inline-flex items-center gap-1 px-1.5 mx-px rounded-md border text-[12.5px] font-medium align-baseline", e ? "bg-accent-50 border-accent-200 text-accent-800 hover:bg-accent-100" : "bg-ink-50 border-ink-200 text-ink-400 line-through")}
+      >
+        <LayoutPanelLeft size={11} className="shrink-0" />{e ? screenName(e) : id}
+      </button>
+    );
+  };
+  /** A mark of a global thread is stamped with the screen it is drawn on (a thread of one screen needs no stamp). */
+  const stamp = (rs: Ref[], global: boolean): Ref[] => (global ? rs.map((r) => ({ ...r, entry: r.entry ?? p.entry.id })) : rs);
 
   useEffect(() => { listEnd.current?.scrollIntoView({ block: "end" }); }, [thread?.messages.length, thread?.agent.state, agentText(thread?.agent.progress)]);
 
@@ -360,12 +446,12 @@ export function ThreadsPanel(p: Props) {
         <div className="flex-1" />
         {err && <p className="px-3 pb-2 text-xs text-rose-600">{err}</p>}
         <Composer
-          placeholder={p.design ? T.designMessageClaude : T.messageClaude} noMarks={p.design}
+          placeholder={T.messageClaudeGlobal} screens={screens}
           draftKey="new" entry={p.entry} pendingRefs={p.pendingRefs} annotating={p.annotating} busy={busy} expanded={p.composeBig} onExpanded={p.onComposeBig}
           onToggleAnnotate={p.onToggleAnnotate} onRemovePending={p.onRemovePending} onFocusRef={p.onFocusRef}
           redrawing={p.redraw?.kind === "pending" ? p.redraw.i : null} onRedraw={(i) => p.onRedraw({ kind: "pending", i })}
           onSend={(text, images) => run(async () => {
-            const t = await api.createThread({ entry: p.design ? DESIGN_ENTRY : p.entry.id, version: p.version, text, refs: p.design ? [] : p.pendingRefs, images, ...(p.design ? { viewing: p.entry.id } : {}) });
+            const t = await api.createThread({ entry: DESIGN_ENTRY, version: p.version, text, refs: stamp(p.pendingRefs, true), images, viewing: p.entry.id });
             p.onClearPending();
             p.onOpen(t.id);
           })}
@@ -407,7 +493,7 @@ export function ThreadsPanel(p: Props) {
                 <RefRow
                   key={`${r.messageId}:${r.index}`}
                   chip={<RefChip n={r.n} claude={r.role === "claude"} removed={!!r.removed} onClick={() => p.onFocusRef(`${r.messageId}:${r.index}`)} />}
-                  where={[who(author), scLabel(p.entry, r), r.viewport, on !== p.entry.id ? T.onMember(p.memberLabel(on)) : ""].filter(Boolean).join(" · ")}
+                  where={[who(author), scLabel(byId(on) ?? p.entry, r), r.viewport, on !== p.entry.id ? T.onMember(onLabel(on)) : ""].filter(Boolean).join(" · ")}
                   texts={r.texts}
                   status={r.removed ? T.statusRemoved : r.redrawn ? T.statusRedrawn : ""}
                   busy={busy}
@@ -430,13 +516,13 @@ export function ThreadsPanel(p: Props) {
                   <p className="flex items-center gap-1.5 text-xs text-ink-500 mb-1">
                     {claude && <Sparkles size={13} className="text-sky-600" />}
                     <span className={cn("font-medium", claude ? "text-sky-800" : "text-ink-700")}>{who(m.author)}</span> · {hm(m.at)}
-                    {!claude && (p.design
-                      ? m.viewing && m.viewing !== p.entry.id && <span data-message-on className="truncate">· {T.lookingAt(p.screenTitle?.(m.viewing) ?? m.viewing)}</span>
-                      : (m.viewing ?? thread.entry) !== p.entry.id && <span data-message-on className="truncate">· {T.onMember(p.memberLabel(m.viewing ?? thread.entry))}</span>)}
+                    {!claude && (isDesignThread(thread)
+                      ? m.viewing && m.viewing !== p.entry.id && <span data-message-on className="truncate">· {T.lookingAt(byId(m.viewing) ? screenName(byId(m.viewing)!) : m.viewing)}</span>
+                      : (m.viewing ?? thread.entry) !== p.entry.id && <span data-message-on className="truncate">· {T.onMember(onLabel(m.viewing ?? thread.entry))}</span>)}
                   </p>
                   {m.text && (() => {
                     const chip = (k: number) => { const r = refOf(k); return r ? <RefChip n={r.n} claude={claude} removed={!!r.removed} onClick={() => p.onFocusRef(`${m.id}:${k - 1}`)} /> : `[#${k}]`; };
-                    return claude ? <ReplyBody text={m.text} chip={chip} /> : <MessageText text={m.text} map={chip} />;
+                    return claude ? <ReplyBody text={m.text} chip={chip} mention={mention} /> : <MessageText text={m.text} map={chip} mention={mention} />;
                   })()}
                   {(m.images?.length ?? 0) > 0 && (
                     <div className="mt-1.5 flex flex-wrap gap-2">
@@ -452,7 +538,7 @@ export function ThreadsPanel(p: Props) {
                       {m.refs.map((r, i) => (
                         <span key={i} className="inline-flex items-center gap-1 text-[11px] text-ink-500">
                           <RefChip n={refOf(i + 1)?.n ?? i + 1} claude={claude} removed={!!r.removed} onClick={() => p.onFocusRef(`${m.id}:${i}`)} title={r.texts.slice(0, 4).join(" · ")} />
-                          <span className="truncate max-w-[160px]">{scLabel(p.entry, r)} · {r.viewport}</span>
+                          <span className="truncate max-w-[160px]">{scLabel(byId(r.entry ?? thread.entry) ?? p.entry, r)} · {r.viewport}</span>
                         </span>
                       ))}
                     </div>
@@ -498,10 +584,10 @@ export function ThreadsPanel(p: Props) {
         {err && <p className="px-3 pb-2 text-xs text-rose-600">{err}</p>}
         <Composer
           placeholder={thread.status === "closed" ? T.replyToReopen : T.reply}
-          noMarks={p.design} draftKey={thread.id} entry={p.entry} pendingRefs={p.pendingRefs} annotating={p.annotating} busy={busy} expanded={p.composeBig} onExpanded={p.onComposeBig}
+          screens={screens} noMarks={!isDesignThread(thread) && featureOf(thread.entry) !== featureOf(p.entry.id)} draftKey={thread.id} entry={p.entry} pendingRefs={p.pendingRefs} annotating={p.annotating} busy={busy} expanded={p.composeBig} onExpanded={p.onComposeBig}
           onToggleAnnotate={p.onToggleAnnotate} onRemovePending={p.onRemovePending} onFocusRef={p.onFocusRef}
           redrawing={p.redraw?.kind === "pending" ? p.redraw.i : null} onRedraw={(i) => p.onRedraw({ kind: "pending", i })}
-          onSend={(text, images) => run(async () => { await api.send(thread.id, { text, refs: p.pendingRefs, images, viewing: p.entry.id }); p.onClearPending(); })}
+          onSend={(text, images) => run(async () => { await api.send(thread.id, { text, refs: stamp(p.pendingRefs, isDesignThread(thread)), images, viewing: p.entry.id }); p.onClearPending(); })}
         />
       </div>
     );
@@ -519,22 +605,22 @@ export function ThreadsPanel(p: Props) {
           <StatusBadge t={t} />
         </div>
         {last && <p className="mt-0.5 text-xs text-ink-500 truncate">{last.role === "claude" ? T.fromClaude(replyPlain(last.text)) : last.text || ((last.images?.length ?? 0) > 0 ? T.lastImage : T.lastMark)}</p>}
-        <p className="mt-0.5 text-[11px] text-ink-400">{T.messageCount(t.messages.length)} · {hm(t.updatedAt)}{!p.design && t.entry !== p.entry.id && <span data-thread-on> · {p.memberLabel(t.entry)}</span>}</p>
+        <p className="mt-0.5 text-[11px] text-ink-400">{T.messageCount(t.messages.length)} · {hm(t.updatedAt)}{!isDesignThread(t) && t.entry !== p.entry.id && <span data-thread-on> · {onLabel(t.entry)}</span>}</p>
       </button>
     );
   };
   return (
     <div className="flex-1 min-h-0 flex flex-col">
-      {header(<p className="font-semibold">{p.design ? T.designTitle : T.conversation}</p>, (
+      {header(<p className="font-semibold">{T.conversation}</p>, (
         <button type="button" onClick={() => p.onOpen("new")} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-accent-700 border border-accent-700 text-white rounded-lg text-sm font-medium hover:bg-accent-800">
           <MessageSquarePlus size={15} /> {T.newThread}
         </button>
       ), false)}
-      {p.design && p.scripts !== undefined && <p data-scripts className="px-4 py-1 text-[11px] text-ink-400 border-b border-ink-100">{p.scripts ? T.scriptsOn(p.scripts) : T.scriptsOff}</p>}
+      {p.scripts !== undefined && <p data-scripts className="px-4 py-1 text-[11px] text-ink-400 border-b border-ink-100">{p.scripts ? T.scriptsOn(p.scripts) : T.scriptsOff}</p>}
       <div className="flex-1 overflow-y-auto">
         {p.threads.length === 0 ? (
           <div className="p-6 text-center text-sm text-ink-500">
-            {p.design ? T.noDesignThreads : T.noThreads}
+            {T.noThreadsGlobal}
           </div>
         ) : (
           <>

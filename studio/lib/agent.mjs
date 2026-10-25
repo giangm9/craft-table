@@ -20,7 +20,7 @@ import { createSdkMcpServer, query, tool } from "@anthropic-ai/claude-agent-sdk"
 import { allRefs, refChangesSince, textWithThreadMarks } from "./thread-core.mjs";
 import { createAgentTools, defaultRules, ruleTopics } from "./agent-tools.mjs";
 import { createDesignTools, DESIGN_TOOL_NAMES } from "./agent-tools-design.mjs";
-import { isDesignThread } from "./thread-core.mjs";
+import { isDesignThread, mentionsOf } from "./thread-core.mjs";
 import { lint, typecheck } from "./checks.mjs";
 import { createVerifyGuard } from "./verify-guard.mjs";
 import { normalizeLang, translate } from "./i18n.mjs";
@@ -153,10 +153,13 @@ export function buildPrompt({ thread, meta, pending, resume, viewing = thread.en
   // A thread is shared by the main screen + its options: once an option was viewed, say which screen this turn is on.
   const mixed = viewing !== thread.entry || thread.messages.some((m) => m.viewing && m.viewing !== thread.entry);
   const where = design ? (viewing ? `${say(lang, "promptViewingDesign", { entry: viewing })}\n` : "") : mixed ? `${say(lang, "promptViewing", { main: viewing === thread.entry, entry: viewing })}\n` : "";
-  if (resume) return `${where}${changes}${body}`;
-  if (design) return `${say(lang, "promptHeadDesign", { thread: thread.id, version: thread.version, before: Math.max(before, 0) })}\n${where}${changes}${body}`;
+  // The screens the person named with @[screen-id] in the new messages.
+  const ids = mentionsOf(pending.map((m) => m.text).join("\n"));
+  const ment = ids.length ? `${say(lang, "promptMentions", { ids })}\n` : "";
+  if (resume) return `${where}${ment}${changes}${body}`;
+  if (design) return `${say(lang, "promptHeadDesign", { thread: thread.id, version: thread.version, before: Math.max(before, 0) })}\n${where}${ment}${changes}${body}`;
   const head = say(lang, "promptHead", { thread: thread.id, version: thread.version, entry: thread.entry, title: meta?.title ?? thread.entry, before: Math.max(before, 0) });
-  return `${head}\n${where}${changes}${body}`;
+  return `${head}\n${where}${ment}${changes}${body}`;
 }
 
 /** SDK event → what Claude is doing now, for the UI ({ key, params }); null when not worth showing. */

@@ -11,12 +11,11 @@ next to their specs, in versions you can compare, with Claude in the room as a d
 - **Versions and options**: a version is a full copy of the design; an option is a variant of one screen that you
   try, compare and then adopt or remove.
 - **History**: every change to a screen is kept as a snapshot you can compare and restore.
-- **Threads with Claude**: talk about a screen, mark areas on its frames, and Claude edits the boards, specs and
-  screen info, looks at the result in a real browser, and checks its own work before answering.
-- **Whole-design conversation**: a tab next to *Conversation* where a thread belongs to the version, not to one
-  screen. Ask for a change that reaches everything (denser spacing, a new type scale, a rename on every screen),
-  an audit or a restructure; Claude changes many files at once, looks at the result in Chrome across every
-  screen, and can run scripts in a sandbox. See [Whole-design conversation](#whole-design-conversation).
+- **Conversations with Claude**: one list per version, the same on every screen. Name a screen inside a message with
+  `@`, mark areas on a frame if you like, and Claude edits the boards, specs and screen info, looks at the result in
+  a real browser, and checks its own work before answering. A conversation can be about one screen or about all of
+  them — a denser spacing, a new type scale, a rename everywhere — and then Claude changes many files at once, looks
+  at every screen in Chrome and can run scripts in a sandbox. See [Conversations](#conversations).
 - **English and Vietnamese**: the studio follows each viewer's choice; Claude answers in the language you write in.
 
 craft-table runs as a small Node server inside your design project folder. Your design lives in plain files
@@ -119,13 +118,23 @@ Claude reads craft-table's own rules (how boards, specs and marks work) and the 
 `rules/` folder. A file in `rules/` with the same name as a built-in topic (`boards.md`, `specs.md`, `marks.md`)
 replaces it. Typical project rules: how to use your design system, words to use on screen, what the spec must cover.
 
-## Whole-design conversation
+## Conversations
 
-The *Whole design* tab (right panel, between *Conversation* and *History*) lists the threads of the version you are
-looking at, the same on every screen. A message there says which screen you were looking at (a hint, not a limit), and
-Claude works on the **whole version**: every screen, the design system, the specs. There are no marks in this tab.
+A conversation belongs to the **version**, not to a screen. The *Conversation* tab (right panel) lists the
+conversations of the version you are looking at — the same list on every screen — and a conversation stays open when you
+move to another screen.
 
-What Claude has there, on top of the tools of a screen thread:
+**Naming a screen.** Type `@` in the message box (or press the *@* button): a menu lists the screens, narrows as you
+type, and Enter, Tab or a click writes `@[screen-id]`. A sent message shows it as a link with the screen's title; a click
+goes to that screen and the conversation stays open. Claude is told which screens a message mentions, and may mention
+screens in its replies the same way. Every message also records the screen you were looking at (a hint of what you
+mean, not a limit). Marks still work: a mark is drawn on the open screen and remembers which one.
+
+Conversations made on one screen before (by an earlier version of the studio) are in the same list, labelled with their
+screen, and work as they did: a turn on that screen and its options.
+
+A conversation turn has the tools of a screen turn (read, search, edit, write, look at frames, check) and, for the whole
+version:
 
 | Tool | What it does |
 |---|---|
@@ -133,9 +142,9 @@ What Claude has there, on top of the tools of a screen thread:
 | `browse` | Looks at the real screens in Chrome (Puppeteer): pictures of the frames you name, or `all: true` for a report over **every scenario of every screen** (what failed to draw, console errors, failed requests). `eval` runs a JavaScript expression inside each page, e.g. a measurement. |
 | `run` | A shell command (node, python, sed … whatever the machine has) in a sandbox. Only when the machine has one — see below. |
 
-A whole-design turn has up to 300 steps and an hour, **holds the whole version** while it runs (a screen turn of the
-same version waits for it, and the other way round), and works in the version of the thread — start it in a draft
-version, not in the live one. Every change is in *History* and can be restored.
+A turn of a conversation has up to 300 steps and an hour, **holds the whole version** while it runs (a turn of a
+screen thread of the same version waits for it, and the other way round), and works in the version of the conversation —
+start one in a draft version, not in the live one. Every change is in *History* and can be restored.
 
 **What a script can touch.** `run` starts in a throwaway copy of `boards/` and `system/`. When the command ends,
 each changed file is checked by the same rules as `edit` / `write` (only `boards/` and `system/`, only
@@ -185,7 +194,7 @@ Register `<STUDIO_PUBLIC_URL>/__auth/callback` as the redirect URI. Sign-in turn
 Other settings: `STUDIO_PORT` (default 5180), `STUDIO_AGENT_MODEL` (Claude model alias, default `sonnet`),
 `STUDIO_ENV_FILE` (another file instead of the project's `.env`), `CRAFT_PROJECT` (the project folder),
 `CRAFT_SANDBOX` / `CRAFT_SANDBOX_IMAGE` (where Claude may run scripts, see
-[Whole-design conversation](#whole-design-conversation)).
+[Conversations](#conversations)).
 
 ### Docker
 
@@ -217,9 +226,9 @@ on Docker Desktop (Mac, Windows), either turn on sign-in or run the studio with 
   read the thread's version, its conversation and the rules, and write only boards, specs, screen info and the
   design system inside that version. Claude cannot read `.env` or `data/`, and the real app's source (`source`) is
   read-only.
-- **Scripts are off unless the machine can isolate them.** A whole-design thread can run shell commands, but only
+- **Scripts are off unless the machine can isolate them.** A conversation can run shell commands, but only
   in a sandbox that is chosen (`CRAFT_SANDBOX`): `bwrap` or `docker` (no network), or — when you ask for it —
-  `process`, which does **not** isolate the network. Anyone who can write in a whole-design thread can then run
+  `process`, which does **not** isolate the network. Anyone who can write in a conversation can then run
   commands there, so never turn `process` on for a studio that people you do not trust can reach (it has no sign-in
   by default, and behind a proxy that hides who is connecting every visitor counts as "this machine").
 - **Without sign-in, only this machine gets in.** A request counts as "this machine" when it comes from a loopback

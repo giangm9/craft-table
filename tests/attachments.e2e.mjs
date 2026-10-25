@@ -14,7 +14,8 @@ const TEXT = "Attachment test: like this picture";
 await run("attachments", async ({ browser, cleanup }) => {
   let upId = null;
   cleanup("thread and uploaded file", async () => {
-    for (const t of (await api("GET", `/__api/threads?entry=${encodeURIComponent(ENTRY)}`)).threads) {
+    // A new conversation belongs to the version (entry "*"); one made on the screen by an earlier studio has the screen's entry.
+    for (const entry of ["*", ENTRY]) for (const t of (await api("GET", `/__api/threads?entry=${encodeURIComponent(entry)}`)).threads) {
       if (t.messages[0]?.text.includes(TEXT)) await api("DELETE", `/__api/threads/${t.id}`);
     }
     if (upId) fs.rmSync(projectFile("data", "uploads", upId), { force: true });
