@@ -107,6 +107,31 @@ test("browse: all=true goes over every scenario of every screen, with no picture
   assert.match(t, /screens\/b.*boom/s);
 });
 
+test("browse: a sweep with eval reports the values grouped (the frames named for rare ones), not only the broken frames", async () => {
+  const f = fixture();
+  // 13 frames (> 12: the long form) — screens/a has 13 scenarios here, one of them measures differently.
+  fs.writeFileSync(path.join(f.v, "boards", "screens", "a.meta.json"), JSON.stringify({ title: "A", scenarios: Array.from({ length: 12 }, (_, i) => ({ id: `s${i}`, title: `S${i}` })) }));
+  const shots = {
+    inspect: async () => { throw new Error("pictures are not taken in a sweep"); },
+    inspectScenarios: async (a) => a.scenarios.map((s) => ({ png: null, height: 1080, errors: [], boardError: false, value: s === "s3" ? { h: 1340 } : { h: 1080 } })),
+  };
+  const browse = createDesignTools({ root: f.root, ctx: { version: "ban-1", threadId: "t_1", entry: null }, shots, lang: "en" }).find((t) => t.name === "browse");
+  const t = textOf(await browse.handler({ all: true, eval: "({ h: document.documentElement.scrollHeight })" }));
+  assert.match(t, /13 frames looked at · 0 broken/);
+  assert.match(t, /eval \{"h":1080\} — 12 frames/);
+  assert.match(t, /eval \{"h":1340\} — 1 frame: screens\/a · s3 · desktop/);
+});
+
+test("browse: an unknown screen among known ones is skipped and named; the rest are looked at", async () => {
+  const f = fixture();
+  const r = await f.by.browse.handler({ frames: [{ entry: "screens/a", scenario: "one" }, { entry: "screens/gone~old" }, { entry: "screens/b", scenario: "only" }] });
+  assert.ok(!r.isError);
+  const t = textOf(r);
+  assert.match(t, /2 frames looked at/);
+  assert.match(t, /Skipped — no such screen in ban-1: screens\/gone~old\./);
+  assert.deepEqual(f.inspected.map((a) => a.entry), ["screens/a", "screens/b"]);
+});
+
 test("browse: an unknown screen is an error, a frame cap keeps it from running for ever", async () => {
   const f = fixture();
   const bad = await f.by.browse.handler({ frames: [{ entry: "screens/nope" }] });

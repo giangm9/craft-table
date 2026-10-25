@@ -648,6 +648,21 @@
       "one": "(bỏ ảnh khi quá undefined khung)",
       "two": "(bỏ ảnh khi quá undefined khung)"
     },
+    "browseEvalGroup": {
+      "params": "eval ‹a0.value› — ‹a0.count› khung: ‹a0.frames›",
+      "one": "(throws TypeError)",
+      "two": "(throws TypeError)"
+    },
+    "browseEvalMore": {
+      "params": "… và ‹a0.n› giá trị eval khác nữa",
+      "one": "… và undefined giá trị eval khác nữa",
+      "two": "… và undefined giá trị eval khác nữa"
+    },
+    "browseSkipped": {
+      "params": "Đã bỏ qua — không có màn này trong ‹a0.version›: ‹a0.list›.",
+      "one": "(throws TypeError)",
+      "two": "(throws TypeError)"
+    },
     "runExit": {
       "params": "mã thoát ‹a0.code›",
       "one": "mã thoát undefined",

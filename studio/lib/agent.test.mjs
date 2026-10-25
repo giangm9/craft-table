@@ -427,6 +427,19 @@ test("designSystemPrompt: edit the screens in place; an option or a new version 
   assert.match(vi, /Hướng A — /);
 });
 
+test("read-only tools are marked so the calls of one step that only look run at once; tools that write are not", async () => {
+  const { READ_ONLY_TOOLS, toolExtras, TOOL_NAMES: names } = await import("./agent.mjs");
+  const all = [...names, ...DESIGN_NAMES];
+  const writing = ["edit", "write", "replace", "run"];
+  assert.deepEqual(all.filter((n) => !READ_ONLY_TOOLS.has(n)).sort(), [...writing].sort(), "every tool is either read-only or one of the writing ones");
+  assert.ok([...READ_ONLY_TOOLS].every((n) => all.includes(n)));
+  assert.deepEqual(toolExtras("view_frame"), { annotations: { readOnlyHint: true } });
+  for (const n of writing) assert.equal(toolExtras(n), undefined);
+  // The SDK keeps the hint on the tool it hands to Claude Code (which runs read-only MCP tools concurrently).
+  const { tool } = await import("@anthropic-ai/claude-agent-sdk");
+  assert.deepEqual(tool("browse", "d", {}, async () => ({ content: [] }), toolExtras("browse")).annotations, { readOnlyHint: true });
+});
+
 test("sdkOptions: effort is passed to the SDK only when one was chosen", () => {
   assert.equal(sdkOptions({ model: "sonnet", mcpServer: {}, systemPrompt: "P", effort: "xhigh" }).effort, "xhigh");
   assert.ok(!("effort" in sdkOptions({ model: "sonnet", mcpServer: {}, systemPrompt: "P" })), "no effort chosen → the model's own default");

@@ -31,6 +31,25 @@ const fail = (t) => ({ content: [{ type: "text", text: t }], isError: true });
 const image = (buf) => ({ type: "image", data: Buffer.from(buf).toString("base64"), mimeType: "image/png" });
 const plural = (n, one, many) => (n === 1 ? one : many);
 
+const EVAL_GROUPS = 20;        // distinct eval values listed after a sweep
+const EVAL_NAMED = 10;         // a value seen on at most this many frames names them
+
+/**
+ * The eval results of a sweep grouped by value, most frequent first: [{ value, count, frames: ["entry · scenario · viewport"] }]
+ * (frames only for rare values), then { more: n } when there are more than EVAL_GROUPS distinct values.
+ */
+export function evalGroups(results) {
+  const by = new Map();
+  for (const { f, r } of results) {
+    const v = r.evalError ? `error: ${r.evalError}` : r.value === undefined ? "undefined" : JSON.stringify(r.value);
+    if (!by.has(v)) by.set(v, []);
+    by.get(v).push(`${f.entry} · ${f.scenario ?? "-"} · ${f.viewport}`);
+  }
+  const groups = [...by].sort((a, b) => b[1].length - a[1].length)
+    .map(([value, fs]) => ({ value: value.length > 300 ? `${value.slice(0, 300)}…` : value, count: fs.length, frames: fs.length <= EVAL_NAMED ? fs : [] }));
+  return groups.length > EVAL_GROUPS ? [...groups.slice(0, EVAL_GROUPS), { more: groups.length - EVAL_GROUPS }] : groups;
+}
+
 /** "boards/**\/*.tsx" → a RegExp over a whole relative path (`**` any depth, `*` inside one folder, `?` one character). */
 export function globToRegExp(glob) {
   const esc = String(glob).replace(/[.+^${}()|[\]\\]/g, "\\$&");
@@ -131,7 +150,7 @@ export function createDesignTools({ root, ctx, shots, sandbox = null, lang = "en
       eval: z.string().max(2000).optional(),
     },
     async handler({ frames, all = false, viewport = "desktop", entries, theme, eval: evalJs }) {
-      let list;
+      let list, skipped = [];
       if (all) {
         const only = entries ? globToRegExp(entries) : null;
         const vps = viewport === "both" ? ["desktop", "mobile"] : [viewport];
@@ -141,8 +160,11 @@ export function createDesignTools({ root, ctx, shots, sandbox = null, lang = "en
       } else {
         if (!frames?.length) return fail(T("browseNoFrames"));
         if (frames.length > MAX_FRAMES) return fail(T("browseTooMany", { max: MAX_FRAMES }));
-        for (const f of frames) if (!validEntry(f.entry)) return fail(T("noScreenIn", { entry: f.entry, version: ctx.version }));
-        list = frames.map((f) => ({ ...f, viewport: f.viewport ?? viewport, theme: f.theme ?? theme }));
+        // One stale id (e.g. an option deleted since) must not cost the whole call: the rest are looked at, the unknown named.
+        skipped = [...new Set(frames.filter((f) => !validEntry(f.entry)).map((f) => f.entry))];
+        const known = frames.filter((f) => validEntry(f.entry));
+        if (!known.length) return fail(T("noScreenIn", { entry: skipped.join(", "), version: ctx.version }));
+        list = known.map((f) => ({ ...f, viewport: f.viewport ?? viewport, theme: f.theme ?? theme }));
       }
       const withPictures = !all && list.length <= MAX_PICTURES;
       const results = new Array(list.length);
@@ -181,10 +203,14 @@ export function createDesignTools({ root, ctx, shots, sandbox = null, lang = "en
       const lines = results.map(({ f, r }) => T("browseLine", { entry: f.entry, scenario: f.scenario, viewport: f.viewport, height: r.height, problems: problems(r), value: r.value === undefined ? undefined : JSON.stringify(r.value) }));
       const broken = results.filter(({ r }) => problems(r).length);
       const summary = T("browseSummary", { frames: results.length, broken: broken.length });
-      // A long list of fine frames is noise: show the broken ones in full, the rest only when the list is short.
-      const body = all && results.length > 12 ? broken.map(({ f, r }) => T("browseLine", { entry: f.entry, scenario: f.scenario, viewport: f.viewport, height: r.height, problems: problems(r), value: undefined })) : lines;
+      // A long list of fine frames is noise: show the broken ones in full, the rest only when the list is short — and the
+      // eval results grouped by value (the frames named when a value is rare), so a measurement over a sweep is never lost.
+      const long = all && results.length > 12;
+      const body = long ? broken.map(({ f, r }) => T("browseLine", { entry: f.entry, scenario: f.scenario, viewport: f.viewport, height: r.height, problems: problems(r), value: undefined })) : lines;
+      if (long && evalJs) body.push(...evalGroups(results).map((g) => g.more != null ? T("browseEvalMore", { n: g.more }) : T("browseEvalGroup", g)));
       const note = !all && list.length > MAX_PICTURES ? `\n${T("browseNoPictures", { max: MAX_PICTURES })}` : "";
-      const content = [{ type: "text", text: `${summary}\n${body.join("\n")}${note}`.trim() }];
+      const skip = skipped.length ? `\n${T("browseSkipped", { list: skipped, version: ctx.version })}` : "";
+      const content = [{ type: "text", text: `${summary}\n${body.join("\n")}${note}${skip}`.trim() }];
       if (withPictures) for (const { r } of results) if (r.png) content.push(image(r.png));
       return { content };
     },

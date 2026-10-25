@@ -103,6 +103,14 @@ export function designSystemPrompt({ project, topics, sandbox }) {
   });
 }
 
+/**
+ * The tools that change nothing. Claude Code runs MCP tool calls one after another unless a tool says it is read-only
+ * (annotations.readOnlyHint): a view_frame sent with a sweep waited the whole sweep (measured: 145 s for a 1 s picture).
+ * Marked, the calls of one step that only look run at once; edit / write / replace / run still go one at a time.
+ */
+export const READ_ONLY_TOOLS = new Set(["list", "read", "search", "read_thread", "view_frame", "view_region", "view_image", "locate", "check", "rules", "browse"]);
+export const toolExtras = (name) => (READ_ONLY_TOOLS.has(name) ? { annotations: { readOnlyHint: true } } : undefined);
+
 /** SDK options of the sandbox (pure — for tests). design: a whole-design turn (more steps, the design tools; `run` only when run !== false). */
 export function sdkOptions({ model, effort, sessionId, mcpServer, systemPrompt: prompt, design = false, run = true }) {
   const names = design ? [...TOOL_NAMES, ...DESIGN_TOOL_NAMES.filter((n) => n !== "run" || run)] : TOOL_NAMES;
@@ -217,7 +225,7 @@ export function runAgent({ root, project = { name: path.basename(root), descript
     const r = await t.handler(args, extra);
     guard.record(t.name, args, !r.isError, r.content?.filter((c) => c.type === "text").map((c) => c.text).join("\n"));
     return r;
-  }));
+  }, toolExtras(t.name)));
   const mcpServer = createSdkMcpServer({ name: "studio", alwaysLoad: true, tools: watched });
   let sid = sessionId ?? null;
   let loginLost = false;
