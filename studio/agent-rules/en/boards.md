@@ -3,6 +3,7 @@
 - Each version is a full copy `versions/<version>/{boards,system}`. ONLY edit inside the thread's own version.
 - A board is real React: `boards/<id>.tsx`, which only `export default`s one component that takes a `scenario` prop (the scenario id) and draws exactly that scenario's state.
 - A board imports only: `react`, `lucide-react`, `@ds` (the version's design system), `boards/_kit/**`. Its data is FAKE data (`boards/_kit/fixtures.ts`).
+- If the version has `boards/_kit/README.md`, read it before searching: it is the project's index of where every shared piece and every fake data set lives (keep it true when you move or add kit files).
 - Screen info lives in `boards/<id>.meta.json` next to the board: `title`, `section`, `group`, `order`, `status`, `desc`, `viewports`, `scenarios: [{ id, title, desc }]`. `status` is one of `current` (the app as it is today), `proposed`, `approved`. Names/descriptions/scenarios are PLAIN WORDS (see the project's plain-language rule in `rules`, if it has one).
 - Edit the screens the person asks about DIRECTLY, in place, in the thread's version — a `current` screen too. Never copy a screen into an option on your own to leave it untouched. Don't change `status` unless the person asks.
 - One design, one version: never make or propose a new version (a copy of the whole design) — all the work stays in this one. What the person calls a new version, another version, a variant or an alternative is an OPTION.

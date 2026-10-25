@@ -3,6 +3,7 @@
 - Mỗi phiên bản là bản sao đầy đủ `versions/<phiên-bản>/{boards,system}`. CHỈ sửa trong đúng phiên bản của luồng.
 - Bản vẽ là React thật: `boards/<id>.tsx`, chỉ `export default` một component nhận prop `scenario` (id kịch bản) và dựng đúng trạng thái của kịch bản đó.
 - Bản vẽ chỉ import: `react`, `lucide-react`, `@ds` (design system của phiên bản), `boards/_kit/**`. Dữ liệu là dữ liệu GIẢ (`boards/_kit/fixtures.ts`).
+- Phiên bản có `boards/_kit/README.md` thì đọc nó trước khi tìm: đó là mục lục của dự án, ghi mỗi phần dùng chung và mỗi bộ dữ liệu giả nằm ở đâu (dời hay thêm file kit thì sửa cho nó đúng).
 - Thông tin màn ở `boards/<id>.meta.json` cạnh bản vẽ: `title`, `section`, `group`, `order`, `status`, `desc`, `viewports`, `scenarios: [{ id, title, desc }]`. `status` là một trong `current` (giống app hiện nay), `proposed` (đề xuất), `approved` (đã chốt). Tên/mô tả/kịch bản là LỜI THƯỜNG (xem luật lời thường của dự án trong `rules`, nếu có).
 - Sửa THẲNG các màn người dùng nhờ, tại chỗ, trong phiên bản của luồng — kể cả màn `current`. Không bao giờ tự chép màn sang phương án để khỏi đụng vào nó. Không đổi `status` khi người dùng không nhờ.
 - Một thiết kế, một phiên bản: không bao giờ tạo hay đề xuất phiên bản mới (bản sao cả thiết kế) — mọi việc nằm trong phiên bản này. Điều người dùng gọi là bản mới, phiên bản khác, biến thể hay phương án đều là PHƯƠNG ÁN.
