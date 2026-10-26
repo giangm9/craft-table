@@ -16,7 +16,8 @@ import { ThreadsPanel, type Redraw } from "./ThreadsPanel";
 import { PanelAside } from "./PanelAside";
 import { FloatingPanel, type FloatRect } from "./FloatingPanel";
 import { defaultFloatRect } from "../lib/panel-float.mjs";
-import { PANEL_DEFAULT } from "../lib/panel-width.mjs";
+import { PANEL_DEFAULT, SIDEBAR_DEFAULT, clampSidebarWidth } from "../lib/panel-width.mjs";
+import { useResize } from "./useResize";
 import { HistoryPanel } from "./HistoryPanel";
 import { MetaEditor } from "./MetaEditor";
 import { CreateOptionDialog, OptionBar } from "./OptionsUi";
@@ -187,6 +188,9 @@ function App() {
   const [specWidth, setSpecWidth] = useStored("studio:specWidth", 380);
   const [codeHeight, setCodeHeight] = useStored("studio:codeHeight", 320);
   const [panelWidth, setPanelWidth] = useStored("studio:panelWidth", PANEL_DEFAULT);
+  // The board list on the left: drag its right edge (wide screens; on a phone it is a drawer of fixed width).
+  const [navWidth, setNavWidth] = useStored("studio:navWidth", SIDEBAR_DEFAULT);
+  const nav = useResize({ width: navWidth, onWidth: setNavWidth, edge: "right", clamp: (w) => clampSidebarWidth(w, innerWidth), def: SIDEBAR_DEFAULT });
   // The conversation panel can pop out as a floating window. It is drawn ONCE, into `host`, an element that is moved between the
   // side panel and the window — so what is typed and the open thread survive the move.
   const [floating, setFloating] = useStored("studio:chatFloat", false);
@@ -338,8 +342,8 @@ function App() {
     // A full-screen app: the page itself never scrolls (nothing that overflows may push it up); each pane scrolls itself.
     <div className="h-screen overflow-hidden flex bg-ink-50 text-ink-900">
       {navOpen && <div className="fixed inset-0 bg-ink-900/40 z-30 md:hidden" onClick={() => setParams({ nav: null })} />}
-      <aside className={cn(
-        "fixed inset-y-0 left-0 w-56 bg-surface border-r border-ink-200 z-40 flex flex-col transition-transform md:static md:translate-x-0",
+      <aside data-sidebar style={{ "--nav-w": `${nav.shown}px` } as React.CSSProperties} className={cn(
+        "fixed inset-y-0 left-0 w-56 md:w-[var(--nav-w)] bg-surface border-r border-ink-200 z-40 flex flex-col transition-transform md:relative md:shrink-0 md:translate-x-0",
         navOpen ? "translate-x-0" : "-translate-x-full",
       )}>
         <div className="h-[52px] px-3 border-b border-ink-200 flex items-center gap-2">
@@ -368,6 +372,17 @@ function App() {
             )}
           </div>
         </div>
+        <div
+          data-sidebar-resize
+          role="separator"
+          aria-orientation="vertical"
+          aria-label={T.navResizeLabel}
+          aria-valuenow={nav.shown}
+          tabIndex={0}
+          title={T.panelResizeHint}
+          {...nav.handle}
+          className={cn("hidden md:block absolute top-0 -right-1 w-2 h-full cursor-col-resize z-10 hover:bg-accent-500/25 focus-visible:bg-accent-500/25 outline-none", nav.dragging && "bg-accent-500/35")}
+        />
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0 min-h-0">

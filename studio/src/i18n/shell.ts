@@ -9,6 +9,7 @@ const en = {
   // PanelAside: the handle on the left edge of the right panel (Conversation / History).
   panelResizeLabel: "Drag to resize the conversation panel",
   panelResizeHint: "Drag to resize · double-click to reset",
+  navResizeLabel: "Drag to resize the board list",
 
   // Sidebar head and foot (main.tsx).
   studioTagline: "Design studio",
@@ -119,6 +120,7 @@ const en = {
 const vi: typeof en = {
   panelResizeLabel: "Kéo để đổi độ rộng ngăn hội thoại",
   panelResizeHint: "Kéo để đổi độ rộng · bấm đúp để về mặc định",
+  navResizeLabel: "Kéo để đổi độ rộng danh mục bản vẽ",
 
   studioTagline: "Xưởng thiết kế",
   signOut: "Đăng xuất",

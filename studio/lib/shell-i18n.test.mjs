@@ -96,6 +96,7 @@ test("shell (en): counts agree with their number", () => {
 const VI_SHELL = {
   panelResizeLabel: "Kéo để đổi độ rộng ngăn hội thoại",
   panelResizeHint: "Kéo để đổi độ rộng · bấm đúp để về mặc định",
+  navResizeLabel: "Kéo để đổi độ rộng danh mục bản vẽ",
   studioTagline: "Xưởng thiết kế",
   signOut: "Đăng xuất",
   language: "Ngôn ngữ",
