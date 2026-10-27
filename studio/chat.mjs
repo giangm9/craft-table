@@ -33,7 +33,7 @@ if (!isValidVersionId(V) || !fs.existsSync(path.join(ROOT, "versions", V))) die(
 const [cmd, ...args] = argv.filter((a) => a !== vArg);
 const BOARDS = path.join(ROOT, "versions", V, "boards");
 
-const shots = createShots({ base: BASE, tool: toolBase(path.resolve(import.meta.dirname, ".."), ROOT), externalOrigins: PROJECT.config.externalOrigins, idleMs: 60_000 });
+const shots = createShots({ base: BASE, tool: toolBase(path.resolve(import.meta.dirname, ".."), ROOT), externalOrigins: PROJECT.config.externalOrigins, desktop: () => PROJECT.config.desktop, idleMs: 60_000 });
 
 switch (cmd) {
   case "list": {

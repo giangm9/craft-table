@@ -2,11 +2,15 @@
 //   • the gear in the sidebar's foot opens them; the current size is ticked (1280 × 800 when the project says nothing)
 //   • picking Full HD and saving: every desktop frame is 1920 px wide, craft-table.json says so, the project API says so;
 //     a reload keeps it; a second page open at the same time follows without a reload
+//   • the command line's frame shots (studio/chat.mjs shot) use the project's size too
 //   • a custom size outside the limits is refused on the page, nothing changes
 //   • the console stays clean. At the end the project's craft-table.json is put back byte for byte.
 // Screenshot: tests/shots/settings-1280.png
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
-import { DESKTOP, STUDIO, gotoReady, newPage, ok, projectFile, run, shot, sleep, studioUrl, until } from "./lib/e2e.mjs";
+import os from "node:os";
+import path from "node:path";
+import { DESKTOP, PROJECT, STUDIO, gotoReady, newPage, ok, projectFile, run, shot, sleep, studioUrl, until } from "./lib/e2e.mjs";
 
 const A = "screens/tasks/list";
 const widths = (page) => page.$$eval("[data-frame]", (els) => [...new Set(els.map((e) => Math.round(parseFloat(e.style.width))))].sort((a, b) => a - b));
@@ -53,6 +57,13 @@ await run("settings", async ({ browser, cleanup }) => {
   await gotoReady(page, studioUrl({ e: A }));
   await page.waitForSelector("[data-frame]", { timeout: 15_000 });
   ok(JSON.stringify(await widths(page)) === "[390,1920]", "a reload keeps it");
+
+  // ── The command line shoots frames at the project's size too ──
+  const png = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "ct-settings-")), "shot.png");
+  cleanup("command-line shot", () => fs.rmSync(path.dirname(png), { recursive: true, force: true }));
+  execFileSync(process.execPath, [path.resolve(import.meta.dirname, "..", "studio", "chat.mjs"), "shot", A, "-", "desktop", png], { env: { ...process.env, CRAFT_PROJECT: PROJECT, STUDIO_URL: STUDIO }, stdio: "pipe", timeout: 120_000 });
+  const shotWidth = fs.readFileSync(png).readUInt32BE(16); // PNG IHDR width
+  ok(shotWidth === 1920, `chat.mjs shot takes a desktop frame 1920 wide (${shotWidth})`);
 
   // ── A custom size outside the limits ──
   await page.click("[data-open-settings]");
